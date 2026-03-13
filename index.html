@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vavan — Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0d0d14;--paper:#f7f6f2;--paper2:#eeecea;
+  --accent:#4a36c8;--accent-light:#ece9fc;--accent-mid:#7c68e0;
+  --muted:#6b6880;--border:rgba(13,13,20,0.1);--radius:10px;
+  --green:#1d9e75;--green-light:#e1f5ee;
+  --amber:#ba7517;--amber-light:#faeeda;
+  --red:#c44a2e;--red-light:#fdecea;
+  --sidebar:300px;--header:52px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--ink);}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+}
+#login-screen.hidden{display:none;}
+.login-card{
+  background:#fff;border-radius:16px;
+  padding:2.5rem 2rem;width:100%;max-width:380px;
+}
+.login-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--ink);margin-bottom:.25rem;}
+.login-logo span{color:var(--accent-mid);}
+.login-tagline{font-size:13px;color:var(--muted);margin-bottom:2rem;}
+.login-label{font-size:12px;font-weight:500;color:var(--ink);margin-bottom:5px;display:block;}
+.login-input{
+  width:100%;border:1px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;
+  color:var(--ink);background:var(--paper);outline:none;margin-bottom:1rem;
+}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{
+  width:100%;padding:11px;border-radius:8px;
+  background:var(--accent);color:#fff;border:none;
+  font-size:14px;font-weight:600;font-family:'Inter',sans-serif;
+  cursor:pointer;transition:opacity .15s;
+}
+.login-btn:hover{opacity:.9;}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;}
+.login-error{font-size:12px;color:var(--red);margin-top:.5rem;min-height:18px;}
+.login-footer{font-size:11px;color:var(--muted);text-align:center;margin-top:1.5rem;}
+
+/* ── APP SHELL ── */
+#app{display:none;}
+#app.visible{display:block;}
+
+/* HEADER */
+#header{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:var(--ink);display:flex;align-items:center;gap:.875rem;
+  padding:0 1.25rem;height:var(--header);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:#fff;letter-spacing:-.02em;}
+.logo span{color:#7c68e0;}
+.hbadge{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:100px;padding:3px 10px;font-size:11px;color:rgba(255,255,255,0.6);font-weight:500;}
+.spacer{flex:1;}
+#user-info{font-size:12px;color:rgba(255,255,255,.4);}
+#user-info span{color:rgba(255,255,255,.75);font-weight:500;}
+.logout-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.6);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;margin-left:.5rem;}
+.logout-btn:hover{background:rgba(255,255,255,0.12);}
+#map-count{font-size:12px;color:rgba(255,255,255,.4);}
+#map-count span{color:#fff;font-weight:600;}
+
+/* SIDEBAR */
+#sidebar{
+  position:fixed;top:var(--header);left:0;bottom:0;
+  width:var(--sidebar);z-index:900;
+  background:#fff;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sb-section{padding:.875rem .875rem .75rem;border-bottom:1px solid var(--border);}
+.sb-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.08em;}
+#search{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);outline:none;}
+#search:focus{border-color:var(--accent);}
+
+/* FILTERS */
+.filter-group{margin-bottom:.75rem;}
+.filter-label{font-size:11px;font-weight:500;color:var(--muted);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.08em;}
+.filter-pills{display:flex;flex-wrap:wrap;gap:4px;}
+.pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:100px;border:1px solid var(--border);background:var(--paper2);color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.pill.amber.active{background:var(--amber);border-color:var(--amber);color:#fff;}
+.pill.green.active{background:var(--green);border-color:var(--green);color:#fff;}
+.pill.red.active{background:var(--red);border-color:var(--red);color:#fff;}
+
+/* AREA TOOLS */
+.tool-row{display:flex;gap:4px;flex-wrap:wrap;}
+.tool-btn{font-size:11px;font-weight:500;padding:5px 9px;border-radius:7px;border:1px solid var(--border);background:var(--paper2);color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px;}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent);}
+.tool-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+.radius-row{display:flex;align-items:center;gap:6px;margin-top:.5rem;}
+.radius-row input[type=range]{flex:1;}
+.radius-label{font-size:11px;color:var(--muted);min-width:40px;text-align:right;}
+
+/* SELECTION SUMMARY */
+#selection-summary{display:none;margin-top:.5rem;padding:.6rem .75rem;background:var(--accent-light);border-radius:7px;}
+#selection-summary.visible{display:block;}
+.sel-count{font-size:13px;font-weight:600;color:var(--accent);}
+.sel-sub{font-size:11px;color:var(--accent);opacity:.8;}
+.sel-clear{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;margin-top:2px;display:inline-block;}
+
+/* LIST */
+#result-count{font-size:11px;color:var(--muted);padding:.5rem .875rem .25rem;flex-shrink:0;}
+#list{flex:1;overflow-y:auto;}
+.biz-item{padding:.65rem .875rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+.biz-item:hover{background:var(--paper);}
+.biz-item.selected{background:var(--accent-light);border-left:3px solid var(--accent);padding-left:calc(.875rem - 2px);}
+.biz-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;line-height:1.3;display:flex;align-items:center;gap:6px;}
+.biz-addr{font-size:11px;color:var(--muted);}
+.biz-phone{font-size:11px;color:var(--accent);margin-top:1px;}
+.score-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block;}
+
+/* MAP */
+#map{position:fixed;top:var(--header);left:var(--sidebar);right:0;bottom:0;z-index:1;}
+
+/* DETAIL PANEL */
+#detail{
+  position:fixed;top:var(--header);right:0;bottom:0;width:320px;z-index:950;
+  background:#fff;border-left:1px solid var(--border);
+  transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;
+}
+#detail.open{transform:translateX(0);}
+#det-close{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--paper2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--muted);z-index:10;}
+#det-inner{padding:1.25rem;overflow-y:auto;flex:1;}
+.det-badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;background:var(--accent-light);color:var(--accent);margin-bottom:.75rem;}
+.det-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:.2rem;}
+.det-addr{font-size:13px;color:var(--muted);margin-bottom:.875rem;line-height:1.5;}
+.divider{height:1px;background:var(--border);margin:.75rem 0;}
+.det-row{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.5rem;}
+.det-lbl{font-size:12px;color:var(--muted);font-weight:500;}
+.det-val{font-size:12px;color:var(--ink);font-weight:500;text-align:right;}
+.det-link{font-size:12px;color:var(--accent);font-weight:500;text-decoration:none;}
+.det-link:hover{text-decoration:underline;}
+.score-bar{height:5px;border-radius:3px;background:var(--paper2);margin-top:.75rem;overflow:hidden;}
+.score-fill{height:100%;border-radius:3px;transition:width .4s ease;}
+.score-row{display:flex;justify-content:space-between;margin-top:.3rem;}
+.score-num{font-size:13px;font-weight:600;}
+.score-txt{font-size:11px;color:var(--muted);}
+.opp-box{margin-top:1rem;padding:.875rem;background:var(--accent-light);border-radius:8px;}
+.opp-title{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:.3rem;}
+.opp-desc{font-size:12px;color:var(--accent);line-height:1.5;opacity:.85;}
+.comp-tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--red-light);color:var(--red);margin-top:.25rem;}
+.terr-tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:100px;background:var(--green-light);color:var(--green);margin-top:.25rem;}
+
+/* LOADING */
+#loader{position:fixed;inset:0;z-index:8000;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
+#loader.hidden{display:none;}
+.ld-logo{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#fff;}
+.ld-logo span{color:#7c68e0;}
+.ld-msg{font-size:13px;color:rgba(255,255,255,.5);}
+#ld-bar-wrap{width:220px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+#ld-bar{height:100%;width:0%;background:#7c68e0;border-radius:2px;transition:width .3s;}
+#ld-lbl{font-size:12px;color:rgba(255,255,255,.35);}
+
+/* MAPBOX OVERRIDES */
+.mapboxgl-ctrl-group{border-radius:8px!important;}
+.mapboxgl-popup-content{border-radius:8px!important;padding:10px 14px!important;font-family:'Inter',sans-serif!important;font-size:13px!important;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Va<span>van</span></div>
+    <div class="login-tagline">Market Intelligence Platform</div>
+    <label class="login-label">Email</label>
+    <input class="login-input" type="email" id="login-email" placeholder="you@company.com" autocomplete="email">
+    <label class="login-label">Password</label>
+    <input class="login-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-footer">Vavan Intelligence Platform · Private Access</div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-logo">Va<span>van</span></div>
+  <div class="ld-msg">Loading market intelligence...</div>
+  <div id="ld-bar-wrap"><div id="ld-bar"></div></div>
+  <div id="ld-lbl">Connecting to database...</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="header">
+    <div class="logo">Va<span>van</span></div>
+    <div class="hbadge" id="market-badge">Las Vegas, NV</div>
+    <div class="hbadge" id="industry-badge">Transportation</div>
+    <div class="spacer"></div>
+    <div id="map-count"><span id="pin-count">0</span> businesses</div>
+    <div id="user-info">Signed in as <span id="user-email"></span></div>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+  </div>
+
+  <div id="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Search</div>
+      <input type="text" id="search" placeholder="Search by name or address...">
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-title">Filters</div>
+      <div class="filter-group">
+        <div class="filter-label">Opportunity</div>
+        <div class="filter-pills">
+          <span class="pill active" data-filter="opp" data-val="all" onclick="setFilter('opp','all',this)">All</span>
+          <span class="pill amber" data-filter="opp" data-val="high" onclick="setFilter('opp','high',this)">⭐ High</span>
+          <span class="pill" data-filter="opp" data-val="med" onclick="setFilter('opp','med',this)">Med</span>
+          <span class="pill" data-filter="opp" data-val="low" onclick="setFilter('opp','low',this)">Low</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Contact info</div>
+        <div class="filter-pills">
+          <span class="pill active" data-filter="contact" data-val="all" onclick="setFilter('contact','all',this)">All</span>
+          <span class="pill green" data-filter="contact" data-val="phone" onclick="setFilter('contact','phone',this)">Has phone</span>
+          <span class="pill green" data-filter="contact" data-val="web" onclick="setFilter('contact','web',this)">Has website</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Status</div>
+        <div class="filter-pills">
+          <span class="pill active" data-filter="status" data-val="all" onclick="setFilter('status','all',this)">All</span>
+          <span class="pill red" data-filter="status" data-val="competitor" onclick="setFilter('status','competitor',this)">Competitor</span>
+          <span class="pill green" data-filter="status" data-val="territory" onclick="setFilter('status','territory',this)">My territory</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-title">Area selection</div>
+      <div class="tool-row">
+        <button class="tool-btn" id="btn-polygon" onclick="activateTool('polygon')">✏️ Draw area</button>
+        <button class="tool-btn" id="btn-radius" onclick="activateTool('radius')">⭕ Radius</button>
+        <button class="tool-btn" id="btn-zip" onclick="activateTool('zip')">🔢 Zip code</button>
+        <button class="tool-btn" id="btn-clear-area" onclick="clearArea()" style="display:none">✕ Clear</button>
+      </div>
+      <div id="radius-controls" style="display:none">
+        <div class="radius-row">
+          <span style="font-size:11px;color:var(--muted)">Radius:</span>
+          <input type="range" min="1" max="50" value="5" step="1" id="radius-slider" oninput="updateRadius(this.value)">
+          <span class="radius-label" id="radius-val">5 mi</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Click anywhere on the map to drop a circle</div>
+      </div>
+      <div id="zip-controls" style="display:none;margin-top:.5rem">
+        <input type="text" id="zip-input" class="login-input" style="margin-bottom:0;padding:7px 10px;font-size:13px" placeholder="Enter zip code (e.g. 89101)">
+        <button onclick="filterByZip()" style="margin-top:4px;width:100%;padding:6px;border-radius:7px;background:var(--accent);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Apply zip filter</button>
+      </div>
+      <div id="selection-summary">
+        <div class="sel-count" id="sel-count-num">0 businesses selected</div>
+        <div class="sel-sub" id="sel-area-desc">in selected area</div>
+        <span class="sel-clear" onclick="clearArea()">Clear selection</span>
+      </div>
+    </div>
+
+    <div id="result-count"></div>
+    <div id="list"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="detail">
+    <div id="det-close" onclick="closeDetail()">✕</div>
+    <div id="det-inner"></div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const SUPABASE_URL = 'https://gcylhmxrzhbkaqkcovct.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjeWxobXhyemhia2Fxa2NvdmN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MDg4MDMsImV4cCI6MjA4ODk4NDgwM30.aGoL_gr4XXX-sefNLAWf1bgZnqVPgUyCY7GImpQhq9U';
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiYXJ0dGF0YXIiLCJhIjoiY21pdWppYThlMjEzcjNxb3JjaDZkdWs4dyJ9.d-lDV_T6-_T2_10CHxfvVg';
+mapboxgl.accessToken = MAPBOX_TOKEN;
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── STATE ──
+let allData = [];
+let filteredData = [];
+let selectedIdx = null;
+let map, draw;
+let activeFilters = {opp:'all', contact:'all', status:'all'};
+let activeTool = null;
+let selectionPolygon = null;
+let radiusCircle = null;
+let radiusMiles = 5;
+let markers = {};
+let currentUser = null;
+
+// ── EMBEDDED DATA (Las Vegas Transportation) ──
+const EMBEDDED_DATA = [{"name":"YRC Freight","street":"5049 W Post Rd","locality":"Las Vegas, NV 89118","full_address":"5049 W Post Rd, Las Vegas, NV 89118","phone":"(800) 610-6500","website":"","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/yrc-freight-471026839","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Bulk Transportation","street":"4915 N Sloan Ln","locality":"Las Vegas, NV 89115","full_address":"4915 N Sloan Ln, Las Vegas, NV 89115","phone":"(702) 565-5701","website":"http://bulk-dti.com/","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/bulk-transportation-20708192","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Southwest Transload & Distribution","street":"4740 E Tropical Pkwy","locality":"Las Vegas, NV 89115","full_address":"4740 E Tropical Pkwy, Las Vegas, NV 89115","phone":"(702) 388-9277","website":"","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/southwest-transload-distribution-463656083","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Valley Truck and Equipment Inc","street":"4570 Wynn Rd","locality":"Las Vegas, NV 89103","full_address":"4570 Wynn Rd, Las Vegas, NV 89103","phone":"(702) 364-8049","website":"http://702trucks.com/","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/valley-truck-and-equipment-inc-523922288","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Las Vegas Paving Corp","street":"4420 S Decatur Blvd","locality":"Las Vegas, NV 89103","full_address":"4420 S Decatur Blvd, Las Vegas, NV 89103","phone":"(702) 876-6245","website":"http://lvpaving.com/","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/las-vegas-paving-corp-471112896","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Steelman Transportation","street":"5085 Steptoe St","locality":"Las Vegas, NV 89122","full_address":"5085 Steptoe St, Las Vegas, NV 89122","phone":"(702) 433-5780","website":"","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/steelman-transportation-459717304","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Southwest Gas","street":"5241 Spring Mountain Rd","locality":"Las Vegas, NV 89146","full_address":"5241 Spring Mountain Rd, Las Vegas, NV 89146","phone":"(702) 876-7237","website":"http://swgas.com/","yp_url":"https://www.yellowpages.com/las-vegas-nv/mip/southwest-gas-458534791","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Nevada Freight Inc","street":"3300 E Desert Inn Rd","locality":"Las Vegas, NV 89121","full_address":"3300 E Desert Inn Rd, Las Vegas, NV 89121","phone":"(702) 457-9200","website":"","yp_url":"","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Silver State Disposal","street":"770 E Sahara Ave","locality":"Las Vegas, NV 89104","full_address":"770 E Sahara Ave, Las Vegas, NV 89104","phone":"(702) 735-5151","website":"","yp_url":"","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""},{"name":"Republic Services","street":"770 E Sahara Ave","locality":"Las Vegas, NV 89104","full_address":"770 E Sahara Ave, Las Vegas, NV 89104","phone":"(702) 735-5151","website":"http://republicservices.com/","yp_url":"","market":"Las Vegas","industry":"Transportation","competitor":"","territory":""}];
+
+// ── AUTH ──
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  if (!email || !pass) { err.textContent = 'Please enter your email and password.'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in...'; err.textContent = '';
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    err.textContent = error.message || "Login failed: " + JSON.stringify(error);';
+    btn.disabled = false; btn.textContent = 'Sign in'; return;
+  }
+  currentUser = data.user;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('user-email').textContent = email.split('@')[0];
+  initApp();
+}
+
+async function doLogout() {
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// ── APP INIT ──
+async function initApp() {
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('loader').classList.remove('hidden');
+  setProgress(10, 'Initializing map...');
+  initMap();
+  setProgress(30, 'Loading business data...');
+  await loadData();
+  setProgress(80, 'Placing pins on map...');
+  renderMapPins();
+  setProgress(100, 'Ready');
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+    renderList();
+  }, 400);
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('ld-bar').style.width = pct + '%';
+  document.getElementById('ld-lbl').textContent = msg;
+}
+
+// ── MAP ──
+function initMap() {
+  map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v11',
+    center: [-115.1398, 36.1699],
+    zoom: 11
+  });
+  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+  draw = new MapboxDraw({
+    displayControlsDefault: false,
+    controls: { polygon: false, trash: false }
+  });
+  map.addControl(draw);
+
+  map.on('draw.create', onDrawCreate);
+  map.on('draw.update', onDrawCreate);
+  map.on('click', onMapClick);
+}
+
+// ── DATA ──
+async function loadData() {
+  // Try Supabase first, fall back to embedded
+  try {
+    const { data, error } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('market', 'Las Vegas')
+      .limit(5000);
+    if (!error && data && data.length > 0) {
+      allData = data;
+      setProgress(60, `Loaded ${data.length} businesses from database`);
+      return;
+    }
+  } catch(e) {}
+  // Use embedded + geocode
+  allData = EMBEDDED_DATA.map((b,i) => ({...b, id:i, lat:null, lon:null, score: calcScore(b)}));
+  setProgress(50, 'Geocoding addresses...');
+  await geocodeAll();
+}
+
+function calcScore(b) {
+  let s = 50;
+  if (b.phone) s += 15;
+  if (b.website) s += 15;
+  const n = (b.name||'').toLowerCase();
+  if (/truck|fleet|freight|transport|haul|carrier|logistic|deliver|fuel|oil|diesel|lube|mechanic|auto|repair|equip|construction|mining/.test(n)) s += 20;
+  return Math.min(s, 100);
+}
+
+async function geocodeAll() {
+  const toGeocode = allData.filter(b => !b.lat && b.full_address);
+  let done = 0;
+  const batch = 5;
+  for (let i = 0; i < toGeocode.length; i += batch) {
+    const chunk = toGeocode.slice(i, i+batch);
+    await Promise.all(chunk.map(async b => {
+      try {
+        const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(b.full_address)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+        const d = await r.json();
+        if (d.features && d.features[0]) {
+          b.lon = d.features[0].center[0];
+          b.lat = d.features[0].center[1];
+        }
+      } catch(e) {}
+      done++;
+    }));
+    const pct = 50 + Math.round((done/toGeocode.length)*30);
+    setProgress(pct, `Geocoding ${done} of ${toGeocode.length}...`);
+    await new Promise(r => setTimeout(r, 200));
+  }
+  allData.forEach(b => { if(!b.score) b.score = calcScore(b); });
+}
+
+// ── MAP PINS ──
+function pinColor(score) {
+  if (score >= 80) return '#EF9F27';
+  if (score >= 65) return '#4a36c8';
+  return '#9b93d4';
+}
+
+function renderMapPins() {
+  if (!map.isStyleLoaded()) { map.once('load', renderMapPins); return; }
+  const valid = allData.filter(b => b.lat && b.lon);
+  filteredData = valid;
+
+  // Remove existing source/layer
+  if (map.getLayer('businesses-layer')) map.removeLayer('businesses-layer');
+  if (map.getLayer('businesses-clusters')) map.removeLayer('businesses-clusters');
+  if (map.getLayer('businesses-cluster-count')) map.removeLayer('businesses-cluster-count');
+  if (map.getSource('businesses')) map.removeSource('businesses');
+
+  const geojson = {
+    type: 'FeatureCollection',
+    features: valid.map((b,i) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [b.lon, b.lat] },
+      properties: { ...b, idx: i, score: b.score || 50 }
+    }))
+  };
+
+  map.addSource('businesses', {
+    type: 'geojson',
+    data: geojson,
+    cluster: true,
+    clusterMaxZoom: 13,
+    clusterRadius: 40
+  });
+
+  // Cluster circles
+  map.addLayer({
+    id: 'businesses-clusters',
+    type: 'circle',
+    source: 'businesses',
+    filter: ['has', 'point_count'],
+    paint: {
+      'circle-color': ['step',['get','point_count'],'#4a36c8',10,'#7c68e0',50,'#EF9F27'],
+      'circle-radius': ['step',['get','point_count'],16,10,22,50,28],
+      'circle-opacity': 0.85
+    }
+  });
+
+  map.addLayer({
+    id: 'businesses-cluster-count',
+    type: 'symbol',
+    source: 'businesses',
+    filter: ['has', 'point_count'],
+    layout: {
+      'text-field': '{point_count_abbreviated}',
+      'text-font': ['DIN Offc Pro Medium','Arial Unicode MS Bold'],
+      'text-size': 12
+    },
+    paint: { 'text-color': '#fff' }
+  });
+
+  // Individual pins
+  map.addLayer({
+    id: 'businesses-layer',
+    type: 'circle',
+    source: 'businesses',
+    filter: ['!', ['has', 'point_count']],
+    paint: {
+      'circle-radius': ['interpolate',['linear'],['zoom'],10,4,14,8,16,12],
+      'circle-color': [
+        'case',
+        ['>=',['get','score'],80],'#EF9F27',
+        ['>=',['get','score'],65],'#4a36c8',
+        '#9b93d4'
+      ],
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#fff',
+      'circle-opacity': 0.9
+    }
+  });
+
+  // Clicks
+  map.on('click', 'businesses-layer', e => {
+    const props = e.features[0].properties;
+    selectBiz(props.idx);
+  });
+
+  map.on('click', 'businesses-clusters', e => {
+    const features = map.queryRenderedFeatures(e.point, {layers:['businesses-clusters']});
+    const clusterId = features[0].properties.cluster_id;
+    map.getSource('businesses').getClusterExpansionZoom(clusterId, (err, zoom) => {
+      if (err) return;
+      map.easeTo({ center: features[0].geometry.coordinates, zoom });
+    });
+  });
+
+  map.on('mouseenter','businesses-layer', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave','businesses-layer', () => map.getCanvas().style.cursor = '');
+  map.on('mouseenter','businesses-clusters', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave','businesses-clusters', () => map.getCanvas().style.cursor = '');
+
+  updatePinCount(valid.length);
+}
+
+function updatePinCount(n) {
+  document.getElementById('pin-count').textContent = n.toLocaleString();
+}
+
+// ── FILTERS ──
+function setFilter(type, val, el) {
+  activeFilters[type] = val;
+  document.querySelectorAll(`[data-filter="${type}"]`).forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let data = allData.filter(b => b.lat && b.lon);
+
+  if (q) data = data.filter(b =>
+    (b.name||'').toLowerCase().includes(q) ||
+    (b.street||'').toLowerCase().includes(q)
+  );
+
+  if (activeFilters.opp === 'high') data = data.filter(b => b.score >= 80);
+  else if (activeFilters.opp === 'med') data = data.filter(b => b.score >= 65 && b.score < 80);
+  else if (activeFilters.opp === 'low') data = data.filter(b => b.score < 65);
+
+  if (activeFilters.contact === 'phone') data = data.filter(b => b.phone);
+  else if (activeFilters.contact === 'web') data = data.filter(b => b.website);
+
+  if (activeFilters.status === 'competitor') data = data.filter(b => b.competitor);
+  else if (activeFilters.status === 'territory') data = data.filter(b => b.territory);
+
+  if (selectionPolygon) {
+    data = data.filter(b => {
+      const pt = turf.point([b.lon, b.lat]);
+      return turf.booleanPointInPolygon(pt, selectionPolygon);
+    });
+  }
+
+  filteredData = data;
+
+  // Update map source with filtered data
+  if (map.getSource('businesses')) {
+    map.getSource('businesses').setData({
+      type: 'FeatureCollection',
+      features: data.map((b,i) => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [b.lon, b.lat] },
+        properties: { ...b, idx: allData.indexOf(b), score: b.score }
+      }))
+    });
+  }
+
+  updatePinCount(data.length);
+  renderList();
+}
+
+document.getElementById('search').addEventListener('input', applyFilters);
+
+// ── LIST ──
+function renderList() {
+  const data = filteredData.length ? filteredData : allData.filter(b=>b.lat&&b.lon);
+  document.getElementById('result-count').textContent = `${data.length.toLocaleString()} businesses`;
+  const list = document.getElementById('list');
+  list.innerHTML = data.slice(0,200).map(b => {
+    const idx = allData.indexOf(b);
+    const dot = b.score >= 80 ? '#EF9F27' : b.score >= 65 ? '#4a36c8' : '#9b93d4';
+    return `<div class="biz-item" id="item-${idx}" onclick="selectBiz(${idx})">
+      <div class="biz-name">
+        <span class="score-dot" style="background:${dot}"></span>
+        ${b.name}
+      </div>
+      <div class="biz-addr">${b.street}</div>
+      ${b.phone ? `<div class="biz-phone">${b.phone}</div>` : ''}
+    </div>`;
+  }).join('');
+  if (data.length > 200) {
+    list.innerHTML += `<div style="padding:.75rem;font-size:12px;color:var(--muted);text-align:center">Showing 200 of ${data.length.toLocaleString()} — zoom in or filter to narrow results</div>`;
+  }
+}
+
+// ── DETAIL ──
+function selectBiz(idx) {
+  selectedIdx = idx;
+  const b = allData[idx];
+  if (!b) return;
+  if (b.lat && b.lon) map.flyTo({ center:[b.lon, b.lat], zoom: Math.max(map.getZoom(), 14), speed:1.2 });
+  document.querySelectorAll('.biz-item').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('item-'+idx);
+  if (el) { el.classList.add('selected'); el.scrollIntoView({block:'nearest'}); }
+  showDetail(b);
+}
+
+function showDetail(b) {
+  const s = b.score || 50;
+  const lbl = s>=80?'High Opportunity':s>=65?'Medium Opportunity':'Standard Prospect';
+  const barColor = s>=80?'#EF9F27':s>=65?'#4a36c8':'#9b93d4';
+  document.getElementById('det-inner').innerHTML = `
+    <div class="det-badge">Transportation · Las Vegas</div>
+    <div class="det-name">${b.name}</div>
+    <div class="det-addr">${b.street}<br>${b.locality}</div>
+    ${b.competitor ? `<span class="comp-tag">Competitor: ${b.competitor}</span>` : ''}
+    ${b.territory ? `<span class="terr-tag">Territory: ${b.territory}</span>` : ''}
+    <div class="divider"></div>
+    <div class="det-row"><span class="det-lbl">Phone</span><span class="det-val">${b.phone||'—'}</span></div>
+    <div class="det-row"><span class="det-lbl">Website</span>${b.website?`<a href="${b.website}" target="_blank" class="det-link">Visit ↗</a>`:'<span class="det-val">—</span>'}</div>
+    ${b.yp_url?`<div class="det-row"><span class="det-lbl">YP Listing</span><a href="${b.yp_url}" target="_blank" class="det-link">View ↗</a></div>`:''}
+    <div class="divider"></div>
+    <div class="det-lbl" style="margin-bottom:6px">Opportunity Score</div>
+    <div class="score-bar"><div class="score-fill" style="width:${s}%;background:${barColor}"></div></div>
+    <div class="score-row"><span class="score-num" style="color:${barColor}">${s}/100</span><span class="score-txt">${lbl}</span></div>
+    <div class="opp-box">
+      <div class="opp-title">Interstate Oil — Sales Intelligence</div>
+      <div class="opp-desc">${s>=80?'Priority prospect. Fleet, freight, or transport operator with strong fuel & lubricant consumption potential. Recommend immediate outreach.':'Transportation business in Las Vegas market. Assess fleet size to determine fuel & lubricant opportunity.'}</div>
+    </div>`;
+  document.getElementById('detail').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+  selectedIdx = null;
+}
+
+// ── AREA TOOLS ──
+function activateTool(tool) {
+  // Toggle off if already active
+  if (activeTool === tool) { deactivateTools(); return; }
+  deactivateTools();
+  activeTool = tool;
+
+  document.getElementById('btn-'+tool).classList.add('active');
+  document.getElementById('btn-clear-area').style.display = 'flex';
+
+  if (tool === 'polygon') {
+    draw.changeMode('draw_polygon');
+    document.getElementById('radius-controls').style.display = 'none';
+    document.getElementById('zip-controls').style.display = 'none';
+  } else if (tool === 'radius') {
+    document.getElementById('radius-controls').style.display = 'block';
+    document.getElementById('zip-controls').style.display = 'none';
+    map.getCanvas().style.cursor = 'crosshair';
+  } else if (tool === 'zip') {
+    document.getElementById('zip-controls').style.display = 'block';
+    document.getElementById('radius-controls').style.display = 'none';
+  }
+}
+
+function deactivateTools() {
+  activeTool = null;
+  ['polygon','radius','zip'].forEach(t => {
+    const el = document.getElementById('btn-'+t);
+    if(el) el.classList.remove('active');
+  });
+  document.getElementById('radius-controls').style.display = 'none';
+  document.getElementById('zip-controls').style.display = 'none';
+  map.getCanvas().style.cursor = '';
+  try { draw.changeMode('simple_select'); } catch(e) {}
+}
+
+function clearArea() {
+  selectionPolygon = null;
+  radiusCircle = null;
+  draw.deleteAll();
+  if (map.getLayer('radius-layer')) map.removeLayer('radius-layer');
+  if (map.getSource('radius-source')) map.removeSource('radius-source');
+  if (map.getLayer('zip-layer')) map.removeLayer('zip-layer');
+  if (map.getSource('zip-source')) map.removeSource('zip-source');
+  document.getElementById('selection-summary').classList.remove('visible');
+  document.getElementById('btn-clear-area').style.display = 'none';
+  deactivateTools();
+  applyFilters();
+}
+
+function onDrawCreate(e) {
+  if (!e.features || !e.features[0]) return;
+  selectionPolygon = e.features[0];
+  showSelectionSummary();
+  deactivateTools();
+  activeTool = null;
+  document.getElementById('btn-clear-area').style.display = 'flex';
+  applyFilters();
+}
+
+function onMapClick(e) {
+  if (activeTool !== 'radius') return;
+  const center = [e.lngLat.lng, e.lngLat.lat];
+  const circle = turf.circle(center, radiusMiles, { units:'miles', steps:64 });
+  selectionPolygon = circle;
+
+  if (map.getLayer('radius-layer')) map.removeLayer('radius-layer');
+  if (map.getSource('radius-source')) map.removeSource('radius-source');
+
+  map.addSource('radius-source', { type:'geojson', data:circle });
+  map.addLayer({
+    id:'radius-layer', type:'fill', source:'radius-source',
+    paint:{ 'fill-color':'#4a36c8', 'fill-opacity':0.1 }
+  });
+  map.addLayer({
+    id:'radius-outline', type:'line', source:'radius-source',
+    paint:{ 'line-color':'#4a36c8', 'line-width':2, 'line-dasharray':[2,2] }
+  });
+
+  deactivateTools();
+  document.getElementById('btn-clear-area').style.display = 'flex';
+  showSelectionSummary();
+  applyFilters();
+}
+
+function updateRadius(val) {
+  radiusMiles = parseInt(val);
+  document.getElementById('radius-val').textContent = val + ' mi';
+}
+
+async function filterByZip() {
+  const zip = document.getElementById('zip-input').value.trim();
+  if (!zip) return;
+  try {
+    const r = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${zip}.json?types=postcode&access_token=${MAPBOX_TOKEN}&limit=1`);
+    const d = await r.json();
+    if (!d.features || !d.features[0]) { alert('Zip code not found'); return; }
+    const bbox = d.features[0].bbox;
+    if (bbox) {
+      const poly = turf.bboxPolygon(bbox);
+      selectionPolygon = poly;
+      map.fitBounds([[bbox[0],bbox[1]],[bbox[2],bbox[3]]], {padding:40});
+      if (map.getLayer('zip-layer')) map.removeLayer('zip-layer');
+      if (map.getLayer('zip-outline')) map.removeLayer('zip-outline');
+      if (map.getSource('zip-source')) map.removeSource('zip-source');
+      map.addSource('zip-source', { type:'geojson', data:poly });
+      map.addLayer({ id:'zip-layer', type:'fill', source:'zip-source', paint:{'fill-color':'#1d9e75','fill-opacity':0.1} });
+      map.addLayer({ id:'zip-outline', type:'line', source:'zip-source', paint:{'line-color':'#1d9e75','line-width':2,'line-dasharray':[2,2]} });
+      document.getElementById('btn-clear-area').style.display = 'flex';
+      showSelectionSummary('Zip ' + zip);
+      applyFilters();
+    }
+  } catch(e) { alert('Error finding zip code'); }
+}
+
+function showSelectionSummary(label) {
+  const inArea = selectionPolygon ? allData.filter(b => {
+    if (!b.lat||!b.lon) return false;
+    return turf.booleanPointInPolygon(turf.point([b.lon,b.lat]), selectionPolygon);
+  }).length : 0;
+  document.getElementById('sel-count-num').textContent = `${inArea.toLocaleString()} businesses`;
+  document.getElementById('sel-area-desc').textContent = label ? `in ${label}` : 'in selected area';
+  document.getElementById('selection-summary').classList.add('visible');
+}
+
+// Check session on load
+(async () => {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    currentUser = data.session.user;
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('user-email').textContent = data.session.user.email.split('@')[0];
+    initApp();
+  }
+})();
+</script>
+</body>
+</html>
