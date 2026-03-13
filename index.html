@@ -58,17 +58,19 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #uinfo b{color:rgba(255,255,255,.7);font-weight:500;}
 #signout-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;}
 #toggle-btn{
-  position:fixed;top:var(--header);left:0;z-index:1001;
+  position:fixed;top:calc(var(--header) + 10px);left:12px;z-index:1001;
   width:auto;display:inline-flex;
-  background:#fff;border:none;border-bottom:1px solid var(--border);border-right:1px solid var(--border);
-  border-radius:0 0 10px 0;
-  padding:9px 18px;font-size:13px;font-weight:600;color:var(--ink);
+  background:rgba(20,20,30,0.85);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:100px;
+  padding:8px 16px;font-size:12px;font-weight:600;color:#fff;
   cursor:pointer;font-family:'Inter',sans-serif;
-  align-items:center;gap:7px;white-space:nowrap;
-  box-shadow:2px 2px 12px rgba(0,0,0,0.12);
+  align-items:center;gap:6px;white-space:nowrap;
+  box-shadow:0 2px 12px rgba(0,0,0,0.3);
   transition:all .15s;
 }
-#toggle-btn:hover{background:var(--paper);}
+#toggle-btn:hover{background:rgba(40,40,55,0.95);}
 #toggle-btn.open{display:none;}
 
 /* MAP */
@@ -140,7 +142,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 /* DETAIL PANEL */
 #detail{position:fixed;top:var(--header);right:0;bottom:0;width:320px;z-index:960;background:#fff;border-left:1px solid var(--border);transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;}
 #detail.open{transform:translateX(0);}
-#det-x{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--paper2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--muted);}
+#det-x{position:sticky;top:0;z-index:10;width:100%;padding:10px 16px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);}
 #det-body{padding:1.25rem;overflow-y:auto;flex:1;}
 .dname{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:.2rem;}
 .daddr{font-size:13px;color:var(--muted);margin-bottom:.875rem;line-height:1.5;}
@@ -353,7 +355,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   </div>
 
   <div id="detail">
-    <div id="det-x" onclick="closeDetail()">✕</div>
+    <div id="det-x" onclick="closeDetail()">✕ Close</div>
     <div id="det-body"></div>
   </div>
 </div>
@@ -481,7 +483,7 @@ function renderPins() {
   
   var valid = allData.filter(function(b){ return b.lat && b.lon; });
   filteredData = valid;
-  ['biz','biz-touch','biz-cl','biz-cn'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
+  ['biz','biz-cl','biz-cn'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
   if (map.getSource('biz')) map.removeSource('biz');
   map.addSource('biz', { type:'geojson', cluster:true, clusterMaxZoom:13, clusterRadius:40,
     data:{ type:'FeatureCollection', features: valid.map(function(b,i){ return {type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:{...b,idx:i,score:b.score||calcScore(b)}}; }) }
@@ -489,16 +491,18 @@ function renderPins() {
   map.addLayer({ id:'biz-cl', type:'circle', source:'biz', filter:['has','point_count'], paint:{'circle-color':'#4a36c8','circle-radius':['step',['get','point_count'],16,10,22,50,28],'circle-opacity':.85} });
   map.addLayer({ id:'biz-cn', type:'symbol', source:'biz', filter:['has','point_count'], layout:{'text-field':'{point_count_abbreviated}','text-size':12}, paint:{'text-color':'#fff'} });
   map.addLayer({ id:'biz', type:'circle', source:'biz', filter:['!',['has','point_count']],
-    paint:{'circle-radius':['interpolate',['linear'],['zoom'],10,8,14,11],'circle-color':['case',['>=',['get','score'],80],'#EF9F27',['>=',['get','score'],65],'#4a36c8','#9b93d4'],'circle-stroke-width':1.5,'circle-stroke-color':'#fff','circle-opacity':.9}
+    paint:{'circle-radius':6,'circle-color':['case',['>=',['get','score'],80],'#EF9F27',['>=',['get','score'],65],'#4a36c8','#9b93d4'],'circle-stroke-width':1.5,'circle-stroke-color':'#fff','circle-opacity':.9}
   });
   map.on('click','biz', function(e){ selectBiz(e.features[0].properties.idx); });
-  // Larger touch target layer for mobile
-  map.addLayer({ id:'biz-touch', type:'circle', source:'biz', filter:['!',['has','point_count']],
-    paint:{'circle-radius':20,'circle-color':'rgba(0,0,0,0)','circle-opacity':0}
+  // Touch support for mobile - query features in a larger radius
+  map.on('touchend', function(e) {
+    var point = e.point;
+    var bbox = [[point.x-22,point.y-22],[point.x+22,point.y+22]];
+    var features = map.queryRenderedFeatures(bbox, {layers:['biz']});
+    if (features.length > 0) {
+      selectBiz(features[0].properties.idx);
+    }
   });
-  map.on('click','biz-touch', function(e){ selectBiz(e.features[0].properties.idx); });
-  map.on('mouseenter','biz-touch', function(){ map.getCanvas().style.cursor='pointer'; });
-  map.on('mouseleave','biz-touch', function(){ map.getCanvas().style.cursor=''; });
   map.on('click','biz-cl', function(e){
     var f = map.queryRenderedFeatures(e.point,{layers:['biz-cl']});
     map.getSource('biz').getClusterExpansionZoom(f[0].properties.cluster_id, function(err,z){ if(!err) map.easeTo({center:f[0].geometry.coordinates,zoom:z}); });
@@ -752,6 +756,6 @@ function onMapClick(e) {
   deactivate(); applyFilters();
 }
 </script>
-<button id="toggle-btn" onclick="toggleSidebar()">☰ Filters &amp; Search</button>
+<button id="toggle-btn" onclick="toggleSidebar()">⊕ Search</button>
 </body>
 </html>
