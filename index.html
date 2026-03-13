@@ -20,6 +20,11 @@
   --red:#c44a2e;--header:48px;--sidebar:340px;
 }
 html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--ink);}
+@media(max-width:600px){
+  #detail{top:auto;bottom:0;right:0;left:0;width:100%;height:70vh;transform:translateY(100%);border-radius:16px 16px 0 0;border-left:none;border-top:1px solid var(--border);}
+  #detail.open{transform:translateY(0);}
+  #sidebar{width:100%;}
+}
 
 /* LOGIN */
 #login-screen{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;align-items:center;justify-content:center;}
@@ -54,11 +59,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #signout-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;}
 #toggle-btn{
   position:fixed;top:var(--header);left:0;z-index:1001;
+  width:auto;display:inline-flex;
   background:#fff;border:none;border-bottom:1px solid var(--border);border-right:1px solid var(--border);
   border-radius:0 0 10px 0;
   padding:9px 18px;font-size:13px;font-weight:600;color:var(--ink);
   cursor:pointer;font-family:'Inter',sans-serif;
-  display:flex;align-items:center;gap:7px;white-space:nowrap;
+  align-items:center;gap:7px;white-space:nowrap;
   box-shadow:2px 2px 12px rgba(0,0,0,0.12);
   transition:all .15s;
 }
@@ -417,9 +423,18 @@ async function startApp() {
   prog(30, 'Loading businesses...');
   await loadData();
   prog(80, 'Placing pins...');
-  renderPins();
-  prog(100, 'Ready!');
-  setTimeout(function(){ document.getElementById('loader').classList.add('hidden'); renderList(); }, 500);
+  // Wait for map to be fully loaded before adding pins
+  if (map.isStyleLoaded()) {
+    renderPins();
+    prog(100, 'Ready!');
+    setTimeout(function(){ document.getElementById('loader').classList.add('hidden'); renderList(); }, 500);
+  } else {
+    map.once('load', function() {
+      renderPins();
+      prog(100, 'Ready!');
+      setTimeout(function(){ document.getElementById('loader').classList.add('hidden'); renderList(); }, 500);
+    });
+  }
 }
 
 function calcScore(b) {
@@ -458,10 +473,12 @@ function initMap() {
   map.addControl(draw);
   map.on('draw.create', onDraw);
   map.on('click', onMapClick);
+  map.on('load', function() { console.log('Map loaded and ready'); });
 }
 
 function renderPins() {
   if (!map.isStyleLoaded()) { map.once('load', renderPins); return; }
+  
   var valid = allData.filter(function(b){ return b.lat && b.lon; });
   filteredData = valid;
   ['biz','biz-touch','biz-cl','biz-cn'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
