@@ -89,9 +89,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .search-row:last-child{margin-bottom:0;}
 .sinput{flex:1;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);outline:none;}
 .sinput:focus{border-color:var(--accent);}
-#industry-select{padding:4px;font-size:13px;}
-#industry-select option{padding:5px 8px;border-radius:4px;margin:1px 0;}
-#industry-select option:checked{background:var(--accent);color:#fff;}
+.ind-tag{display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);border-radius:100px;padding:2px 8px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;}
+.ind-tag .tx{cursor:pointer;font-size:12px;line-height:1;margin-left:2px;}
+.ind-tag .tx:hover{opacity:.7;}
+.ind-opt{padding:7px 10px;border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;color:var(--ink);cursor:pointer;transition:background .1s;}
+.ind-opt:hover{background:var(--paper);}
+.ind-opt.on{background:var(--accent-light);color:var(--accent);font-weight:600;}
 .sinput-sm{width:90px;flex:none;}
 
 /* PILLS */
@@ -112,9 +115,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .tbtn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 
 /* APPLY BUTTON */
-.apply-wrap{padding:.875rem 1rem;border-top:1px solid var(--border);flex-shrink:0;}
+.apply-wrap{padding:.875rem 1rem;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:6px;}
 #apply-btn{width:100%;padding:10px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;}
 #apply-btn:hover{opacity:.9;}
+#clear-btn{width:100%;padding:8px;border-radius:8px;background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;}
+#clear-btn:hover{background:var(--paper2);}
 
 /* RESULTS LIST */
 #rcount{font-size:11px;color:var(--muted);padding:.5rem 1rem .25rem;flex-shrink:0;}
@@ -222,20 +227,24 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- INDUSTRY -->
       <div class="sb-sec">
         <div class="sb-title">Industry</div>
-        <select id="industry-select" class="sinput" style="width:100%;height:auto" multiple size="6">
-          <option value="all" selected>All Industries</option>
-          <option value="Transportation">Transportation</option>
-          <option value="Automotive">Automotive</option>
-          <option value="Agribusiness">Agribusiness</option>
-          <option value="Construction">Construction</option>
-          <option value="Industrial">Industrial</option>
-          <option value="Government">Government &amp; Institutions</option>
-          <option value="Hospitality">Hospitality &amp; Leisure</option>
-          <option value="Energy">Energy &amp; Utilities</option>
-          <option value="RealEstate">Real Estate</option>
-          <option value="ServiceBusiness">Service Business</option>
-        </select>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px">Hold Cmd/Ctrl to select multiple industries</div>
+        <div id="ind-dropdown-wrap" style="position:relative">
+          <div id="ind-display" onclick="toggleIndDropdown()" style="border:1px solid var(--border);border-radius:7px;padding:7px 10px;min-height:36px;background:var(--paper);cursor:pointer;display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:13px;color:var(--muted);font-family:'Inter',sans-serif;">
+            <span id="ind-placeholder">Industry</span>
+          </div>
+          <div id="ind-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:2000;padding:6px;">
+            <div class="ind-opt" data-val="all">All Industries</div>
+            <div class="ind-opt" data-val="Transportation">Transportation</div>
+            <div class="ind-opt" data-val="Automotive">Automotive</div>
+            <div class="ind-opt" data-val="Agribusiness">Agribusiness</div>
+            <div class="ind-opt" data-val="Construction">Construction</div>
+            <div class="ind-opt" data-val="Industrial">Industrial</div>
+            <div class="ind-opt" data-val="Government">Government & Institutions</div>
+            <div class="ind-opt" data-val="Hospitality">Hospitality & Leisure</div>
+            <div class="ind-opt" data-val="Energy">Energy & Utilities</div>
+            <div class="ind-opt" data-val="RealEstate">Real Estate</div>
+            <div class="ind-opt" data-val="ServiceBusiness">Service Business</div>
+          </div>
+        </div>
       </div>
 
       <!-- OPPORTUNITY -->
@@ -280,7 +289,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     </div><!-- end filter-scroll -->
 
     <div class="apply-wrap">
-      <button id="apply-btn" onclick="applyAndClose()">✓ Apply Filters &amp; Close</button>
+      <button id="apply-btn" onclick="applyAndClose()">Apply Filters</button>
+      <button id="clear-btn" onclick="clearFilters()">Clear Filters</button>
     </div>
 
     <div id="rcount"></div>
@@ -463,11 +473,58 @@ document.querySelectorAll('.pill[data-f]').forEach(function(p){
   });
 });
 
-document.getElementById('industry-select').addEventListener('change', function(){
-  var selected = Array.from(this.selectedOptions).map(function(o){ return o.value; });
-  if (selected.includes('all')) { filters.industry = 'all'; }
-  else { filters.industry = selected; }
+var selectedIndustries = [];
+
+function toggleIndDropdown() {
+  var dd = document.getElementById('ind-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('ind-dropdown-wrap').contains(e.target)) {
+    document.getElementById('ind-dropdown').style.display = 'none';
+  }
 });
+
+document.querySelectorAll('.ind-opt').forEach(function(opt) {
+  opt.addEventListener('click', function() {
+    var val = this.dataset.val;
+    if (val === 'all') {
+      selectedIndustries = [];
+      document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
+      this.classList.add('on');
+    } else {
+      document.querySelector('.ind-opt[data-val="all"]').classList.remove('on');
+      var idx = selectedIndustries.indexOf(val);
+      if (idx > -1) { selectedIndustries.splice(idx, 1); this.classList.remove('on'); }
+      else { selectedIndustries.push(val); this.classList.add('on'); }
+    }
+    filters.industry = selectedIndustries.length ? selectedIndustries : 'all';
+    renderIndTags();
+  });
+});
+
+function renderIndTags() {
+  var display = document.getElementById('ind-display');
+  var placeholder = document.getElementById('ind-placeholder');
+  if (!selectedIndustries.length) {
+    display.innerHTML = '<span id="ind-placeholder" style="color:var(--muted)">Industry</span>';
+  } else {
+    display.innerHTML = selectedIndustries.map(function(v) {
+      var label = document.querySelector('.ind-opt[data-val="'+v+'"]').textContent;
+      return '<span class="ind-tag">'+label+'<span class="tx" onclick="removeInd(event,''+v+'')">×</span></span>';
+    }).join('');
+  }
+}
+
+function removeInd(e, val) {
+  e.stopPropagation();
+  selectedIndustries = selectedIndustries.filter(function(v){ return v !== val; });
+  var opt = document.querySelector('.ind-opt[data-val="'+val+'"]');
+  if (opt) opt.classList.remove('on');
+  filters.industry = selectedIndustries.length ? selectedIndustries : 'all';
+  renderIndTags();
+}
 
 // ── APPLY FILTERS ──
 function applyFilters() {
@@ -568,6 +625,27 @@ function onDraw(e) {
   document.getElementById('tbtn-clear').style.display='inline-flex';
   applyFilters();
 }
+function clearFilters() {
+  // Reset all filter state
+  filters = { opp:'all', contact:'all', industry:'all' };
+  selectedIndustries = [];
+  // Reset industry display
+  document.getElementById('ind-display').innerHTML = '<span id="ind-placeholder" style="color:var(--muted)">Industry</span>';
+  document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
+  document.querySelector('.ind-opt[data-val="all"]').classList.add('on');
+  // Reset pill filters
+  document.querySelectorAll('.pill[data-f]').forEach(function(p){ p.classList.remove('on'); });
+  document.querySelectorAll('.pill[data-v="all"]').forEach(function(p){ p.classList.add('on'); });
+  // Reset text inputs
+  ['s-name','s-city','s-zip'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('s-state').value='NV';
+  // Clear area selection
+  clearArea();
+  // Update badge
+  document.getElementById('filter-badge').classList.remove('visible');
+  applyFilters();
+}
+
 function onMapClick(e) {
   if(activeTool!=='radius') return;
   var c=turf.circle([e.lngLat.lng,e.lngLat.lat],radMiles,{units:'miles',steps:64});
