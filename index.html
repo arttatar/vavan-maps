@@ -506,14 +506,28 @@ document.querySelectorAll('.ind-opt').forEach(function(opt) {
 
 function renderIndTags() {
   var display = document.getElementById('ind-display');
-  var placeholder = document.getElementById('ind-placeholder');
+  display.innerHTML = '';
   if (!selectedIndustries.length) {
-    display.innerHTML = '<span id="ind-placeholder" style="color:var(--muted)">Industry</span>';
+    var ph = document.createElement('span');
+    ph.id = 'ind-placeholder';
+    ph.style.color = 'var(--muted)';
+    ph.textContent = 'Industry';
+    display.appendChild(ph);
   } else {
-    display.innerHTML = selectedIndustries.map(function(v) {
-      var label = document.querySelector('.ind-opt[data-val="'+v+'"]').textContent;
-      return '<span class="ind-tag">'+label+'<span class="tx" data-val="'+v+'" onclick="removeInd(event,this.dataset.val)">×</span></span>';
-    }).join('');
+    selectedIndustries.forEach(function(v) {
+      var optEl = document.querySelector('.ind-opt[data-val="' + v + '"]');
+      var label = optEl ? optEl.textContent : v;
+      var tag = document.createElement('span');
+      tag.className = 'ind-tag';
+      tag.textContent = label;
+      var x = document.createElement('span');
+      x.className = 'tx';
+      x.textContent = ' x';
+      x.setAttribute('data-val', v);
+      x.addEventListener('click', function(e) { removeInd(e, this.getAttribute('data-val')); });
+      tag.appendChild(x);
+      display.appendChild(tag);
+    });
   }
 }
 
