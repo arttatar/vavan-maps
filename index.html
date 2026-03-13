@@ -461,8 +461,20 @@ function calcScore(b) {
 
 async function loadData() {
   try {
-    var r = await sb.from('businesses').select('*').eq('market','Las Vegas').limit(6000);
-    if (!r.error && r.data && r.data.length > 0) { allData = r.data; prog(60, 'Loaded '+r.data.length+' businesses'); return; }
+    // Paginate to get all records (Supabase max 1000 per request)
+    var allRows = [];
+    var from = 0;
+    var pageSize = 1000;
+    while (true) {
+      var r = await sb.from('businesses').select('*').eq('market','Las Vegas').range(from, from + pageSize - 1);
+      if (r.error) break;
+      if (!r.data || r.data.length === 0) break;
+      allRows = allRows.concat(r.data);
+      prog(30 + Math.min(30, Math.floor(allRows.length / 60)), 'Loading... ' + allRows.length + ' businesses');
+      if (r.data.length < pageSize) break;
+      from += pageSize;
+    }
+    if (allRows.length > 0) { allData = allRows; prog(60, 'Loaded ' + allRows.length + ' businesses'); return; }
   } catch(e) {}
   allData = [
     {name:'YRC Freight',street:'5049 W Post Rd',locality:'Las Vegas, NV 89118',phone:'(800) 610-6500',website:'',industry:'Transportation',market:'Las Vegas',lat:36.1025,lon:-115.2144},
