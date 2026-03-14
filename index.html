@@ -402,14 +402,16 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           </div>
           <div id="ind-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:2000;padding:6px;">
             <div class="ind-opt" data-val="all">All Industries</div>
-            <div class="ind-opt" data-val="Transport">Transport & Logistics</div>
-            <div class="ind-opt" data-val="Automotive">Automotive</div>
-            <div class="ind-opt" data-val="Construction">Construction</div>
-            <div class="ind-opt" data-val="Energy">Energy & Fuel Stations</div>
-            <div class="ind-opt" data-val="Industrial">Industrial & Manufacturing</div>
-            <div class="ind-opt" data-val="Services">Services Business</div>
-            <div class="ind-opt" data-val="Hospitality">Hospitality & Leisure</div>
-            <div class="ind-opt" data-val="Government">Government & Institutions</div>
+            <div class="ind-opt" data-val="Automotive">🚗 Automotive</div>
+            <div class="ind-opt" data-val="Agribusiness">🌾 Agribusiness</div>
+            <div class="ind-opt" data-val="Transport">🚚 Transportation</div>
+            <div class="ind-opt" data-val="Construction">🏗 Infrastructure</div>
+            <div class="ind-opt" data-val="Industrial">🏭 Industrial</div>
+            <div class="ind-opt" data-val="Services">🧰 Services Business</div>
+            <div class="ind-opt" data-val="Hospitality">🏨 Hospitality &amp; Leisure</div>
+            <div class="ind-opt" data-val="Government">🏛 Government &amp; Institutions</div>
+            <div class="ind-opt" data-val="Energy">⚡ Energy, Utilities &amp; Environmental</div>
+            <div class="ind-opt" data-val="RealEstate">🏢 Real Estate</div>
             <div class="ind-opt" data-val="Competitors">🔴 Competitors</div>
           </div>
         </div>
@@ -963,8 +965,17 @@ function applyFilters() {
   if (filters.industry !== 'all' && Array.isArray(filters.industry) && filters.industry.length > 0) {
     data = data.filter(function(b){
       return filters.industry.some(function(ind){
-        // Energy filter catches both 'Energy' and 'Fuel Stations'
-        if (ind === 'Energy') return (b.industry||'') === 'Energy' || (b.industry||'') === 'Fuel Stations';
+        var bInd = (b.industry||'').toLowerCase();
+        if (ind === 'Energy')       return bInd === 'energy' || bInd === 'fuel stations' || bInd === 'utilities' || bInd === 'environmental';
+        if (ind === 'Construction') return bInd === 'construction' || bInd === 'infrastructure';
+        if (ind === 'Agribusiness') return bInd === 'agribusiness' || bInd === 'agriculture' || bInd === 'farming';
+        if (ind === 'RealEstate')   return bInd === 'real estate' || bInd === 'realestate';
+        if (ind === 'Transport')    return bInd === 'transport' || bInd === 'transportation' || bInd === 'logistics';
+        if (ind === 'Industrial')   return bInd === 'industrial' || bInd === 'manufacturing';
+        if (ind === 'Services')     return bInd === 'services' || bInd === 'services business';
+        if (ind === 'Hospitality')  return bInd === 'hospitality' || bInd === 'leisure' || bInd === 'hospitality & leisure';
+        if (ind === 'Government')   return bInd === 'government' || bInd === 'institutions' || bInd === 'government & institutions';
+        if (ind === 'Competitors')  return b.is_competitor === true || bInd === 'competitors';
         return (b.industry||'') === ind;
       });
     });
