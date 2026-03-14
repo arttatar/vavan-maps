@@ -28,17 +28,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   #pcount-wrap{display:none;}
   #uinfo{display:none;}
 
-  /* ── SEARCH BUTTON — top left like Google Maps ── */
-  #toggle-btn{
-    top:calc(var(--header) + env(safe-area-inset-top,0px) + 10px) !important;
-    left:12px !important;
-    right:auto !important;
-    z-index:1000 !important;
-    padding:10px 16px !important;
-    font-size:13px !important;
-    box-shadow:0 2px 16px rgba(0,0,0,0.35) !important;
-  }
-
   /* ── ALL PANELS SLIDE UP FROM BOTTOM ── */
 
   /* Filter panel */
@@ -151,21 +140,37 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #uinfo{font-size:12px;color:rgba(255,255,255,.4);}
 #uinfo b{color:rgba(255,255,255,.7);font-weight:500;}
 #signout-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;}
-#toggle-btn{
-  position:fixed;top:calc(var(--header) + env(safe-area-inset-top, 0px) + 10px);left:12px;z-index:900;
-  width:auto;display:inline-flex;
-  background:rgba(20,20,30,0.85);
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+/* ── FLOATING ACTION BUTTONS ── */
+#fab-wrap{
+  position:fixed;
+  top:calc(var(--header) + env(safe-area-inset-top,0px) + 10px);
+  left:12px;
+  z-index:900;
+  display:flex;
+  gap:8px;
+}
+.fab{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(20,20,30,0.88);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid rgba(255,255,255,0.15);
   border-radius:100px;
-  padding:8px 16px;font-size:12px;font-weight:600;color:#fff;
+  padding:9px 16px;
+  font-size:12px;font-weight:600;color:#fff;
   cursor:pointer;font-family:'Inter',sans-serif;
-  align-items:center;gap:6px;white-space:nowrap;
-  box-shadow:0 2px 12px rgba(0,0,0,0.3);
-  transition:all .15s;
+  white-space:nowrap;
+  box-shadow:0 2px 12px rgba(0,0,0,0.35);
+  transition:background .15s;
 }
-#toggle-btn:hover{background:rgba(40,40,55,0.95);}
-#toggle-btn.open{display:none;}
+.fab:hover{background:rgba(40,40,55,0.97);}
+.fab.active{background:var(--accent);border-color:var(--accent);}
+#fab-list .fab-count{
+  background:rgba(255,255,255,0.2);
+  border-radius:100px;
+  padding:1px 7px;
+  font-size:10px;
+  font-weight:700;
+}
 
 /* MAP */
 #map{position:fixed;top:calc(var(--header) + env(safe-area-inset-top, 0px));left:0;right:0;bottom:0;z-index:1;}
@@ -288,27 +293,17 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   #signout-btn { padding: 3px 8px; font-size: 10px; }
 
   /* Toggle button: stays fixed top-left below header */
-  #toggle-btn {
-    left: 0;
-    right: 0;
-    width: 100%;
-    border-radius: 0;
-    border-right: none;
-    justify-content: center;
-    font-size: 13px;
-    padding: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  }
+  #toggle-btn { display: none; } /* legacy — replaced by fab buttons */
 
-  /* Map starts below header + toggle button */
+  /* Map starts below header + fab buttons */
   #map {
-    top: calc(var(--header) + 41px);
+    top: calc(var(--header) + 50px);
   }
 
   /* Sidebar full width on mobile */
   #sidebar {
     width: 100vw;
-    top: calc(var(--header) + 41px);
+    top: calc(var(--header) + 50px);
   }
 
   /* Detail panel full width on mobile */
@@ -316,6 +311,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     width: 100vw;
     top: var(--header);
   }
+
+  /* FAB buttons on mobile — slightly smaller */
+  .fab { padding:8px 14px; font-size:12px; }
 
   /* Bigger touch targets for pills */
   .pill { padding: 6px 12px; font-size: 12px; }
@@ -1011,39 +1009,45 @@ function renderPins() {
   map.on('mouseenter','biz-cl', function(){ map.getCanvas().style.cursor='pointer'; });
   map.on('mouseleave','biz-cl', function(){ map.getCanvas().style.cursor=''; });
   document.getElementById('pcount').textContent = allData.length;
+  updateFabCount();
 }
 
-// ── SIDEBAR ──
+// ── FAB BUTTON LOGIC ──
 function toggleSidebar() {
   document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
 }
+function toggleList() {
+  document.getElementById('results-panel').classList.contains('open') ? closeResults() : openResults();
+}
 function openResults() {
+  renderList();
   document.getElementById('results-panel').classList.add('open');
-  var tbtn = document.getElementById('toggle-btn');
-  if (tbtn && window.innerWidth <= 600) tbtn.style.display = 'none';
+  document.getElementById('fab-list').classList.add('active');
 }
 function closeResults() {
   document.getElementById('results-panel').classList.remove('open');
-  var tbtn = document.getElementById('toggle-btn');
-  if (tbtn) tbtn.style.display = '';
+  document.getElementById('fab-list').classList.remove('active');
 }
-
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('show');
-  document.getElementById('toggle-btn').innerHTML = '✕ Close';
-  renderList();
+  document.getElementById('fab-filter').classList.add('active');
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
-  document.getElementById('toggle-btn').innerHTML = '☰ Filters &amp; Search';
+  document.getElementById('fab-filter').classList.remove('active');
 }
 function applyAndClose() {
   applyFilters();
   updateFilterBadge();
   closeSidebar();
   setTimeout(openResults, 260);
+}
+function updateFabCount() {
+  var source = filtersApplied ? filteredData : allData;
+  var el = document.getElementById('fab-count');
+  if (el) el.textContent = source.length >= 1000 ? (Math.round(source.length/100)/10)+'k' : source.length;
 }
 
 function updateFilterBadge() {
@@ -1478,6 +1482,7 @@ function applyFilters() {
     map.getSource('biz').setData({ type:'FeatureCollection', features: data.map(function(b){ return {type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:{...b,idx:allData.indexOf(b),score:b.score||calcScore(b)}}; }) });
   }
   document.getElementById('pcount').textContent = data.length + ' matched';
+  updateFabCount();
   renderList();
 }
 
@@ -1548,9 +1553,8 @@ function selectBiz(idx) {
       });
     }
   }
-  // Hide search button when detail card open on mobile
-  var tbtn = document.getElementById('toggle-btn');
-  if (tbtn) tbtn.style.display = 'none';
+  // Hide fab buttons when detail card is open on mobile
+  if (window.innerWidth <= 768) document.getElementById('fab-wrap').style.display = 'none';
   var titleEl = document.getElementById('det-x-title'); if (titleEl) titleEl.textContent = b.name||'';
   var s = b.score||calcScore(b);
   var color = b.is_competitor?'#E53E3E':s>=80?'#EF9F27':s>=65?'#4a36c8':'#9b93d4';
@@ -1579,8 +1583,7 @@ function selectBiz(idx) {
 }
 function closeDetail() {
   document.getElementById('detail').classList.remove('open');
-  var tbtn = document.getElementById('toggle-btn');
-  if (tbtn) tbtn.style.display = '';
+  document.getElementById('fab-wrap').style.display = '';
   // Clear the selected highlight
   if (map.getSource('biz-selected')) {
     map.getSource('biz-selected').setData({type:'FeatureCollection',features:[]});
@@ -1652,6 +1655,9 @@ function onMapClick(e) {
   deactivate(); applyFilters();
 }
 </script>
-<button id="toggle-btn" onclick="toggleSidebar()">⊕ Search</button>
+<div id="fab-wrap">
+  <button id="fab-filter" class="fab" onclick="toggleSidebar()">⚙ Filters</button>
+  <button id="fab-list" class="fab" onclick="toggleList()">☰ List <span class="fab-count" id="fab-count">0</span></button>
+</div>
 </body>
 </html>
