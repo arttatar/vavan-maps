@@ -121,7 +121,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   #overlay{z-index:1700;}
 
   /* Hide desktop-only elements */
-  .rp-hdr .rp-close{display:none;}
+  .rp-hdr .rp-close{display:flex !important;align-items:center;justify-content:center;width:36px;height:36px;background:#f5f5f5;border-radius:50%;font-size:14px;cursor:pointer;}
+  /* Results header on mobile */
+  .rp-hdr{padding:.5rem 1rem .75rem;flex-direction:column;gap:0;}
+  .rp-hdr::before{content:'';display:block;width:40px;height:4px;background:#ddd;border-radius:2px;margin:6px auto 10px;flex-shrink:0;}
+  .rp-title{font-size:15px;}
+  /* Row with title + close */  
+  .rp-hdr-row{display:flex;align-items:center;justify-content:space-between;width:100%;}
 }
 
 /* LOGIN */
@@ -479,15 +485,17 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
   <div id="results-panel">
     <div class="rp-hdr">
-      <div class="rp-title">Results</div>
-      <div class="rp-close" onclick="closeResults()">✕</div>
+      <div class="rp-hdr-row">
+        <div class="rp-title">Results</div>
+        <div class="rp-close" onclick="closeResults()">✕</div>
+      </div>
     </div>
     <div id="rcount"></div>
     <div id="biz-list"></div>
   </div>
 
   <div id="detail">
-    <div id="det-x"><button onclick="closeDetail()" style="min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink);padding:0 4px;flex-shrink:0;">✕</button><div id="det-x-title" style="font-size:13px;font-weight:600;color:var(--ink);flex:1;text-align:center;padding-right:48px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-right:52px;"></div></div>
+    <div id="det-x"><div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:10px auto 2px;"></div><div style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 4px 8px;"><button onclick="closeDetail()" style="min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink);padding:0 4px;flex-shrink:0;">✕</button><div id="det-x-title" style="font-size:13px;font-weight:600;color:var(--ink);flex:1;text-align:center;padding-right:48px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-right:52px;"></div></div></div>
     <div id="det-body"></div>
   </div>
 </div>
@@ -631,7 +639,51 @@ if (navigator.geolocation) {
   map.on('click', onMapClick);
   map.on('load', function() {
   startLocationTracking();
+  initDragDismiss();
 });
+
+// ── DRAG TO DISMISS BOTTOM SHEETS ──
+function addDragDismiss(panelId, closeFn) {
+  var el = document.getElementById(panelId);
+  if (!el) return;
+  var startY = 0, currentY = 0, dragging = false;
+  
+  el.addEventListener('touchstart', function(e) {
+    // Only drag from the handle area (top 60px)
+    if (e.touches[0].clientY - el.getBoundingClientRect().top > 60) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+    el.style.transition = 'none';
+  }, {passive:true});
+
+  el.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    currentY = e.touches[0].clientY - startY;
+    if (currentY > 0) {
+      el.style.transform = 'translateY(' + currentY + 'px)';
+    }
+  }, {passive:true});
+
+  el.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    el.style.transition = '';
+    if (currentY > 80) {
+      // Dragged down enough — dismiss
+      closeFn();
+    } else {
+      // Snap back
+      el.style.transform = '';
+    }
+    currentY = 0;
+  });
+}
+
+function initDragDismiss() {
+  addDragDismiss('sidebar', closeSidebar);
+  addDragDismiss('results-panel', closeResults);
+  addDragDismiss('detail', closeDetail);
+}
 
 function startLocationTracking() {
   if (!navigator.geolocation) return;
