@@ -366,28 +366,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
     <div id="filter-scroll">
 
-      <!-- LOCATION SEARCH -->
+      <!-- BUSINESS NAME -->
       <div class="sb-sec">
-        <div class="sb-title">Location Search</div>
+        <div class="sb-title">Business Name</div>
         <div class="search-row">
           <input type="text" class="sinput" id="s-name" placeholder="Business name...">
-        </div>
-        <div class="search-row">
-          <input type="text" class="sinput" id="s-city" placeholder="City...">
-          <input type="text" class="sinput sinput-sm" id="s-zip" placeholder="Zip code">
-        </div>
-        <div class="search-row">
-          <select class="sinput" id="s-state">
-            <option value="" selected>All States</option>
-            <option value="NV">Nevada (NV)</option>
-            <option value="CA">California (CA)</option>
-            <option value="AZ">Arizona (AZ)</option>
-            <option value="UT">Utah (UT)</option>
-            <option value="OR">Oregon (OR)</option>
-            <option value="WA">Washington (WA)</option>
-            <option value="ID">Idaho (ID)</option>
-            <option value="TX">Texas (TX)</option>
-          </select>
         </div>
       </div>
 
@@ -425,13 +408,26 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           <div id="sub-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:2000;padding:6px;max-height:260px;overflow-y:auto;"></div>
         </div>
       </div>
+
+      <!-- CITY / ZIP -->
       <div class="sb-sec">
-        <div class="sb-title">Opportunity Score</div>
-        <div class="pills">
-          <span class="pill on" data-f="opp" data-v="all">All</span>
-          <span class="pill amber" data-f="opp" data-v="high">⭐ High (80+)</span>
-          <span class="pill" data-f="opp" data-v="med">Medium (65–79)</span>
-          <span class="pill" data-f="opp" data-v="low">Low (&lt;65)</span>
+        <div class="sb-title">Location</div>
+        <div class="search-row">
+          <input type="text" class="sinput" id="s-city" placeholder="City...">
+          <input type="text" class="sinput sinput-sm" id="s-zip" placeholder="Zip code">
+        </div>
+        <div class="search-row">
+          <select class="sinput" id="s-state">
+            <option value="" selected>All States</option>
+            <option value="NV">Nevada (NV)</option>
+            <option value="CA">California (CA)</option>
+            <option value="AZ">Arizona (AZ)</option>
+            <option value="UT">Utah (UT)</option>
+            <option value="OR">Oregon (OR)</option>
+            <option value="WA">Washington (WA)</option>
+            <option value="ID">Idaho (ID)</option>
+            <option value="TX">Texas (TX)</option>
+          </select>
         </div>
       </div>
 
@@ -447,6 +443,17 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           <option value="Credit Application">Credit Application</option>
           <option value="Won Opportunity">Won Opportunity</option>
         </select>
+      </div>
+
+      <!-- OPPORTUNITY SCORE -->
+      <div class="sb-sec">
+        <div class="sb-title">Opportunity Score</div>
+        <div class="pills">
+          <span class="pill on" data-f="opp" data-v="all">All</span>
+          <span class="pill amber" data-f="opp" data-v="high">⭐ High (80+)</span>
+          <span class="pill" data-f="opp" data-v="med">Medium (65–79)</span>
+          <span class="pill" data-f="opp" data-v="low">Low (&lt;65)</span>
+        </div>
       </div>
 
       <!-- CONTACT INFO -->
