@@ -109,13 +109,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     flex-shrink:0;
   }
 
-  /* Make det-x show handle + X cleanly */
-  #det-x{
-    flex-direction:column !important;
-    padding-top:0 !important;
-    min-height:56px !important;
-  }
-  #det-x > button{align-self:flex-start;}
+  #det-x{min-height:auto !important;padding:0 !important;flex-direction:column !important;}
 
   /* Overlay behind panels */
   #overlay{z-index:1700;}
@@ -124,6 +118,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   .rp-hdr .rp-close{display:flex !important;align-items:center;justify-content:center;width:36px;height:36px;background:#f5f5f5;border-radius:50%;font-size:14px;cursor:pointer;}
   /* Results header on mobile */
   .rp-hdr{padding:.5rem 1rem .75rem;flex-direction:column;gap:0;}
+/* ── SHEET COMPONENTS ── */
+.sheet-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 8px;flex-shrink:0;}
+.sheet-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 8px 12px;border-bottom:1px solid var(--border);}
+.sheet-title{font-size:15px;font-weight:600;color:var(--ink);flex:1;text-align:center;}
+.sheet-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;border:none;border-radius:50%;cursor:pointer;font-size:14px;color:var(--ink);flex-shrink:0;}
+.sheet-close:active{background:#e0e0e0;}
+
   .rp-hdr::before{content:'';display:block;width:40px;height:4px;background:#ddd;border-radius:2px;margin:6px auto 10px;flex-shrink:0;}
   .rp-title{font-size:15px;}
   /* Row with title + close */  
@@ -369,7 +370,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
   <div id="sidebar">
     <div class="panel-hdr">
-      <div class="panel-title">Filters &amp; Search</div>
+      <div class="sheet-handle"></div>
+      <div class="sheet-topbar">
+        <div style="width:44px"></div>
+        <div class="sheet-title">Filters &amp; Search</div>
+        <button class="sheet-close" onclick="closeSidebar()">✕</button>
+      </div>
     </div>
 
     <div id="filter-scroll">
@@ -485,9 +491,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
   <div id="results-panel">
     <div class="rp-hdr">
-      <div class="rp-hdr-row">
-        <div class="rp-title">Results</div>
-        <div class="rp-close" onclick="closeResults()">✕</div>
+      <div class="sheet-handle"></div>
+      <div class="sheet-topbar">
+        <div style="width:44px"></div>
+        <div class="sheet-title">Results</div>
+        <button class="sheet-close" onclick="closeResults()">✕</button>
       </div>
     </div>
     <div id="rcount"></div>
@@ -495,7 +503,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   </div>
 
   <div id="detail">
-    <div id="det-x"><div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:10px auto 2px;"></div><div style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 4px 8px;"><button onclick="closeDetail()" style="min-width:48px;min-height:48px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink);padding:0 4px;flex-shrink:0;">✕</button><div id="det-x-title" style="font-size:13px;font-weight:600;color:var(--ink);flex:1;text-align:center;padding-right:48px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-right:52px;"></div></div></div>
+    <div id="det-x"><div class="sheet-handle"></div><div class="sheet-topbar"><button class="sheet-close" onclick="closeDetail()">✕</button><div id="det-x-title" class="sheet-title"></div><div style="width:44px"></div></div></div>
     <div id="det-body"></div>
   </div>
 </div>
