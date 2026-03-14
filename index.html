@@ -603,6 +603,189 @@ function calcScore(b) {
   return Math.min(s, 100);
 }
 
+// ── SUB-INDUSTRY INFERENCE ──
+// Auto-assigns sub_industry val to each business based on name + industry keywords
+var SUB_RULES = [
+  // AUTOMOTIVE
+  {val:'auto-dealers',         rx:/dealership|auto sales|car sales|used car|new car|pre.?owned|wholesale vehicle|ford |chevy |chevrolet|toyota |honda |nissan |dodge |jeep |chrysler |kia |hyundai |mazda |subaru |volkswagen |vw |gmc |buick |cadillac |lincoln |bmw |audi |mercedes|lexus |acura |infiniti |volvo /i},
+  {val:'auto-auctions',        rx:/auction|wholesale yard|copart|manheim|adesa/i},
+  {val:'auto-repair',          rx:/auto repair|brake|transmission|electrical repair|general repair|auto service|car repair|engine repair|tune.?up|smog check|inspection station/i},
+  {val:'quick-lube',           rx:/lube|oil change|jiffy|valvoline|pennzoil|quick lube|express lube|take 5/i},
+  {val:'tires',                rx:/tire|tyre|wheel align|alignment|suspension|discount tire|big o tire|firestone|goodyear|pep boys/i},
+  {val:'truck-repair',         rx:/truck repair|semi repair|big rig|diesel repair|fleet repair|commercial vehicle repair|freightliner|kenworth|peterbilt|mack dealer/i},
+  {val:'body-shop',            rx:/body shop|collision|auto body|paint shop|dent|bumper repair|maaco|caliber collision/i},
+  {val:'auto-glass',           rx:/auto glass|windshield|safelite|glass replacement/i},
+  {val:'car-wash',             rx:/car wash|detail center|auto spa|hand wash|wash.*wax/i},
+  {val:'mobile-detail',        rx:/mobile detail|mobile wash|mobile clean/i},
+  {val:'auto-parts',           rx:/auto parts|autozone|o'reilly|napa|advance auto|parts store|parts depot/i},
+  {val:'fleet-outfitters',     rx:/upfitter|fleet outfitter|work truck|emergency vehicle build|fleet conversion/i},
+  {val:'rv-motorcycle',        rx:/rv |recreational vehicle|motorhome|rv dealer|motorcycle|powersport|harley|kawasaki|suzuki dealer|yamaha dealer/i},
+  {val:'mobile-mechanic',      rx:/mobile mechanic|mobile auto service|on.?site repair/i},
+  // TRANSPORT
+  {val:'long-haul',            rx:/trucking|long haul|regional freight|over the road|carrier|otr/i},
+  {val:'ltl-courier',          rx:/ltl|less than truckload|parcel|courier|fedex|ups|delivery service/i},
+  {val:'refrigerated',         rx:/reefer|refrigerated|cold chain|frozen|temperature.?controlled/i},
+  {val:'flatbed-heavy',        rx:/flatbed|heavy haul|oversize|overdimensional|wide load/i},
+  {val:'tanker-bulk',          rx:/tanker|bulk transport|liquid|fuel transport|vacuum truck/i},
+  {val:'dump-aggregate',       rx:/dump truck|aggregate|gravel haul|sand haul|rock hauling/i},
+  {val:'hazmat',               rx:/hazmat|hazardous|chemical transport|dangerous goods/i},
+  {val:'freight-3pl',          rx:/freight broker|3pl|third party logistics|dispatch|logistics firm/i},
+  {val:'distribution',         rx:/distribution|fulfillment|cross.?dock|warehouse.*logistic/i},
+  {val:'bus-transit',          rx:/school bus|shuttle|transit|coach|charter bus|paratransit/i},
+  {val:'taxi-rideshare',       rx:/taxi|limo|limousine|rideshare|towncar|black car/i},
+  {val:'ems-medical',          rx:/ambulance|ems|medical transport|non.?emergency|dialysis transport/i},
+  {val:'tow-recovery',         rx:/tow|towing|roadside|recovery|wrecker/i},
+  {val:'rail',                 rx:/railroad|railway|rail|intermodal|drayage|switching yard/i},
+  {val:'aviation',             rx:/airport|airline|air cargo|charter cargo|aviation|fixed base/i},
+  {val:'marine',               rx:/marine freight|barge|shipping|port|coastal|harbor/i},
+  // INFRASTRUCTURE / CONSTRUCTION
+  {val:'general-contractor',   rx:/general contractor|civil contractor|public works|site work/i},
+  {val:'road-highway',         rx:/road construction|highway|bridge|paving contractor|asphalt contractor/i},
+  {val:'excavation',           rx:/excavat|grading|earthmov|dirt work|land clearing|bulldoz/i},
+  {val:'utility-construction', rx:/utility contractor|water line|sewer|gas line|electric contractor/i},
+  {val:'pipeline',             rx:/pipeline|pipe contractor|piping|gas main/i},
+  {val:'demolition',           rx:/demolition|demo contractor|site prep|wrecking/i},
+  {val:'paving',               rx:/paving|asphalt|concrete contractor|blacktop/i},
+  {val:'crane-rigging',        rx:/crane|rigging|heavy lift|lift service/i},
+  {val:'mining-quarry',        rx:/mining|quarry|aggregate operation|rock crusher|gravel pit/i},
+  {val:'environmental-construction', rx:/remediation|soil stabilization|environmental contractor|contamination/i},
+  // INDUSTRIAL
+  {val:'metal-fab',            rx:/machine shop|fabricat|metal fab|welding shop|steel fab|cnc/i},
+  {val:'foundry',              rx:/foundry|casting|smelting|aluminum plant|steel mill/i},
+  {val:'plastics-rubber',      rx:/plastic|rubber|foam|molding|injection/i},
+  {val:'chemicals',            rx:/chemical|paint mfg|adhesive|coating|sealant plant/i},
+  {val:'food-processing',      rx:/food processing|bottling|food plant|beverage plant|cannery/i},
+  {val:'packaging',            rx:/packaging|printing plant|label|converting/i},
+  {val:'equipment-mfg',        rx:/equipment manufacturer|oem|machinery manufacturer/i},
+  {val:'recycling',            rx:/recycling|scrap metal|scrap yard|waste processing|salvage/i},
+  {val:'warehousing',          rx:/industrial warehouse|cold storage|distribution center/i},
+  {val:'pharma-biotech',       rx:/pharmaceutical|biotech|drug manufacturing|lab/i},
+  {val:'industrial-maintenance',rx:/industrial maintenance|mro|overhaul|plant maintenance/i},
+  // AGRIBUSINESS
+  {val:'crop-farms',           rx:/farm|crop|grain|corn|wheat|soybean|organic farm|row crop/i},
+  {val:'orchards-vineyards',   rx:/orchard|vineyard|winery|greenhouse|nursery/i},
+  {val:'livestock',            rx:/cattle|dairy|poultry|swine|livestock|ranch|hog/i},
+  {val:'feedlots',             rx:/feedlot|feed yard|animal feeding/i},
+  {val:'farm-services',        rx:/crop spray|harvest service|irrigation service|custom farm/i},
+  {val:'ag-equipment',         rx:/farm equipment|tractor dealer|ag equipment|john deere|cnh/i},
+  {val:'ag-supply',            rx:/seed|fertilizer|feed store|ag supply|farm supply/i},
+  {val:'grain-storage',        rx:/grain elevator|grain storage|silo|ag warehouse/i},
+  {val:'produce-packing',      rx:/packing house|produce pack|sorting facility/i},
+  {val:'ag-coops',             rx:/co.?op|cooperative|farm cooperative/i},
+  // ENERGY
+  {val:'fuel-stations',        rx:/gas station|fuel station|filling station|mini mart|service station|chevron|shell|arco|exxon|mobil|bp |circle k|loves|pilot|flying j/i},
+  {val:'cardlock',             rx:/cardlock|fleet fuel|fueling yard|pacific pride|cfi/i},
+  {val:'propane-def',          rx:/propane|def distributor|diesel exhaust fluid/i},
+  {val:'bulk-fuel',            rx:/bulk fuel|jobber|fuel dealer|fuel terminal|petroleum distributor/i},
+  {val:'fuel-transport',       rx:/fuel hauling|fuel truck|petroleum transport|fuel delivery/i},
+  {val:'power-generation',     rx:/generator|power generation|backup power|standby power/i},
+  {val:'renewables',           rx:/solar|wind energy|geothermal|renewable/i},
+  {val:'oil-gas',              rx:/oil field|gas field|drilling|oilfield service|fracking/i},
+  {val:'utilities',            rx:/electric utility|gas utility|water utility|wastewater|utility company/i},
+  {val:'waste-management',     rx:/waste management|landfill|recycling yard|sanitation|garbage/i},
+  {val:'environmental-services',rx:/environmental cleanup|spill response|remediation firm|environmental testing/i},
+  {val:'tank-services',        rx:/tank cleaning|tank inspection|septic|portable sanitation/i},
+  // SERVICES
+  {val:'hvac-plumbing',        rx:/hvac|heating|cooling|air condition|plumb|electrical service|electrician/i},
+  {val:'landscaping',          rx:/landscap|lawn|tree service|groundskeep|irrigation/i},
+  {val:'cleaning',             rx:/cleaning|janitorial|custodial|maid|sanitation service/i},
+  {val:'pest-control',         rx:/pest control|exterminator|termite/i},
+  {val:'roofing',              rx:/roof|roofing|restoration contractor/i},
+  {val:'property-maintenance', rx:/property maintenance|facility maintenance|building maintenance/i},
+  {val:'security',             rx:/security patrol|guard service|protection service/i},
+  {val:'equipment-rental',     rx:/equipment rental|tool rental|machinery rental|rental company/i},
+  {val:'mobile-tech',          rx:/mobile technician|mobile equipment|on.?site tech/i},
+  {val:'snow-removal',         rx:/snow removal|ice control|striping|pavement marking/i},
+  {val:'event-services',       rx:/event service|tent rental|event rental|catering|portable restroom/i},
+  // HOSPITALITY
+  {val:'restaurants',          rx:/restaurant|cafe|diner|eatery|fast food|pizza|burger|taco|sushi|qsr|donut|coffee|bakery|food truck/i},
+  {val:'bars-nightlife',       rx:/bar |nightclub|lounge|tavern|brewery|pub /i},
+  {val:'catering',             rx:/catering|banquet|event catering/i},
+  {val:'grocery-supply',       rx:/grocery|supermarket|food distributor|produce distributor|meat distributor/i},
+  {val:'food-processing-hosp', rx:/food pack|food processing|cold storage logistic/i},
+  {val:'hotels-resorts',       rx:/hotel|motel|resort|inn |suites|lodging/i},
+  {val:'casinos-gaming',       rx:/casino|gaming|slot|poker|mgm|caesars|wynn|bellagio|venetian|palace station/i},
+  {val:'fitness-wellness',     rx:/gym|fitness|spa |wellness|yoga|crossfit|pilates/i},
+  {val:'venues-events',        rx:/arena|stadium|convention|event venue|theater|concert/i},
+  {val:'recreation',           rx:/golf|marina|boat club|amusement|theme park|campground|rv park|attraction/i},
+  // GOVERNMENT
+  {val:'federal-state',        rx:/federal|state agency|county agency|department of/i},
+  {val:'fire-police',          rx:/fire department|police|sheriff|ems department|emergency services/i},
+  {val:'public-transit-gov',   rx:/public transit|rtc|bus fleet|metro|transit authority/i},
+  {val:'public-works',         rx:/public works|street maintenance|road dept|city works/i},
+  {val:'schools',              rx:/school|college|university|district|charter school/i},
+  {val:'hospitals-gov',        rx:/hospital|clinic|medical center|health system/i},
+  {val:'military',             rx:/military|national guard|army|navy|air force|base/i},
+  {val:'corrections',          rx:/prison|correctional|detention|jail/i},
+  {val:'water-utilities-gov',  rx:/water district|wastewater|municipal utility|water authority/i},
+  // REAL ESTATE
+  {val:'commercial-re',        rx:/commercial real estate|office building|corporate campus|cre /i},
+  {val:'retail-centers',       rx:/shopping mall|strip mall|retail center|shopping center/i},
+  {val:'industrial-re',        rx:/industrial property|warehouse property|flex space/i},
+  {val:'multifamily',          rx:/apartment|condo|multifamily|townhome|residential complex/i},
+  {val:'sfr-portfolio',        rx:/single family rental|sfr|home rental|rental portfolio/i},
+  {val:'property-mgmt',        rx:/property management|property manager|hoa management/i},
+  {val:'senior-living',        rx:/senior living|assisted living|memory care|student housing|affordable housing/i},
+  {val:'self-storage',         rx:/self storage|storage facility|public storage|extra space/i},
+  {val:'re-developers',        rx:/developer|reit|real estate investment|development firm/i},
+  {val:'hoa',                  rx:/hoa|homeowner association|community association/i},
+  // COMPETITORS
+  {val:'fuel-competitors',     rx:/petro|sunoco|sinclair|brenntag|world fuel|mansfield/i},
+  {val:'lubricant-competitors',rx:/castrol|valvoline|pennzoil|quaker state|mobil.*oil|shell.*oil|lubricant|lube.*distribut/i},
+];
+
+function inferSubIndustry(b) {
+  if (b.sub_industry) {
+    // If DB has it, could be array or string — normalize to array
+    return Array.isArray(b.sub_industry) ? b.sub_industry : [b.sub_industry];
+  }
+  var text = ((b.name||'') + ' ' + (b.industry||'') + ' ' + (b.categories||'')).toLowerCase();
+  var matches = [];
+  for (var i = 0; i < SUB_RULES.length; i++) {
+    if (SUB_RULES[i].rx.test(text)) matches.push(SUB_RULES[i].val);
+  }
+
+  // Compound rules — businesses that naturally span multiple sub-industries
+  var hasDealer = matches.indexOf('auto-dealers') > -1;
+  var hasTruckDealer = /freightliner|kenworth|peterbilt|mack|international truck|isuzu truck|hino/i.test(text);
+
+  if (hasDealer) {
+    // New/used car dealers almost always have service, parts, and quick lube
+    ['auto-repair','auto-parts','quick-lube'].forEach(function(v){
+      if (matches.indexOf(v) === -1) matches.push(v);
+    });
+  }
+  if (hasTruckDealer) {
+    ['auto-dealers','truck-repair','auto-parts'].forEach(function(v){
+      if (matches.indexOf(v) === -1) matches.push(v);
+    });
+  }
+  // Truck stops typically have fuel + quick lube + truck repair
+  if (matches.indexOf('fuel-stations') > -1 && /truck stop|travel center|pilot|loves|flying j|petro stop/i.test(text)) {
+    ['quick-lube','truck-repair','cardlock'].forEach(function(v){
+      if (matches.indexOf(v) === -1) matches.push(v);
+    });
+  }
+  // Full-service auto shops often do tires + oil + repair
+  if (matches.indexOf('auto-repair') > -1 && /full service|complete auto|auto center/i.test(text)) {
+    ['tires','quick-lube'].forEach(function(v){
+      if (matches.indexOf(v) === -1) matches.push(v);
+    });
+  }
+
+  return matches.length ? matches : null;
+}
+
+function applySubIndustries(rows) {
+  rows.forEach(function(b) {
+    if (!b._subInferred) {
+      b.sub_industry_inferred = inferSubIndustry(b);
+      b._subInferred = true;
+    }
+  });
+  return rows;
+}
+
 async function loadData() {
   try {
     // Paginate to get all records (Supabase max 1000 per request)
@@ -618,7 +801,7 @@ async function loadData() {
       if (r.data.length < pageSize) break;
       from += pageSize;
     }
-    if (allRows.length > 0) { allData = allRows; prog(60, 'Loaded ' + allRows.length + ' businesses'); return; }
+    if (allRows.length > 0) { allData = applySubIndustries(allRows); prog(60, 'Loaded ' + allRows.length + ' businesses'); return; }
   } catch(e) {}
   allData = [
     {name:'YRC Freight',street:'5049 W Post Rd',locality:'Las Vegas, NV 89118',phone:'(800) 610-6500',website:'',industry:'Transportation',market:'Las Vegas',lat:36.1025,lon:-115.2144},
@@ -633,6 +816,7 @@ async function loadData() {
     {name:'Clark County Public Works',street:'500 S Grand Central Pkwy',locality:'Las Vegas, NV 89155',phone:'(702) 455-6000',website:'',industry:'Government',market:'Las Vegas',lat:36.1762,lon:-115.1398}
   ];
   allData.forEach(function(b){ b.score = calcScore(b); });
+  applySubIndustries(allData);
   prog(60, 'Using sample data');
 }
 
@@ -1278,11 +1462,12 @@ function applyFilters() {
   else if (filters.contact==='web') data = data.filter(function(b){ return b.website; });
   else if (filters.contact==='both') data = data.filter(function(b){ return b.phone && b.website; });
 
-  // Sub-industry filter — match against sub_industry field if present
+  // Sub-industry filter — business can have multiple sub-industries, match any
   if (filters.subIndustry && filters.subIndustry !== 'all' && Array.isArray(filters.subIndustry) && filters.subIndustry.length > 0) {
     data = data.filter(function(b){
-      var bSub = (b.sub_industry||'').toLowerCase().replace(/\s+/g,'-');
-      return filters.subIndustry.some(function(sv){ return bSub === sv || (b.sub_industry||'').toLowerCase().includes(sv.replace(/-/g,' ')); });
+      var bSubs = b.sub_industry_inferred || (b.sub_industry ? [b.sub_industry] : []);
+      if (!Array.isArray(bSubs)) bSubs = [bSubs];
+      return bSubs.some(function(s){ return filters.subIndustry.indexOf(s) > -1; });
     });
   }
 
