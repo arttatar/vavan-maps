@@ -383,17 +383,17 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           </div>
           <div id="ind-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:2000;padding:6px;">
             <div class="ind-opt" data-val="all">All Industries</div>
-            <div class="ind-opt" data-val="Automotive">🚗 Automotive</div>
-            <div class="ind-opt" data-val="Agribusiness">🌾 Agribusiness</div>
-            <div class="ind-opt" data-val="Transport">🚚 Transportation</div>
-            <div class="ind-opt" data-val="Construction">🏗 Infrastructure</div>
-            <div class="ind-opt" data-val="Industrial">🏭 Industrial</div>
-            <div class="ind-opt" data-val="Services">🧰 Services Business</div>
-            <div class="ind-opt" data-val="Hospitality">🏨 Hospitality &amp; Leisure</div>
-            <div class="ind-opt" data-val="Government">🏛 Government &amp; Institutions</div>
-            <div class="ind-opt" data-val="Energy">⚡ Energy, Utilities &amp; Environmental</div>
-            <div class="ind-opt" data-val="RealEstate">🏢 Real Estate</div>
-            <div class="ind-opt" data-val="Competitors">🔴 Competitors</div>
+            <div class="ind-opt" data-val="Automotive"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3B82F6;margin-right:8px;flex-shrink:0;"></span>Automotive</div>
+            <div class="ind-opt" data-val="Agribusiness"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#84CC16;margin-right:8px;flex-shrink:0;"></span>Agribusiness</div>
+            <div class="ind-opt" data-val="Transport"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#F97316;margin-right:8px;flex-shrink:0;"></span>Transportation</div>
+            <div class="ind-opt" data-val="Construction"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#D97706;margin-right:8px;flex-shrink:0;"></span>Infrastructure</div>
+            <div class="ind-opt" data-val="Industrial"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6B7280;margin-right:8px;flex-shrink:0;"></span>Industrial</div>
+            <div class="ind-opt" data-val="Services"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#8B5CF6;margin-right:8px;flex-shrink:0;"></span>Services Business</div>
+            <div class="ind-opt" data-val="Hospitality"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#EC4899;margin-right:8px;flex-shrink:0;"></span>Hospitality &amp; Leisure</div>
+            <div class="ind-opt" data-val="Government"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0EA5E9;margin-right:8px;flex-shrink:0;"></span>Government &amp; Institutions</div>
+            <div class="ind-opt" data-val="Energy"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#EAB308;margin-right:8px;flex-shrink:0;"></span>Energy, Utilities &amp; Environmental</div>
+            <div class="ind-opt" data-val="RealEstate"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#14B8A6;margin-right:8px;flex-shrink:0;"></span>Real Estate</div>
+            <div class="ind-opt" data-val="Competitors"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#EF4444;margin-right:8px;flex-shrink:0;"></span>Competitors</div>
           </div>
         </div>
       </div>
@@ -846,10 +846,18 @@ if (navigator.geolocation) {
 // Refresh list as map moves — shows only what's visible
 map.on('moveend', function() {
   if (document.getElementById('results-panel').classList.contains('open')) renderList();
+  // Allow taps again shortly after movement stops
+  clearTimeout(_moveTimer);
+  _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
 });
 map.on('zoomend', function() {
   if (document.getElementById('results-panel').classList.contains('open')) renderList();
+  clearTimeout(_moveTimer);
+  _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
 });
+map.on('movestart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
+map.on('zoomstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
+map.on('dragstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
 
 // ── DRAG TO DISMISS BOTTOM SHEETS ──
 function addDragDismiss(panelId, closeFn) {
@@ -963,13 +971,21 @@ function renderPins() {
     paint:{
       'circle-radius':6,
       'circle-color':['case',
-        ['==',['get','is_competitor'],true],'#E53E3E',
-        ['>=',['get','score'],80],'#EF9F27',
-        ['>=',['get','score'],65],'#4a36c8',
+        ['==',['get','is_competitor'],true],'#EF4444',
+        ['==',['get','industry'],'Automotive'],'#3B82F6',
+        ['==',['get','industry'],'Agribusiness'],'#84CC16',
+        ['in',['get','industry'],['literal',['Transport','Transportation']]],'#F97316',
+        ['in',['get','industry'],['literal',['Construction','Infrastructure']]],'#D97706',
+        ['==',['get','industry'],'Industrial'],'#6B7280',
+        ['==',['get','industry'],'Services'],'#8B5CF6',
+        ['==',['get','industry'],'Hospitality'],'#EC4899',
+        ['==',['get','industry'],'Government'],'#0EA5E9',
+        ['in',['get','industry'],['literal',['Energy','Fuel Stations']]],'#EAB308',
+        ['==',['get','industry'],'RealEstate'],'#14B8A6',
         '#9b93d4'
       ],
       'circle-opacity':0.9,
-      'circle-stroke-width':['case',['==',['get','is_competitor'],true],2,0],
+      'circle-stroke-width':0,
       'circle-stroke-color':'#fff'
     }
   });
@@ -989,7 +1005,20 @@ function renderPins() {
     map.addLayer({ id:'biz-sel-dot', type:'circle', source:'biz-selected',
       paint:{
         'circle-radius':10,
-        'circle-color':['case',['==',['get','is_competitor'],true],'#E53E3E',['>=',['get','score'],80],'#EF9F27',['>=',['get','score'],65],'#4a36c8','#9b93d4'],
+        'circle-color':['case',
+          ['==',['get','is_competitor'],true],'#EF4444',
+          ['==',['get','industry'],'Automotive'],'#3B82F6',
+          ['==',['get','industry'],'Agribusiness'],'#84CC16',
+          ['in',['get','industry'],['literal',['Transport','Transportation']]],'#F97316',
+          ['in',['get','industry'],['literal',['Construction','Infrastructure']]],'#D97706',
+          ['==',['get','industry'],'Industrial'],'#6B7280',
+          ['==',['get','industry'],'Services'],'#8B5CF6',
+          ['==',['get','industry'],'Hospitality'],'#EC4899',
+          ['==',['get','industry'],'Government'],'#0EA5E9',
+          ['in',['get','industry'],['literal',['Energy','Fuel Stations']]],'#EAB308',
+          ['==',['get','industry'],'RealEstate'],'#14B8A6',
+          '#9b93d4'
+        ],
         'circle-stroke-width':3,
         'circle-stroke-color':'#ffffff',
         'circle-opacity':1
@@ -997,9 +1026,13 @@ function renderPins() {
     });
   }
 
-  map.on('click','biz', function(e){ selectBiz(e.features[0].properties.idx); });
-  // Touch support for mobile - query features in a larger radius
+  map.on('click','biz', function(e){
+    if (mapIsMoving) return; // ignore clicks during/just after movement
+    selectBiz(e.features[0].properties.idx);
+  });
+  // Touch support for mobile — only fire if map was still
   map.on('touchend', function(e) {
+    if (mapIsMoving) return;
     var point = e.point;
     var bbox = [[point.x-22,point.y-22],[point.x+22,point.y+22]];
     var features = map.queryRenderedFeatures(bbox, {layers:['biz']});
@@ -1519,7 +1552,7 @@ function renderList() {
   document.getElementById('biz-list').innerHTML = data.slice(0,150).map(function(b){
     var idx = allData.indexOf(b);
     var s = b.score || calcScore(b);
-    var color = b.is_competitor?'#E53E3E':s>=80?'#EF9F27':s>=65?'#4a36c8':'#9b93d4';
+    var color = bizColor(b);
     return '<div class="bitem" onclick="selectBiz('+idx+')"><div class="bname"><span class="sdot" style="background:'+color+'"></span>'+b.name+'</div><div class="baddr">'+b.street+(b.industry?' · <em style=color:var(--muted)>'+b.industry+'</em>':'')+'</div>'+(b.phone?'<div class="bphone"><a href="tel:'+b.phone.replace(/\D/g,'')+'" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">'+b.phone+'</a></div>':'')+'</div>';
   }).join('') + (data.length>150?'<div style="padding:.75rem;font-size:12px;color:var(--muted);text-align:center">Showing 150 of '+data.length.toLocaleString()+' — zoom in or filter to narrow</div>':'');
 }
@@ -1551,17 +1584,43 @@ function openNav(address) {
 }
 
 var lastSelectedBiz = null;
+var mapIsMoving = false;
+var _moveTimer = null;
+
+// ── INDUSTRY COLORS — used on map dots, list, detail ──
+var IND_COLORS = {
+  Automotive:   '#3B82F6',
+  Agribusiness: '#84CC16',
+  Transport:    '#F97316',
+  Transportation:'#F97316',
+  Construction: '#D97706',
+  Infrastructure:'#D97706',
+  Industrial:   '#6B7280',
+  Services:     '#8B5CF6',
+  Hospitality:  '#EC4899',
+  Government:   '#0EA5E9',
+  Energy:       '#EAB308',
+  RealEstate:   '#14B8A6',
+  Competitors:  '#EF4444',
+};
+var IND_DEFAULT = '#9b93d4';
+
+function bizColor(b) {
+  if (b.is_competitor) return IND_COLORS.Competitors;
+  var ind = (b.industry||'').trim();
+  return IND_COLORS[ind] || IND_DEFAULT;
+}
 
 function selectBiz(idx) {
   var b = allData[idx]; if (!b) return;
   lastSelectedBiz = b;
   if (b.lat&&b.lon) {
     map.flyTo({center:[b.lon,b.lat],zoom:16,speed:1.4});
-    // Light up the selected dot
+    // Swap highlight to new dot — clears previous automatically
     if (map.getSource('biz-selected')) {
       map.getSource('biz-selected').setData({
         type:'FeatureCollection',
-        features:[{type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:{score:b.score||calcScore(b),is_competitor:b.is_competitor||false}}]
+        features:[{type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:{industry:b.industry||'',is_competitor:b.is_competitor||false}}]
       });
     }
   }
@@ -1569,10 +1628,10 @@ function selectBiz(idx) {
   if (window.innerWidth <= 768) document.getElementById('fab-wrap').style.display = 'none';
   var titleEl = document.getElementById('det-x-title'); if (titleEl) titleEl.textContent = b.name||'';
   var s = b.score||calcScore(b);
-  var color = b.is_competitor?'#E53E3E':s>=80?'#EF9F27':s>=65?'#4a36c8':'#9b93d4';
+  var color = bizColor(b);
   var lbl = s>=80?'High Opportunity':s>=65?'Medium Opportunity':'Standard Prospect';
   document.getElementById('det-body').innerHTML =
-    '<div style="font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-light);padding:3px 10px;border-radius:100px;display:inline-block;margin-bottom:.75rem">'+(b.industry||'Business')+' · '+(b.market||'Las Vegas')+'</div>'+
+    '<div style="font-size:11px;font-weight:600;color:#fff;background:'+color+';padding:3px 10px;border-radius:100px;display:inline-block;margin-bottom:.75rem">'+(b.industry||'Business')+' · '+(b.market||'Las Vegas')+'</div>'+
     '<div class="dname">'+b.name+'</div>'+
     (function(){
       var stage = b.pipeline_stage||'';
@@ -1596,11 +1655,7 @@ function selectBiz(idx) {
 function closeDetail() {
   document.getElementById('detail').classList.remove('open');
   document.getElementById('fab-wrap').style.display = '';
-  // Clear the selected highlight
-  if (map.getSource('biz-selected')) {
-    map.getSource('biz-selected').setData({type:'FeatureCollection',features:[]});
-  }
-  // Keep map centered on the business that was open so user doesn't lose their spot
+  // Keep map centered on the business — dot stays highlighted until user picks another
   if (lastSelectedBiz && lastSelectedBiz.lat && lastSelectedBiz.lon) {
     map.easeTo({center:[lastSelectedBiz.lon, lastSelectedBiz.lat], zoom:16, duration:300});
   }
