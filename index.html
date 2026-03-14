@@ -417,7 +417,16 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         </div>
       </div>
 
-      <!-- OPPORTUNITY -->
+      <!-- SUB-INDUSTRY -->
+      <div class="sb-sec">
+        <div class="sb-title">Sub-Industry</div>
+        <div id="sub-dropdown-wrap" style="position:relative">
+          <div id="sub-display" onclick="toggleSubDropdown()" style="border:1px solid var(--border);border-radius:7px;padding:7px 10px;min-height:36px;background:var(--paper);cursor:pointer;display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:13px;color:var(--muted);font-family:'Inter',sans-serif;">
+            <span id="sub-placeholder">Select industries first</span>
+          </div>
+          <div id="sub-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.12);z-index:2000;padding:6px;max-height:260px;overflow-y:auto;"></div>
+        </div>
+      </div>
       <div class="sb-sec">
         <div class="sb-title">Opportunity Score</div>
         <div class="pills">
@@ -520,7 +529,7 @@ var sb = window.supabase.createClient(SURL, SKEY);
 mapboxgl.accessToken = MBOX;
 
 var allData = [], filteredData = [], map, draw;
-var filters = { opp:'all', contact:'all', industry:'all', pipeline:'all' };
+var filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all' };
   var pipeEl = document.getElementById('s-pipeline');
   if (pipeEl) pipeEl.value = 'all';
 var activeTool = null, selPoly = null, radMiles = 5;
@@ -946,7 +955,289 @@ function removeInd(e, val) {
   if (opt) opt.classList.remove('on');
   filters.industry = selectedIndustries.length ? selectedIndustries : 'all';
   renderIndTags();
+  // Remove any sub-industries that no longer have a parent selected
+  var allowed = getAvailableSubs().map(function(s){ return s.val; });
+  selectedSubIndustries = selectedSubIndustries.filter(function(v){ return allowed.indexOf(v) > -1; });
+  filters.subIndustry = selectedSubIndustries.length ? selectedSubIndustries : 'all';
+  renderSubTags();
+  renderSubDropdown();
 }
+
+// ── SUB-INDUSTRY DATA ──
+var SUB_MAP = {
+  Automotive: [
+    {val:'auto-dealers',        label:'Dealerships (New / Used / Wholesale)'},
+    {val:'auto-auctions',       label:'Auto Auctions / Wholesale Yards'},
+    {val:'auto-repair',         label:'Repair Shops (General / Brake / Transmission)'},
+    {val:'quick-lube',          label:'Quick Lube / Oil Change Centers'},
+    {val:'tires',               label:'Tire / Alignment / Suspension Shops'},
+    {val:'truck-repair',        label:'Truck / Semi-Truck Repair'},
+    {val:'body-shop',           label:'Body / Collision Repair'},
+    {val:'auto-glass',          label:'Auto Glass / Windshield Services'},
+    {val:'car-wash',            label:'Car Wash / Detail Centers'},
+    {val:'mobile-detail',       label:'Mobile Detailing / Mobile Wash'},
+    {val:'auto-parts',          label:'Auto Parts Stores / Distributors'},
+    {val:'fleet-outfitters',    label:'Fleet Outfitters / Specialty Upfitters'},
+    {val:'rv-motorcycle',       label:'RV / Motorcycle / Powersports'},
+    {val:'mobile-mechanic',     label:'Mobile Mechanics'},
+  ],
+  Transport: [
+    {val:'long-haul',           label:'Long-Haul / Regional Trucking'},
+    {val:'ltl-courier',         label:'LTL / Parcel / Courier'},
+    {val:'refrigerated',        label:'Refrigerated / Cold Chain Fleets'},
+    {val:'flatbed-heavy',       label:'Flatbed / Heavy Haul / Oversize'},
+    {val:'tanker-bulk',         label:'Tanker / Bulk / Fuel Transport'},
+    {val:'dump-aggregate',      label:'Dump Truck / Aggregate Hauling'},
+    {val:'hazmat',              label:'Hazmat / Specialized Transport'},
+    {val:'freight-3pl',         label:'Freight Brokers / 3PLs'},
+    {val:'distribution',        label:'Distribution / Fulfillment Centers'},
+    {val:'bus-transit',         label:'School Bus / Shuttle / Transit'},
+    {val:'taxi-rideshare',      label:'Taxi / Limo / Rideshare Fleets'},
+    {val:'ems-medical',         label:'Ambulance / EMS / Medical Transport'},
+    {val:'tow-recovery',        label:'Tow / Recovery / Roadside Assistance'},
+    {val:'rail',                label:'Rail / Intermodal Operators'},
+    {val:'aviation',            label:'Airports / Air Cargo / Charter'},
+    {val:'marine',              label:'Marine Freight / Port Operations'},
+  ],
+  Construction: [
+    {val:'general-contractor',  label:'General / Civil / Public Works'},
+    {val:'road-highway',        label:'Road / Highway / Bridge'},
+    {val:'excavation',          label:'Excavation / Grading / Earthmoving'},
+    {val:'utility-construction',label:'Utility Construction (Water/Sewer/Gas/Electric)'},
+    {val:'pipeline',            label:'Pipeline Construction / Maintenance'},
+    {val:'demolition',          label:'Demolition / Site Preparation'},
+    {val:'paving',              label:'Concrete / Asphalt / Paving'},
+    {val:'crane-rigging',       label:'Crane / Rigging / Heavy Lift'},
+    {val:'mining-quarry',       label:'Mining / Quarry / Aggregate'},
+    {val:'environmental-construction', label:'Environmental / Remediation'},
+  ],
+  Industrial: [
+    {val:'metal-fab',           label:'Machine Shops / Metal Fabrication'},
+    {val:'foundry',             label:'Foundries / Metal Casting'},
+    {val:'plastics-rubber',     label:'Plastic / Rubber / Foam Manufacturing'},
+    {val:'chemicals',           label:'Chemical / Paint / Coatings Plants'},
+    {val:'food-processing',     label:'Food / Beverage Processing'},
+    {val:'packaging',           label:'Printing / Packaging / Labeling'},
+    {val:'equipment-mfg',       label:'Equipment Manufacturers / OEMs'},
+    {val:'recycling',           label:'Recycling / Scrap / Waste Processing'},
+    {val:'warehousing',         label:'Industrial Warehouses / Cold Storage'},
+    {val:'pharma-biotech',      label:'Pharmaceutical / Biotech Manufacturing'},
+    {val:'industrial-maintenance', label:'Industrial Maintenance / MRO'},
+  ],
+  Agribusiness: [
+    {val:'crop-farms',          label:'Crop Farms (Row / Specialty / Organic)'},
+    {val:'orchards-vineyards',  label:'Orchards / Vineyards / Greenhouses'},
+    {val:'livestock',           label:'Cattle / Dairy / Poultry / Swine'},
+    {val:'feedlots',            label:'Feedlots / Animal Feeding Operations'},
+    {val:'farm-services',       label:'Custom Farming / Crop Services / Irrigation'},
+    {val:'ag-equipment',        label:'Farm Equipment Dealers / Repair'},
+    {val:'ag-supply',           label:'Seed / Fertilizer / Feed Suppliers'},
+    {val:'grain-storage',       label:'Grain Elevators / Ag Warehousing'},
+    {val:'produce-packing',     label:'Produce Packing / Processing'},
+    {val:'ag-coops',            label:'Agricultural Co-Ops'},
+  ],
+  Energy: [
+    {val:'fuel-stations',       label:'Retail Fuel Stations / Truck Stops'},
+    {val:'cardlock',            label:'Cardlock / Fleet Fueling Yards'},
+    {val:'propane-def',         label:'Propane Retailers / DEF Distributors'},
+    {val:'bulk-fuel',           label:'Bulk Fuel Jobbers / Fuel Terminals'},
+    {val:'fuel-transport',      label:'Fuel Hauling / Fuel Transport'},
+    {val:'power-generation',    label:'Power Generation / Backup Generator Services'},
+    {val:'renewables',          label:'Renewable Energy (Solar / Wind / Geothermal)'},
+    {val:'oil-gas',             label:'Oil & Gas Field Services'},
+    {val:'utilities',           label:'Electric / Gas / Water Utilities'},
+    {val:'waste-management',    label:'Waste Management / Landfills / Recycling'},
+    {val:'environmental-services', label:'Environmental Cleanup / Compliance'},
+    {val:'tank-services',       label:'Tank Cleaning / Septic / Sanitation'},
+  ],
+  Services: [
+    {val:'hvac-plumbing',       label:'HVAC / Plumbing / Electrical'},
+    {val:'landscaping',         label:'Landscaping / Tree Service'},
+    {val:'cleaning',            label:'Cleaning / Janitorial'},
+    {val:'pest-control',        label:'Pest Control'},
+    {val:'roofing',             label:'Roofing / Restoration'},
+    {val:'property-maintenance',label:'Property / Facility Maintenance'},
+    {val:'security',            label:'Security Patrol / Protection'},
+    {val:'equipment-rental',    label:'Equipment / Tool Rental'},
+    {val:'mobile-tech',         label:'Mobile Equipment Technicians'},
+    {val:'event-services',      label:'Event / Temporary Services'},
+    {val:'snow-removal',        label:'Snow Removal / Striping'},
+  ],
+  Hospitality: [
+    {val:'restaurants',         label:'Restaurants / QSR / Cafés / Food Trucks'},
+    {val:'bars-nightlife',      label:'Bars / Nightlife Venues'},
+    {val:'catering',            label:'Catering / Banquet Halls'},
+    {val:'grocery-supply',      label:'Grocery / Food Distributors'},
+    {val:'food-processing-hosp',label:'Food Processing / Cold Storage'},
+    {val:'hotels-resorts',      label:'Hotels / Motels / Resorts'},
+    {val:'casinos-gaming',      label:'Casinos / Gaming Facilities'},
+    {val:'fitness-wellness',    label:'Fitness / Gyms / Spas'},
+    {val:'venues-events',       label:'Venues / Arenas / Convention Centers'},
+    {val:'recreation',          label:'Golf / Marinas / Parks / Attractions'},
+  ],
+  Government: [
+    {val:'federal-state',       label:'Federal / State / County Agencies'},
+    {val:'fire-police',         label:'Fire / Police / Emergency Services'},
+    {val:'public-transit-gov',  label:'Public Transit / Bus Fleets'},
+    {val:'public-works',        label:'Public Works / Street Maintenance'},
+    {val:'schools',             label:'Schools / Colleges / Universities'},
+    {val:'hospitals-gov',       label:'Hospitals / Medical Facilities'},
+    {val:'military',            label:'Military / National Guard'},
+    {val:'corrections',         label:'Corrections / Civic Facilities'},
+    {val:'water-utilities-gov', label:'Water / Wastewater Districts'},
+  ],
+  RealEstate: [
+    {val:'commercial-re',       label:'Commercial Properties / Office Buildings'},
+    {val:'retail-centers',      label:'Retail Centers / Shopping Malls'},
+    {val:'industrial-re',       label:'Industrial / Warehouse Properties'},
+    {val:'multifamily',         label:'Multifamily / Apartments / Condos'},
+    {val:'sfr-portfolio',       label:'Single-Family Rental Portfolios'},
+    {val:'property-mgmt',       label:'Property Management Companies'},
+    {val:'senior-living',       label:'Senior / Affordable / Student Housing'},
+    {val:'self-storage',        label:'Self-Storage Facilities'},
+    {val:'re-developers',       label:'Developers / REITs / Investment Firms'},
+    {val:'hoa',                 label:'HOAs / Community Associations'},
+  ],
+  Competitors: [
+    {val:'fuel-competitors',    label:'Fuel Competitors'},
+    {val:'lubricant-competitors',label:'Lubricant Competitors'},
+  ]
+};
+
+var selectedSubIndustries = [];
+
+function getAvailableSubs() {
+  // If no industries selected, show nothing; if all selected, show all
+  var industries = selectedIndustries.length ? selectedIndustries : [];
+  var subs = [];
+  industries.forEach(function(ind) {
+    if (SUB_MAP[ind]) {
+      SUB_MAP[ind].forEach(function(s) {
+        subs.push(Object.assign({}, s, {parent: ind}));
+      });
+    }
+  });
+  return subs;
+}
+
+function toggleSubDropdown() {
+  var subs = getAvailableSubs();
+  if (!subs.length) return; // nothing to show
+  var dd = document.getElementById('sub-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderSubDropdown() {
+  var dd = document.getElementById('sub-dropdown');
+  var subs = getAvailableSubs();
+  var ph = document.getElementById('sub-placeholder');
+
+  if (!subs.length) {
+    dd.innerHTML = '';
+    dd.style.display = 'none';
+    if (ph) { ph.style.display = ''; ph.textContent = 'Select industries first'; }
+    return;
+  }
+  if (ph) ph.style.display = 'none';
+
+  // Group by parent industry
+  var grouped = {};
+  subs.forEach(function(s) {
+    if (!grouped[s.parent]) grouped[s.parent] = [];
+    grouped[s.parent].push(s);
+  });
+
+  var industryLabels = {
+    Automotive:'🚗 Automotive', Transport:'🚚 Transportation', Construction:'🏗 Infrastructure',
+    Industrial:'🏭 Industrial', Agribusiness:'🌾 Agribusiness', Energy:'⚡ Energy & Utilities',
+    Services:'🧰 Services', Hospitality:'🏨 Hospitality', Government:'🏛 Government',
+    RealEstate:'🏢 Real Estate', Competitors:'🔴 Competitors'
+  };
+
+  dd.innerHTML = '';
+  Object.keys(grouped).forEach(function(parent) {
+    // Group header
+    if (selectedIndustries.length > 1) {
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:8px 10px 4px;';
+      hdr.textContent = industryLabels[parent] || parent;
+      dd.appendChild(hdr);
+    }
+    grouped[parent].forEach(function(s) {
+      var opt = document.createElement('div');
+      opt.className = 'ind-opt' + (selectedSubIndustries.indexOf(s.val) > -1 ? ' on' : '');
+      opt.setAttribute('data-sub', s.val);
+      opt.textContent = s.label;
+      opt.addEventListener('click', function() { toggleSub(s.val); });
+      dd.appendChild(opt);
+    });
+  });
+}
+
+function toggleSub(val) {
+  var idx = selectedSubIndustries.indexOf(val);
+  if (idx > -1) {
+    selectedSubIndustries.splice(idx, 1);
+  } else {
+    selectedSubIndustries.push(val);
+  }
+  filters.subIndustry = selectedSubIndustries.length ? selectedSubIndustries : 'all';
+  renderSubTags();
+  // Re-render dropdown to update highlights
+  renderSubDropdown();
+}
+
+function renderSubTags() {
+  var display = document.getElementById('sub-display');
+  var ph = document.getElementById('sub-placeholder');
+  display.innerHTML = '';
+
+  var subs = getAvailableSubs();
+  if (!subs.length) {
+    var p = document.createElement('span');
+    p.id = 'sub-placeholder'; p.style.color = 'var(--muted)'; p.textContent = 'Select industries first';
+    display.appendChild(p);
+    return;
+  }
+
+  if (!selectedSubIndustries.length) {
+    var p = document.createElement('span');
+    p.id = 'sub-placeholder'; p.style.color = 'var(--muted)'; p.textContent = 'All sub-industries';
+    display.appendChild(p);
+    return;
+  }
+
+  selectedSubIndustries.forEach(function(v) {
+    var subObj = null;
+    subs.forEach(function(s){ if(s.val===v) subObj=s; });
+    if (!subObj) return;
+    var tag = document.createElement('span');
+    tag.className = 'ind-tag'; tag.textContent = subObj.label;
+    var x = document.createElement('span');
+    x.className = 'tx'; x.textContent = ' x'; x.setAttribute('data-val', v);
+    x.addEventListener('click', function(e){ e.stopPropagation(); toggleSub(this.getAttribute('data-val')); });
+    tag.appendChild(x);
+    display.appendChild(tag);
+  });
+}
+
+document.addEventListener('click', function(e) {
+  if (!document.getElementById('sub-dropdown-wrap').contains(e.target)) {
+    document.getElementById('sub-dropdown').style.display = 'none';
+  }
+});
+
+// When industries change, rebuild sub dropdown
+var _origRenderIndTags = renderIndTags;
+// Patch industry toggle to also update subs
+document.querySelectorAll('.ind-opt').forEach(function(opt) {
+  opt.addEventListener('click', function() {
+    setTimeout(function() {
+      renderSubDropdown();
+      renderSubTags();
+    }, 0);
+  });
+});
 
 // ── APPLY FILTERS ──
 function applyFilters() {
@@ -986,6 +1277,14 @@ function applyFilters() {
   if (filters.contact==='phone') data = data.filter(function(b){ return b.phone; });
   else if (filters.contact==='web') data = data.filter(function(b){ return b.website; });
   else if (filters.contact==='both') data = data.filter(function(b){ return b.phone && b.website; });
+
+  // Sub-industry filter — match against sub_industry field if present
+  if (filters.subIndustry && filters.subIndustry !== 'all' && Array.isArray(filters.subIndustry) && filters.subIndustry.length > 0) {
+    data = data.filter(function(b){
+      var bSub = (b.sub_industry||'').toLowerCase().replace(/\s+/g,'-');
+      return filters.subIndustry.some(function(sv){ return bSub === sv || (b.sub_industry||'').toLowerCase().includes(sv.replace(/-/g,' ')); });
+    });
+  }
 
   if (selPoly) data = data.filter(function(b){ return turf.booleanPointInPolygon(turf.point([b.lon,b.lat]),selPoly); });
 
@@ -1137,24 +1436,20 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  // Reset all filter state
-  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all' };
+  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all' };
   var pipeEl = document.getElementById('s-pipeline');
   if (pipeEl) pipeEl.value = 'all';
   selectedIndustries = [];
-  // Reset industry display
-  selectedIndustries = [];
+  selectedSubIndustries = [];
   document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
   renderIndTags();
-  // Reset pill filters
+  renderSubDropdown();
+  renderSubTags();
   document.querySelectorAll('.pill[data-f]').forEach(function(p){ p.classList.remove('on'); });
   document.querySelectorAll('.pill[data-v="all"]').forEach(function(p){ p.classList.add('on'); });
-  // Reset text inputs
   ['s-name','s-city','s-zip'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('s-state').value='';
-  // Clear area selection
   clearArea();
-  // Update badge
   document.getElementById('filter-badge').classList.remove('visible');
   applyFilters();
 }
