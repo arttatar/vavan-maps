@@ -773,6 +773,30 @@ function renderPins() {
       'circle-stroke-color':'#fff'
     }
   });
+
+  // Selected business highlight — separate source so it's always on top
+  if (!map.getSource('biz-selected')) {
+    map.addSource('biz-selected', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  }
+  // Outer pulse ring
+  if (!map.getLayer('biz-sel-ring')) {
+    map.addLayer({ id:'biz-sel-ring', type:'circle', source:'biz-selected',
+      paint:{'circle-radius':18,'circle-color':'#fff','circle-opacity':0.25,'circle-stroke-width':0}
+    });
+  }
+  // Main selected dot — larger, white stroke
+  if (!map.getLayer('biz-sel-dot')) {
+    map.addLayer({ id:'biz-sel-dot', type:'circle', source:'biz-selected',
+      paint:{
+        'circle-radius':10,
+        'circle-color':['case',['==',['get','is_competitor'],true],'#E53E3E',['>=',['get','score'],80],'#EF9F27',['>=',['get','score'],65],'#4a36c8','#9b93d4'],
+        'circle-stroke-width':3,
+        'circle-stroke-color':'#ffffff',
+        'circle-opacity':1
+      }
+    });
+  }
+
   map.on('click','biz', function(e){ selectBiz(e.features[0].properties.idx); });
   // Touch support for mobile - query features in a larger radius
   map.on('touchend', function(e) {
@@ -1019,7 +1043,16 @@ var lastSelectedBiz = null;
 function selectBiz(idx) {
   var b = allData[idx]; if (!b) return;
   lastSelectedBiz = b;
-  if (b.lat&&b.lon) map.flyTo({center:[b.lon,b.lat],zoom:16,speed:1.4});
+  if (b.lat&&b.lon) {
+    map.flyTo({center:[b.lon,b.lat],zoom:16,speed:1.4});
+    // Light up the selected dot
+    if (map.getSource('biz-selected')) {
+      map.getSource('biz-selected').setData({
+        type:'FeatureCollection',
+        features:[{type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:{score:b.score||calcScore(b),is_competitor:b.is_competitor||false}}]
+      });
+    }
+  }
   // Hide search button when detail card open on mobile
   var tbtn = document.getElementById('toggle-btn');
   if (tbtn) tbtn.style.display = 'none';
@@ -1053,6 +1086,10 @@ function closeDetail() {
   document.getElementById('detail').classList.remove('open');
   var tbtn = document.getElementById('toggle-btn');
   if (tbtn) tbtn.style.display = '';
+  // Clear the selected highlight
+  if (map.getSource('biz-selected')) {
+    map.getSource('biz-selected').setData({type:'FeatureCollection',features:[]});
+  }
   // Keep map centered on the business that was open so user doesn't lose their spot
   if (lastSelectedBiz && lastSelectedBiz.lat && lastSelectedBiz.lon) {
     map.easeTo({center:[lastSelectedBiz.lon, lastSelectedBiz.lat], zoom:16, duration:300});
