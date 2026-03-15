@@ -1018,7 +1018,6 @@ function startLocationTracking() {
     console.warn('Geolocation error:', err.message);
   }, { enableHighAccuracy:true, maximumAge:3000, timeout:10000 });
 }
-}
 
 function renderPins() {
   if (!map.isStyleLoaded()) { map.once('load', renderPins); return; }
