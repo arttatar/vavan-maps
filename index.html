@@ -2732,9 +2732,9 @@ function renderDetailPanel(b) {
     var dotColor = active ? (isWon ? '#059669' : stageColor) : 'var(--border)';
     var bgColor  = active ? dotColor : '#fff';
     var label    = s === 'Lead Captured'?'Lead':s==='Qualified'?'Qualified':s==='Fact-Finding'?'Fact-Find':s==='Proposal Sent'?'Proposal':s==='Credit Application'?'Credit':'Won ✓';
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;" onclick="setDetailStage(\''+s.replace(/'/g,"\\'")+'\')" title="'+s+'">'+
-      '<div style="width:14px;height:14px;border-radius:50%;border:2px solid '+dotColor+';background:'+bgColor+';transition:all .2s;flex-shrink:0;"></div>'+
-      '<div style="font-size:9px;font-weight:600;color:'+(active?stageColor:'var(--muted)')+';white-space:nowrap;max-width:40px;text-align:center;line-height:1.2;">'+label+'</div>'+
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;position:relative;z-index:1;" onclick="setDetailStage(\''+s.replace(/'/g,"\\'")+'\')" title="'+s+'">'+
+      '<div style="width:16px;height:16px;border-radius:50%;border:2px solid '+dotColor+';background:'+bgColor+';transition:all .2s;flex-shrink:0;box-shadow:0 0 0 2px #fff;"></div>'+
+      '<div style="font-size:9px;font-weight:600;color:'+(active?stageColor:'var(--muted)')+';white-space:nowrap;text-align:center;line-height:1.2;">'+label+'</div>'+
     '</div>';
   }).join('');
 
@@ -2747,14 +2747,20 @@ function renderDetailPanel(b) {
       '</div>'+
       // Pipeline stage slider under name
       '<div style="margin:8px 0 10px;">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
           '<span style="font-size:11px;color:var(--muted);font-weight:500;">Pipeline Stage</span>'+
           '<span style="font-size:12px;font-weight:700;color:'+stageColor+'">'+stage+'</span>'+
         '</div>'+
-        '<div style="position:relative;height:4px;background:var(--paper2);border-radius:2px;margin-bottom:10px;">'+
-          '<div style="position:absolute;left:0;top:0;height:100%;width:'+stagePct+'%;background:'+stageColor+';border-radius:2px;transition:width .3s;"></div>'+
+        '<div style="position:relative;padding-bottom:22px;">'+
+          // Track behind dots
+          '<div style="position:absolute;left:0;right:0;top:8px;height:4px;background:var(--paper2);border-radius:2px;">'+
+            '<div style="position:absolute;left:0;top:0;height:100%;width:'+stagePct+'%;background:'+stageColor+';border-radius:2px;transition:width .3s;"></div>'+
+          '</div>'+
+          // Dots on top of track
+          '<div style="position:relative;display:flex;justify-content:space-between;">'+
+            pipeDotsHtml+
+          '</div>'+
         '</div>'+
-        '<div style="display:flex;justify-content:space-between;">'+pipeDotsHtml+'</div>'+
       '</div>'+
       '<div class="det-badges">'+
         '<span class="status-badge '+statusClass(status)+'">'+status+'</span>'+
