@@ -1656,10 +1656,7 @@ function selectBiz(idx) {
   var lbl = s>=80?'High Opportunity':s>=65?'Medium Opportunity':'Standard Prospect';
   document.getElementById('det-body').innerHTML =
     '<div style="font-size:11px;font-weight:600;color:#fff;background:'+color+';padding:3px 10px;border-radius:100px;display:inline-block;margin-bottom:.75rem">'+(b.industry||'Business')+' · '+(b.market||'Las Vegas')+'</div>'+
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;">'+
-      '<div class="dname" style="margin-bottom:0">'+b.name+'</div>'+
-      '<button onclick="showRelated('+idx+')" style="flex-shrink:0;margin-left:10px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600;font-family:\'Inter\',sans-serif;cursor:pointer;white-space:nowrap;">⬡ Related</button>'+
-    '</div>'+
+    '<div class="dname">'+b.name+'</div>'+
     (function(){
       var stage = b.pipeline_stage||'';
       if (!stage) return '<div class="pipeline-badge pipe-lead">● Lead Captured</div>';
