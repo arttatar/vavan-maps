@@ -844,7 +844,7 @@ async function loadData() {
 
 function initMap() {
   // Start at user location if available, otherwise Las Vegas
-map = new mapboxgl.Map({ container:'map', style:'mapbox://styles/mapbox/dark-v11', center:[-115.1398,36.1699], zoom:10 });
+map = new mapboxgl.Map({ container:'map', style:'mapbox://styles/mapbox/dark-v11', center:[-115.1398, 36.1899], zoom:11 });
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(function(pos) {
     map.flyTo({ center:[pos.coords.longitude, pos.coords.latitude], zoom:12, speed:1.5 });
@@ -856,10 +856,10 @@ if (navigator.geolocation) {
   map.on('draw.create', onDraw);
   map.on('click', onMapClick);
   map.on('load', function() {
-  startLocationTracking();
-  initDragDismiss();
-  addHQMarker();
-});
+    startLocationTracking();
+    initDragDismiss();
+    setTimeout(addHQMarker, 500); // slight delay ensures map is fully ready
+  });
 
 // Refresh list as map moves — shows only what's visible
 map.on('moveend', function() {
@@ -917,42 +917,38 @@ function addDragDismiss(panelId, closeFn) {
 function addHQMarker() {
   var el = document.createElement('div');
   el.style.cssText = [
-    'width:36px','height:36px',
+    'width:44px','height:44px',
     'display:flex','align-items:center','justify-content:center',
-    'cursor:pointer','position:relative'
+    'cursor:pointer','position:relative','z-index:999'
   ].join(';');
 
-  // Outer glow ring
   el.innerHTML = [
-    '<div style="position:absolute;width:36px;height:36px;border-radius:50%;',
-      'background:rgba(255,200,0,0.18);border:2px solid rgba(255,200,0,0.4);',
+    '<div style="position:absolute;width:44px;height:44px;border-radius:50%;',
+      'background:rgba(255,200,0,0.25);border:2px solid rgba(255,200,0,0.6);',
       'animation:hq-pulse 2s ease-in-out infinite;"></div>',
-    // Star SVG
-    '<svg width="22" height="22" viewBox="0 0 24 24" fill="#FFD700" ',
+    '<svg width="28" height="28" viewBox="0 0 24 24" fill="#FFD700" ',
       'xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;',
-      'filter:drop-shadow(0 0 4px rgba(255,200,0,0.8))">',
+      'filter:drop-shadow(0 0 6px rgba(255,200,0,1)) drop-shadow(0 0 12px rgba(255,200,0,0.6))">',
       '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
     '</svg>'
   ].join('');
 
-  // Add pulse animation if not already added
   if (!document.getElementById('hq-style')) {
     var style = document.createElement('style');
     style.id = 'hq-style';
-    style.textContent = '@keyframes hq-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.4);opacity:.2}}';
+    style.textContent = '@keyframes hq-pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.5);opacity:.2}}';
     document.head.appendChild(style);
   }
 
-  // Tooltip on tap/hover
-  el.title = 'InterState Oil Company | Las Vegas HQ';
   el.addEventListener('click', function() {
-    var popup = new mapboxgl.Popup({offset:20, closeButton:true, closeOnClick:false})
+    new mapboxgl.Popup({offset:24, closeButton:true, closeOnClick:false})
       .setLngLat([-115.124750, 36.229203])
       .setHTML([
         '<div style="font-family:Inter,sans-serif;padding:4px 2px;">',
-          '<div style="font-size:11px;font-weight:700;color:#FFD700;margin-bottom:2px;">★ HQ</div>',
+          '<div style="font-size:11px;font-weight:700;color:#FFD700;margin-bottom:2px;letter-spacing:.05em">★ HQ</div>',
           '<div style="font-size:13px;font-weight:700;color:#0d0d14;line-height:1.3;">InterState Oil Company</div>',
-          '<div style="font-size:11px;color:#6b6880;margin-top:3px;">3840 N Bruce St<br>North Las Vegas, NV 89030</div>',
+          '<div style="font-size:11px;color:#888;margin-top:2px;">Las Vegas</div>',
+          '<div style="font-size:11px;color:#6b6880;margin-top:4px;">3840 N Bruce St<br>North Las Vegas, NV 89030</div>',
           '<a href="https://www.google.com/maps/search/3840+N+Bruce+St+North+Las+Vegas+NV" target="_blank" ',
             'style="font-size:11px;color:#4285F4;text-decoration:none;display:block;margin-top:6px;">🔗 View on Google Maps</a>',
         '</div>'
