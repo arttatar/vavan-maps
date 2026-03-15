@@ -1128,10 +1128,9 @@ document.querySelectorAll('.ind-opt').forEach(function(opt) {
   opt.addEventListener('click', function() {
     var val = this.dataset.val;
     if (val === 'all') {
-      // Clear all — "All Industries" means no filter
-      selectedIndustries = [];
-      document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
-      this.classList.add('on');
+      // Select all industries
+      selectedIndustries = Object.keys(IND_LABELS);
+      document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.add('on'); });
     } else {
       document.querySelector('.ind-opt[data-val="all"]').classList.remove('on');
       var idx = selectedIndustries.indexOf(val);
@@ -1143,6 +1142,14 @@ document.querySelectorAll('.ind-opt').forEach(function(opt) {
   });
 });
 
+// Industry label map — clean names without dot spans
+var IND_LABELS = {
+  Automotive:'Automotive', Agribusiness:'Agribusiness', Transport:'Transportation',
+  Construction:'Infrastructure', Industrial:'Industrial', Services:'Services Business',
+  Hospitality:'Hospitality & Leisure', Government:'Government & Institutions',
+  Energy:'Energy, Utilities & Environmental', RealEstate:'Real Estate', Competitors:'Competitors'
+};
+
 function renderIndTags() {
   var display = document.getElementById('ind-display');
   display.innerHTML = '';
@@ -1152,17 +1159,39 @@ function renderIndTags() {
     ph.style.color = 'var(--muted)';
     ph.textContent = 'Industry';
     display.appendChild(ph);
+  } else if (selectedIndustries.length === Object.keys(IND_LABELS).length) {
+    // All selected — show single "All Industries" tag
+    var tag = document.createElement('span');
+    tag.className = 'ind-tag';
+    tag.textContent = 'All Industries';
+    var x = document.createElement('span');
+    x.className = 'tx'; x.textContent = ' x';
+    x.addEventListener('click', function(e) {
+      e.stopPropagation();
+      selectedIndustries = [];
+      document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
+      filters.industry = 'all';
+      renderIndTags();
+      renderSubDropdown(); renderSubTags();
+    });
+    tag.appendChild(x);
+    display.appendChild(tag);
   } else {
     selectedIndustries.forEach(function(v) {
-      var optEl = document.querySelector('.ind-opt[data-val="' + v + '"]');
-      var label = optEl ? optEl.textContent : v;
+      var label = IND_LABELS[v] || v;
+      var color = IND_COLORS[v] || IND_DEFAULT;
       var tag = document.createElement('span');
       tag.className = 'ind-tag';
-      tag.textContent = label;
+      tag.style.borderColor = color;
+      tag.style.color = color;
+      tag.style.background = color + '18';
+      // dot + label
+      var dot = document.createElement('span');
+      dot.style.cssText = 'display:inline-block;width:7px;height:7px;border-radius:50%;background:'+color+';margin-right:4px;flex-shrink:0;';
+      tag.appendChild(dot);
+      tag.appendChild(document.createTextNode(label));
       var x = document.createElement('span');
-      x.className = 'tx';
-      x.textContent = ' x';
-      x.setAttribute('data-val', v);
+      x.className = 'tx'; x.textContent = ' x'; x.setAttribute('data-val', v);
       x.addEventListener('click', function(e) { removeInd(e, this.getAttribute('data-val')); });
       tag.appendChild(x);
       display.appendChild(tag);
@@ -1627,7 +1656,10 @@ function selectBiz(idx) {
   var lbl = s>=80?'High Opportunity':s>=65?'Medium Opportunity':'Standard Prospect';
   document.getElementById('det-body').innerHTML =
     '<div style="font-size:11px;font-weight:600;color:#fff;background:'+color+';padding:3px 10px;border-radius:100px;display:inline-block;margin-bottom:.75rem">'+(b.industry||'Business')+' · '+(b.market||'Las Vegas')+'</div>'+
-    '<div class="dname">'+b.name+'</div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;">'+
+      '<div class="dname" style="margin-bottom:0">'+b.name+'</div>'+
+      '<button onclick="showRelated('+idx+')" style="flex-shrink:0;margin-left:10px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600;font-family:\'Inter\',sans-serif;cursor:pointer;white-space:nowrap;">⬡ Related</button>'+
+    '</div>'+
     (function(){
       var stage = b.pipeline_stage||'';
       if (!stage) return '<div class="pipeline-badge pipe-lead">● Lead Captured</div>';
@@ -1655,6 +1687,79 @@ function closeDetail() {
     map.easeTo({center:[lastSelectedBiz.lon, lastSelectedBiz.lat], zoom:16, duration:300});
   }
 }
+
+// ── RELATED BUSINESSES ──
+// Words to strip when extracting core brand name
+var STOP_WORDS = /\b(inc|llc|ltd|corp|co|company|group|services|service|solutions|enterprises|enterprise|management|mgmt|properties|property|holdings|partners|associates|consulting|the|of|and|&|a|at|by|for|in|on)\b/gi;
+
+function getCoreKeywords(name) {
+  var clean = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')  // remove punctuation
+    .replace(STOP_WORDS, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Return words longer than 2 chars
+  return clean.split(' ').filter(function(w){ return w.length > 2; });
+}
+
+function showRelated(idx) {
+  var b = allData[idx]; if (!b) return;
+  var keywords = getCoreKeywords(b.name||'');
+  if (!keywords.length) return;
+
+  // Find businesses that share at least one core keyword
+  var source = allData.filter(function(r){
+    if (r === b) return false; // exclude self
+    if (!r.lat || !r.lon) return false;
+    var rName = (r.name||'').toLowerCase();
+    return keywords.some(function(kw){ return rName.indexOf(kw) > -1; });
+  });
+
+  if (!source.length) {
+    alert('No related businesses found for "' + b.name + '"');
+    return;
+  }
+
+  // Show on map
+  if (map.getSource('biz')) {
+    map.getSource('biz').setData({ type:'FeatureCollection', features: source.map(function(r){
+      return {type:'Feature',geometry:{type:'Point',coordinates:[r.lon,r.lat]},
+        properties:Object.assign({},r,{idx:allData.indexOf(r),score:r.score||calcScore(r)})};
+    })});
+  }
+
+  // Show in list
+  filteredData = source;
+  filtersApplied = true;
+  updateFabCount();
+
+  // Close detail and open list
+  closeDetail();
+  setTimeout(function(){
+    // Fit map to show all related dots
+    if (source.length > 1) {
+      var lngs = source.map(function(r){ return r.lon; });
+      var lats = source.map(function(r){ return r.lat; });
+      map.fitBounds([
+        [Math.min.apply(null,lngs)-0.01, Math.min.apply(null,lats)-0.01],
+        [Math.max.apply(null,lngs)+0.01, Math.max.apply(null,lats)+0.01]
+      ], {padding:60, maxZoom:14});
+    }
+    openResults();
+    // Update results title to show context
+    var titleEl = document.querySelector('#results-panel .sheet-title');
+    if (titleEl) titleEl.textContent = 'Related: ' + (b.name||'');
+  }, 300);
+}
+
+// Reset results title when closing
+var _origCloseResults = closeResults;
+closeResults = function() {
+  _origCloseResults();
+  var titleEl = document.querySelector('#results-panel .sheet-title');
+  if (titleEl) titleEl.textContent = 'Results';
+};
 
 // ── AREA TOOLS ──
 function activateTool(t) {
