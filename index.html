@@ -1320,7 +1320,7 @@ function renderPins() {
       type:'FeatureCollection',
       features: valid.map(function(b){
         return {type:'Feature', geometry:{type:'Point', coordinates:[b.lon,b.lat]},
-          properties:Object.assign({}, b, {_id:b._id, score:b.score||calcScore(b)})};
+          properties:{_id:b._id, industry:b.industry||'', is_competitor:b.is_competitor||false, score:b.score||calcScore(b)}};
       })
     });
     document.getElementById('pcount').textContent = allData.length.toLocaleString();
@@ -1333,7 +1333,7 @@ function renderPins() {
   map.addSource('biz', { type:'geojson', cluster:true, clusterMaxZoom:13, clusterRadius:40,
     data:{ type:'FeatureCollection', features: valid.map(function(b){
       return {type:'Feature', geometry:{type:'Point', coordinates:[b.lon,b.lat]},
-        properties:Object.assign({}, b, {_id:b._id, score:b.score||calcScore(b)})};
+        properties:{_id:b._id, industry:b.industry||'', is_competitor:b.is_competitor||false, score:b.score||calcScore(b)}};
     })}
   });
   map.addLayer({ id:'biz-cl', type:'circle', source:'biz', filter:['has','point_count'], paint:{'circle-color':'#4a36c8','circle-radius':['step',['get','point_count'],16,10,22,50,28],'circle-opacity':.85} });
@@ -1989,7 +1989,7 @@ function applyFilters() {
   // Update map pins to show only filtered results
   if (map && map.getSource('biz')) {
     map.getSource('biz').setData({ type:'FeatureCollection', features: data.map(function(b){
-      return {type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:Object.assign({},b,{_id:b._id,score:b.score||calcScore(b)})};
+      return {type:'Feature',geometry:{type:'Point',coordinates:[b.lon,b.lat]},properties:{_id:b._id, industry:b.industry||'', is_competitor:b.is_competitor||false, score:b.score||calcScore(b)}};
     }) });
   }
   document.getElementById('pcount').textContent = data.length.toLocaleString() + ' matched';
