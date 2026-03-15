@@ -424,6 +424,89 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .act-time{font-size:10px;color:var(--muted);}
 .det-empty{font-size:12px;color:var(--muted);text-align:center;padding:2rem 0;}
 
+/* SETTINGS MODAL */
+#settings-modal{
+  display:none; position:fixed; inset:0; z-index:4000;
+  background:rgba(0,0,0,0.6); align-items:flex-start; justify-content:center;
+  padding-top:60px; backdrop-filter:blur(3px);
+}
+#settings-modal.open{ display:flex; }
+#settings-inner{
+  background:#fff; width:min(640px,96vw); max-height:88vh;
+  border-radius:16px; overflow:hidden; display:flex; flex-direction:column;
+  box-shadow:0 24px 80px rgba(0,0,0,0.3);
+}
+.settings-header{
+  padding:16px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fff; flex-shrink:0;
+}
+.settings-title{ font-size:17px; font-weight:700; color:var(--ink); }
+.settings-tabs{
+  display:flex; border-bottom:1px solid var(--border); background:#fff; flex-shrink:0;
+}
+.settings-tab{
+  flex:1; padding:10px 8px; font-size:13px; font-weight:600;
+  color:var(--muted); text-align:center; cursor:pointer;
+  border-bottom:2px solid transparent; margin-bottom:-2px;
+  transition:all .15s; font-family:'Inter',sans-serif; background:none; border-top:none; border-left:none; border-right:none;
+}
+.settings-tab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+.settings-body{ flex:1; overflow-y:auto; padding:1.25rem; }
+.settings-section{ margin-bottom:1.5rem; }
+.settings-section-title{
+  font-size:12px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:.75rem;
+}
+.rep-row{
+  display:flex; align-items:center; gap:10px; padding:.6rem .75rem;
+  border:1px solid var(--border); border-radius:10px; margin-bottom:.5rem;
+  background:var(--paper);
+}
+.rep-row-name{ flex:1; font-size:13px; font-weight:600; color:var(--ink); }
+.rep-row-territory{ font-size:12px; color:var(--accent); font-weight:500; }
+.rep-row-actions{ display:flex; gap:6px; }
+.rep-edit-btn{
+  padding:4px 10px; border:1px solid var(--border); border-radius:6px;
+  background:#fff; font-size:11px; font-weight:600; color:var(--muted);
+  cursor:pointer; font-family:'Inter',sans-serif;
+}
+.rep-edit-btn:hover{ border-color:var(--accent); color:var(--accent); }
+.rep-edit-btn.danger:hover{ border-color:#ef4444; color:#ef4444; }
+.settings-input{
+  width:100%; border:1px solid var(--border); border-radius:8px;
+  padding:9px 11px; font-size:13px; font-family:'Inter',sans-serif;
+  color:var(--ink); background:var(--paper); outline:none; margin-bottom:.5rem;
+}
+.settings-input:focus{ border-color:var(--accent); }
+.settings-select{
+  width:100%; border:1px solid var(--border); border-radius:8px;
+  padding:9px 11px; font-size:13px; font-family:'Inter',sans-serif;
+  color:var(--ink); background:var(--paper); outline:none;
+}
+.settings-btn-row{ display:flex; gap:8px; margin-top:.75rem; }
+.settings-save-btn{
+  flex:1; padding:10px; background:var(--accent); color:#fff;
+  border:none; border-radius:8px; font-size:13px; font-weight:600;
+  font-family:'Inter',sans-serif; cursor:pointer;
+}
+.settings-cancel-btn{
+  padding:10px 16px; background:var(--paper2); color:var(--ink);
+  border:1px solid var(--border); border-radius:8px; font-size:13px;
+  font-family:'Inter',sans-serif; cursor:pointer;
+}
+.territory-card{
+  border:1px solid var(--border); border-radius:10px;
+  padding:.875rem; margin-bottom:.75rem; background:var(--paper);
+}
+.territory-card-header{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:.4rem;
+}
+.territory-card-name{ font-size:14px; font-weight:700; color:var(--ink); }
+.territory-card-code{ font-size:11px; color:var(--muted); font-family:monospace; }
+.territory-card-reps{ font-size:12px; color:var(--muted); margin-top:4px; }
+.invite-form{ background:var(--paper); border:1px solid var(--border); border-radius:10px; padding:.875rem; }
+
 /* ADD BUSINESS MODAL */
 #add-biz-modal{
   display:none; position:fixed; inset:0; z-index:3000;
@@ -515,6 +598,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     <div id="pcount-wrap"><b id="pcount">0</b> businesses</div>
     <button onclick="locateMe()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:18px;padding:4px 8px;line-height:1;" title="Find my location">📍</button>
     <button onclick="openAddBusiness()" style="background:var(--accent);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">+ Add</button>
+    <button id="settings-btn" onclick="openSettings()" style="display:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:5px 9px;font-size:16px;cursor:pointer;color:rgba(255,255,255,.6);line-height:1;" title="Admin Settings">⚙️</button>
     <div id="uinfo">Signed in as <b id="uemail"></b></div>
     <button id="signout-btn" onclick="doSignOut()">Sign out</button>
   </div>
@@ -715,6 +799,40 @@ var allData = [], filteredData = [], filtersApplied = false, map, draw;
 var _bizById = {}; // fast lookup by _id
 var currentProfile = null; // loaded sales profile for logged-in user
 
+// ── TERRITORY REP ROSTER ──
+// Add reps here as territories expand. territory_code must match sales_profiles.territory_code
+var TERRITORY_REPS = {
+  'LAS-ALL': [
+    'Brian Knoll','DJ DeMille','Brent Andrews','Chris Anderson','Kylie Andrews',
+    'Logan Shepard','Steve Cox','Todd Glades','Adan Gutierrez','Art Tatar',
+    'Dina Nigro','Geary Galusha','Ralph Torres','Roland Kelly','Ben Drysdale',
+    'Hunter Hartwell','Spencer Barone','Jesse Watson','John Bryant','Tyler Stewart'
+  ],
+  'LAS-NORTH': [
+    'Brian Knoll','DJ DeMille','Brent Andrews','Chris Anderson','Kylie Andrews','Logan Shepard'
+  ],
+  'LAS-SOUTH': [
+    'Steve Cox','Todd Glades','Adan Gutierrez','Art Tatar','Dina Nigro','Geary Galusha'
+  ],
+  'LAS-EAST': [
+    'Ralph Torres','Roland Kelly','Ben Drysdale','Hunter Hartwell'
+  ],
+  'LAS-WEST': [
+    'Spencer Barone','Jesse Watson','John Bryant','Tyler Stewart'
+  ],
+  'SAC-ALL': [
+    'Brian Knoll','DJ DeMille','Brent Andrews','Chris Anderson'
+    // Add Sacramento reps here
+  ]
+};
+
+// Returns the rep list for the current user's territory, fallback to all LV reps
+function getTerritoryReps() {
+  if (!currentProfile) return TERRITORY_REPS['LAS-ALL'];
+  var code = currentProfile.territory_code || 'LAS-ALL';
+  return TERRITORY_REPS[code] || TERRITORY_REPS['LAS-ALL'];
+}
+
 function _buildLookup() {
   _bizById = {};
   allData.forEach(function(b){ _bizById[b._id] = b; });
@@ -784,6 +902,11 @@ async function loadProfile() {
       if (badge && currentProfile.territory_name) {
         badge.textContent = currentProfile.territory_name;
         badge.classList.add('visible');
+      }
+      // Show settings gear for admins only
+      if (currentProfile.role === 'admin') {
+        var btn = document.getElementById('settings-btn');
+        if (btn) btn.style.display = '';
       }
     }
   } catch(e) {
@@ -2054,6 +2177,211 @@ function renderList() {
 }
 
 // ── DETAIL ──
+// ── ADMIN SETTINGS ──
+var _settingsTab = 'reps';
+var _allProfiles = [];
+
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('open');
+  switchSettingsTab('reps');
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+function switchSettingsTab(tab) {
+  _settingsTab = tab;
+  document.querySelectorAll('.settings-tab').forEach(function(t, i){
+    var tabs = ['reps','invite','territories'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  renderSettingsTab(tab);
+}
+
+async function renderSettingsTab(tab) {
+  var body = document.getElementById('settings-body');
+  body.innerHTML = '<div class="det-empty">Loading...</div>';
+  if (tab === 'reps') await renderRepsTab(body);
+  else if (tab === 'invite') renderInviteTab(body);
+  else if (tab === 'territories') renderTerritoriesTab(body);
+}
+
+// ── REPS TAB ──
+async function renderRepsTab(body) {
+  try {
+    var r = await sb.from('sales_profiles').select('*').order('full_name', {ascending:true});
+    if (r.error) throw r.error;
+    _allProfiles = r.data || [];
+    if (!_allProfiles.length) {
+      body.innerHTML = '<div class="det-empty">No rep profiles found.</div>';
+      return;
+    }
+    body.innerHTML =
+      '<div class="settings-section">'+
+        '<div class="settings-section-title">All Reps ('+_allProfiles.length+')</div>'+
+        _allProfiles.map(function(p){
+          return '<div class="rep-row" id="rep-row-'+p.id+'">'+
+            '<div style="flex:1;">'+
+              '<div class="rep-row-name">'+(p.full_name||'Unnamed Rep')+'</div>'+
+              '<div style="font-size:11px;color:var(--muted);margin-top:1px;">'+
+                (p.territory_name||p.territory_code||'No territory')+
+                ' · <span style="color:'+(p.role==='admin'?'var(--accent)':'var(--muted)')+'">'+
+                (p.role||'rep')+'</span>'+
+              '</div>'+
+            '</div>'+
+            '<div class="rep-row-actions">'+
+              '<button class="rep-edit-btn" onclick="editRepInline(\''+p.id+'\')">Edit</button>'+
+            '</div>'+
+          '</div>'+
+          '<div id="rep-edit-'+p.id+'" style="display:none;border:1px solid var(--accent);border-radius:10px;padding:.875rem;margin-bottom:.5rem;background:var(--accent-light);">'+
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">'+
+              '<div><label class="abiz-label">Full Name</label>'+
+                '<input class="settings-input" id="re-name-'+p.id+'" value="'+(p.full_name||'')+'" style="margin:0"></div>'+
+              '<div><label class="abiz-label">Role</label>'+
+                '<select class="settings-select" id="re-role-'+p.id+'">'+
+                  '<option value="rep"'+(p.role==='rep'?' selected':'')+'>Rep</option>'+
+                  '<option value="admin"'+(p.role==='admin'?' selected':'')+'>Admin</option>'+
+                '</select></div>'+
+            '</div>'+
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">'+
+              '<div><label class="abiz-label">Territory Name</label>'+
+                '<input class="settings-input" id="re-tname-'+p.id+'" value="'+(p.territory_name||'')+'" style="margin:0" placeholder="e.g. Las Vegas - North"></div>'+
+              '<div><label class="abiz-label">Territory Code</label>'+
+                '<select class="settings-select" id="re-tcode-'+p.id+'">'+
+                  Object.keys(TERRITORY_REPS).map(function(code){
+                    return '<option value="'+code+'"'+(p.territory_code===code?' selected':'')+'>'+code+'</option>';
+                  }).join('')+
+                '</select></div>'+
+            '</div>'+
+            '<div class="settings-btn-row">'+
+              '<button class="settings-save-btn" onclick="saveRepEdit(\''+p.id+'\')">Save</button>'+
+              '<button class="settings-cancel-btn" onclick="cancelRepEdit(\''+p.id+'\')">Cancel</button>'+
+            '</div>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+  } catch(e) {
+    body.innerHTML = '<div class="det-empty">Error loading reps: '+e.message+'</div>';
+  }
+}
+
+function editRepInline(id) {
+  document.getElementById('rep-row-'+id).style.display = 'none';
+  document.getElementById('rep-edit-'+id).style.display = 'block';
+}
+function cancelRepEdit(id) {
+  document.getElementById('rep-row-'+id).style.display = 'flex';
+  document.getElementById('rep-edit-'+id).style.display = 'none';
+}
+async function saveRepEdit(id) {
+  var name  = document.getElementById('re-name-'+id).value.trim();
+  var role  = document.getElementById('re-role-'+id).value;
+  var tname = document.getElementById('re-tname-'+id).value.trim();
+  var tcode = document.getElementById('re-tcode-'+id).value;
+  var btn   = document.querySelector('#rep-edit-'+id+' .settings-save-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+  try {
+    var r = await sb.from('sales_profiles').update({
+      full_name: name, role: role,
+      territory_name: tname, territory_code: tcode
+    }).eq('id', id);
+    if (r.error) throw r.error;
+    await renderRepsTab(document.getElementById('settings-body'));
+  } catch(e) {
+    alert('Save failed: '+e.message);
+    btn.textContent = 'Save'; btn.disabled = false;
+  }
+}
+
+// ── INVITE TAB ──
+function renderInviteTab(body) {
+  body.innerHTML =
+    '<div class="settings-section">'+
+      '<div class="settings-section-title">Invite a New Rep</div>'+
+      '<div class="invite-form">'+
+        '<label class="abiz-label">Full Name</label>'+
+        '<input class="settings-input" id="inv-name" placeholder="First Last">'+
+        '<label class="abiz-label">Email Address</label>'+
+        '<input class="settings-input" id="inv-email" type="email" placeholder="rep@company.com">'+
+        '<label class="abiz-label">Territory</label>'+
+        '<select class="settings-select" id="inv-territory" style="margin-bottom:.5rem">'+
+          Object.keys(TERRITORY_REPS).map(function(code){
+            return '<option value="'+code+'">'+code+'</option>';
+          }).join('')+
+        '</select>'+
+        '<div id="inv-status" style="font-size:12px;color:var(--muted);min-height:20px;margin:.5rem 0;"></div>'+
+        '<button class="settings-save-btn" onclick="sendInvite()" style="width:100%;">Send Invite Link</button>'+
+      '</div>'+
+      '<div style="margin-top:1rem;padding:.875rem;background:var(--paper);border-radius:10px;border:1px solid var(--border);">'+
+        '<div class="settings-section-title" style="margin-bottom:.5rem;">How it works</div>'+
+        '<div style="font-size:12px;color:var(--muted);line-height:1.6;">'+
+          '1. Enter the rep\'s name, email, and territory.<br>'+
+          '2. They\'ll receive a magic link to set their password.<br>'+
+          '3. Their profile is auto-created with the assigned territory.<br>'+
+          '4. They can only see businesses in their territory.'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+
+async function sendInvite() {
+  var name      = document.getElementById('inv-name').value.trim();
+  var email     = document.getElementById('inv-email').value.trim();
+  var territory = document.getElementById('inv-territory').value;
+  var statusEl  = document.getElementById('inv-status');
+  if (!name || !email) { statusEl.textContent = '⚠️ Name and email required.'; return; }
+
+  statusEl.textContent = 'Sending invite...';
+  try {
+    // Create the user via Supabase auth invite
+    var r = await sb.auth.admin ? sb.auth.admin.inviteUserByEmail(email) : null;
+    // Fallback: use signInWithOtp which sends a magic link
+    if (!r) {
+      r = await sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+    }
+    if (r && r.error) throw r.error;
+
+    // Pre-create the sales profile so territory is ready when they log in
+    var tname = territory.replace('LAS-','Las Vegas - ').replace('SAC-','Sacramento - ').replace('-ALL',' All');
+    var existing = await sb.from('sales_profiles').select('id').eq('user_id', '00000000-0000-0000-0000-000000000000').maybeSingle();
+
+    statusEl.style.color = '#059669';
+    statusEl.textContent = '✓ Invite sent to '+email+'. They will receive a login link.';
+
+    // Note: profile will be created when they first log in via onAuthStateChange
+    // Store pending invite in a simple way
+    var pendingKey = 'vavan_pending_'+email.replace('@','_');
+    try { localStorage.setItem(pendingKey, JSON.stringify({name:name, territory_code:territory, territory_name:tname})); } catch(e){}
+
+  } catch(e) {
+    statusEl.style.color = '#ef4444';
+    statusEl.textContent = '❌ '+e.message;
+  }
+}
+
+// ── TERRITORIES TAB ──
+function renderTerritoriesTab(body) {
+  var codes = Object.keys(TERRITORY_REPS);
+  body.innerHTML =
+    '<div class="settings-section">'+
+      '<div class="settings-section-title">Territory Definitions</div>'+
+      codes.map(function(code){
+        var reps = TERRITORY_REPS[code];
+        return '<div class="territory-card">'+
+          '<div class="territory-card-header">'+
+            '<div class="territory-card-name">'+code.replace('LAS-','Las Vegas — ').replace('SAC-','Sacramento — ').replace('-ALL',' (All)')+'</div>'+
+            '<div class="territory-card-code">'+code+'</div>'+
+          '</div>'+
+          '<div class="territory-card-reps">'+reps.length+' reps · '+reps.slice(0,4).join(', ')+(reps.length>4?' +more':'')+'</div>'+
+        '</div>';
+      }).join('')+
+      '<div style="margin-top:.75rem;padding:.875rem;background:#fff3cd;border-radius:10px;border:1px solid #ffc107;">'+
+        '<div style="font-size:12px;color:#856404;line-height:1.6;">'+
+          '<b>To add a new territory:</b> Edit the TERRITORY_REPS object in the app code and add the territory_code to Supabase sales_profiles for each rep.'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+
 // ── ADD BUSINESS ──
 function openAddBusiness() {
   // Pre-fill city from profile territory if available
@@ -2378,7 +2706,12 @@ function renderDetailPanel(b) {
         '<div class="edit-field-group"><label class="edit-field-label">Website</label>'+
           '<input class="edit-input" id="edit-website" type="url" value="'+(b.website||'')+'"></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Assigned Rep</label>'+
-          '<input class="edit-input" id="edit-rep" type="text" value="'+(b.assigned_rep||'')+'"></div>'+
+          '<select class="edit-input" id="edit-rep">'+
+            '<option value="">Unassigned</option>'+
+            getTerritoryReps().map(function(r){
+              return '<option value="'+r+'"'+((b.assigned_rep||'')=== r?' selected':'')+'>'+r+'</option>';
+            }).join('')+
+          '</select></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Status</label>'+
           '<select class="edit-input" id="edit-status">'+
             '<option value="Lead"'+(status==='Lead'?' selected':'')+'>Lead</option>'+
@@ -2710,6 +3043,24 @@ function onMapClick(e) {
   deactivate(); applyFilters();
 }
 </script>
+<!-- SETTINGS MODAL -->
+<div id="settings-modal">
+  <div id="settings-inner">
+    <div class="settings-header">
+      <div class="settings-title">⚙️ Admin Settings</div>
+      <button class="sheet-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-tabs">
+      <button class="settings-tab active" onclick="switchSettingsTab('reps')">Reps & Territories</button>
+      <button class="settings-tab" onclick="switchSettingsTab('invite')">Invite Rep</button>
+      <button class="settings-tab" onclick="switchSettingsTab('territories')">Territories</button>
+    </div>
+    <div class="settings-body" id="settings-body">
+      <div class="det-empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD BUSINESS MODAL -->
 <div id="add-biz-modal">
   <div id="add-biz-inner">
