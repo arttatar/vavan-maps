@@ -562,33 +562,8 @@ async function doLogin() {
 async function doSignOut() { await sb.auth.signOut(); location.reload(); }
 
 // Handle magic link / password reset tokens in URL hash
-(async function handleAuthHash() {
-  var hash = window.location.hash;
-  if (hash && hash.indexOf('access_token') > -1) {
-    try {
-      var r = await sb.auth.getSession();
-      if (r.data && r.data.session) {
-        window.history.replaceState(null, '', window.location.pathname);
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('uemail').textContent = r.data.session.user.email.split('@')[0];
-        startApp();
-        return;
-      }
-    } catch(e) {}
-  }
-})();
-
-sb.auth.getSession().then(function(r) {
-  if (r.data && r.data.session) {
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('uemail').textContent = r.data.session.user.email.split('@')[0];
-    startApp();
-  }
-});
-
-// Listen for auth state changes (catches magic link sign-in)
 sb.auth.onAuthStateChange(function(event, session) {
-  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session) {
+  if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
     var loginScreen = document.getElementById('login-screen');
     if (loginScreen && !loginScreen.classList.contains('hidden')) {
       window.history.replaceState(null, '', window.location.pathname);
@@ -596,6 +571,14 @@ sb.auth.onAuthStateChange(function(event, session) {
       document.getElementById('uemail').textContent = session.user.email.split('@')[0];
       startApp();
     }
+  }
+});
+
+sb.auth.getSession().then(function(r) {
+  if (r.data && r.data.session) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('uemail').textContent = r.data.session.user.email.split('@')[0];
+    startApp();
   }
 });
 
