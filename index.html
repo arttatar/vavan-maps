@@ -558,6 +558,25 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 
 
+/* Pipeline stage slider */
+.pipe-dot{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;position:relative;}
+.pipe-dot-circle{
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid var(--border);background:#fff;
+  transition:all .15s;flex-shrink:0;
+}
+.pipe-dot-circle.active{background:var(--accent);border-color:var(--accent);}
+.pipe-dot-circle.won{border-color:#059669;}
+.pipe-dot-circle.won.active{background:#059669;border-color:#059669;}
+.pipe-dot:hover .pipe-dot-circle{border-color:var(--accent);}
+.pipe-dot-label{
+  font-size:9px;font-weight:600;color:var(--muted);
+  white-space:nowrap;text-align:center;
+  max-width:42px;line-height:1.2;
+}
+.pipe-dot.active .pipe-dot-label{color:var(--accent);}
+.pipe-dot.active.won-stage .pipe-dot-label{color:#059669;}
+
 /* LOADER */
 #loader{position:fixed;inset:0;z-index:8000;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
 #loader.hidden{display:none;}
@@ -685,15 +704,49 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- PIPELINE STAGE -->
       <div class="sb-sec">
         <div class="sb-title">Pipeline Stage</div>
-        <select class="sinput" id="s-pipeline" onchange="filters.pipeline=this.value">
-          <option value="all">All Stages</option>
-          <option value="Lead Captured">Lead Captured</option>
-          <option value="Qualified">Qualified</option>
-          <option value="Fact-Finding">Fact-Finding</option>
-          <option value="Proposal Sent">Proposal Sent</option>
-          <option value="Credit Application">Credit Application</option>
-          <option value="Won Opportunity">Won Opportunity</option>
-        </select>
+        <div id="pipeline-slider-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:600;color:var(--accent)" id="pipe-stage-label">All Stages</span>
+            <span id="pipe-clear-btn" onclick="clearPipelineFilter()" style="display:none;font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;">Clear</span>
+          </div>
+          <!-- Stage track -->
+          <div style="position:relative;padding:0 0 28px;">
+            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:10px 0 0;">
+              <div id="pipe-track-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;transition:width .2s;width:0%"></div>
+            </div>
+            <!-- Stage dots -->
+            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;">
+              <div class="pipe-dot" data-stage="all" onclick="setPipelineStage('all',this)" title="All Stages">
+                <div class="pipe-dot-circle active"></div>
+                <div class="pipe-dot-label">All</div>
+              </div>
+              <div class="pipe-dot" data-stage="Lead Captured" onclick="setPipelineStage('Lead Captured',this)" title="Lead Captured">
+                <div class="pipe-dot-circle"></div>
+                <div class="pipe-dot-label">Lead</div>
+              </div>
+              <div class="pipe-dot" data-stage="Qualified" onclick="setPipelineStage('Qualified',this)" title="Qualified">
+                <div class="pipe-dot-circle"></div>
+                <div class="pipe-dot-label">Qualified</div>
+              </div>
+              <div class="pipe-dot" data-stage="Fact-Finding" onclick="setPipelineStage('Fact-Finding',this)" title="Fact-Finding">
+                <div class="pipe-dot-circle"></div>
+                <div class="pipe-dot-label">Fact-Find</div>
+              </div>
+              <div class="pipe-dot" data-stage="Proposal Sent" onclick="setPipelineStage('Proposal Sent',this)" title="Proposal Sent">
+                <div class="pipe-dot-circle"></div>
+                <div class="pipe-dot-label">Proposal</div>
+              </div>
+              <div class="pipe-dot" data-stage="Credit Application" onclick="setPipelineStage('Credit Application',this)" title="Credit Application">
+                <div class="pipe-dot-circle"></div>
+                <div class="pipe-dot-label">Credit</div>
+              </div>
+              <div class="pipe-dot" data-stage="Won Opportunity" onclick="setPipelineStage('Won Opportunity',this)" title="Won Opportunity">
+                <div class="pipe-dot-circle won"></div>
+                <div class="pipe-dot-label">Won ✓</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- STATUS -->
@@ -704,17 +757,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           <span class="pill" data-f="status" data-v="Lead" style="--pill-color:#4a36c8">Lead</span>
           <span class="pill green" data-f="status" data-v="Customer">Customer</span>
           <span class="pill" data-f="status" data-v="Lost Customer" style="color:#dc2626;border-color:#dc2626">Lost Customer</span>
-        </div>
-      </div>
-
-      <!-- OPPORTUNITY SCORE -->
-      <div class="sb-sec">
-        <div class="sb-title">Opportunity Score</div>
-        <div class="pills">
-          <span class="pill on" data-f="opp" data-v="all">All</span>
-          <span class="pill amber" data-f="opp" data-v="high">⭐ High (80+)</span>
-          <span class="pill" data-f="opp" data-v="med">Medium (65–79)</span>
-          <span class="pill" data-f="opp" data-v="low">Low (&lt;65)</span>
         </div>
       </div>
 
@@ -1663,12 +1705,74 @@ function openContactBusiness(bizId) {
   setTimeout(function(){ switchTab('contacts'); }, 350);
 }
 
+// ── PIPELINE SLIDER ──
+var PIPE_STAGES = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
+var PIPE_LABELS = {
+  'all':'All Stages',
+  'Lead Captured':'Lead Captured',
+  'Qualified':'Qualified',
+  'Fact-Finding':'Fact-Finding',
+  'Proposal Sent':'Proposal Sent',
+  'Credit Application':'Credit Application',
+  'Won Opportunity':'Won Opportunity ✓'
+};
+
+function setPipelineStage(stage, el) {
+  filters.pipeline = stage;
+
+  // Update all dot states
+  document.querySelectorAll('.pipe-dot').forEach(function(dot){
+    var s = dot.dataset.stage;
+    var circle = dot.querySelector('.pipe-dot-circle');
+    var isActive = (s === stage);
+    dot.classList.toggle('active', isActive);
+    if (isActive) {
+      circle.classList.add('active');
+      if (s === 'Won Opportunity') { circle.classList.add('won'); dot.classList.add('won-stage'); }
+    } else {
+      circle.classList.remove('active');
+    }
+  });
+
+  // Update label
+  var labelEl = document.getElementById('pipe-stage-label');
+  if (labelEl) labelEl.textContent = PIPE_LABELS[stage] || stage;
+
+  // Update track fill
+  var idx = PIPE_STAGES.indexOf(stage);
+  var pct = idx <= 0 ? 0 : ((idx) / (PIPE_STAGES.length - 1)) * 100;
+  var fill = document.getElementById('pipe-track-fill');
+  if (fill) fill.style.width = pct + '%';
+
+  // Show/hide clear button
+  var clearBtn = document.getElementById('pipe-clear-btn');
+  if (clearBtn) clearBtn.style.display = stage === 'all' ? 'none' : '';
+
+  // Color label based on stage
+  if (labelEl) {
+    var colors = {
+      'all':'var(--muted)',
+      'Lead Captured':'#4a36c8',
+      'Qualified':'#d97706',
+      'Fact-Finding':'#dc2626',
+      'Proposal Sent':'#16a34a',
+      'Credit Application':'#9333ea',
+      'Won Opportunity':'#059669'
+    };
+    labelEl.style.color = colors[stage] || 'var(--accent)';
+  }
+}
+
+function clearPipelineFilter() {
+  setPipelineStage('all', null);
+}
+
 function updateFilterBadge() {
   var parts = [];
   if (filters.industry !== 'all') parts.push(filters.industry);
-  if (filters.opp !== 'all') parts.push(filters.opp+' opp');
   if (filters.contact !== 'all') parts.push(filters.contact);
   if (filters.pipeline !== 'all') parts.push(filters.pipeline);
+  if (filters.status !== 'all') parts.push(filters.status);
   var q = document.getElementById('s-city').value.trim() || document.getElementById('s-name').value.trim();
   if (q) parts.push('"'+q+'"');
   var badge = document.getElementById('filter-badge');
@@ -3006,8 +3110,7 @@ function clearFilters() {
   filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all' };
   filtersApplied = false;
   filteredData = [];
-  var pipeEl = document.getElementById('s-pipeline');
-  if (pipeEl) pipeEl.value = 'all';
+  setPipelineStage('all', null); // reset slider
   selectedIndustries = [];
   selectedSubIndustries = [];
   document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
