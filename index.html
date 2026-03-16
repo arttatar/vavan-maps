@@ -5438,7 +5438,7 @@ function _showRadiusFloat() {
       '<span style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;">0.5 mi</span>'+
       '<input type="range" min="1" max="40" step="1" value="'+((radMiles||5)*2)+'" '+
         'style="flex:1;accent-color:var(--accent);" '+
-        'oninput="_onRadSlider(this.value);document.getElementById(\'rad-float-lbl\').textContent=radMiles+(radMiles===Math.floor(radMiles)?\'':radMiles.toFixed(1)+'\') + \' mi\'">'+
+        'oninput="_onRadSlider(this.value)">'+
       '<span style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;">20 mi</span>'+
     '</div>'+
     '<div style="text-align:center;margin-top:4px;">'+
