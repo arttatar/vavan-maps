@@ -718,9 +718,16 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 .rp-title-row{display:flex;align-items:center;justify-content:space-between;}
 .rp-title{font-size:15px;font-weight:700;color:#fff;font-family:'Syne',sans-serif;}
-.rp-subtitle{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+.rp-subtitle{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;line-height:1.4;word-break:break-word;}
 .rp-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:0;line-height:1;}
-.rp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.rp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;padding:0 16px;}
+.rp-action-btn{
+  flex:1;min-width:80px;padding:7px 6px;
+  border:none;border-radius:8px;
+  font-size:11px;font-weight:700;
+  font-family:'Inter',sans-serif;cursor:pointer;
+  white-space:nowrap;
+}
 .rp-action-btn{
   flex:1;min-width:80px;padding:7px 6px;
   border:none;border-radius:8px;
@@ -6844,10 +6851,10 @@ function onMapClick(e) {
 <div id="route-panel">
   <div class="rp-header">
     <div class="sheet-handle-wrap"><div class="sheet-handle" style="background:rgba(255,255,255,.3);"></div></div>
-    <div class="sheet-topbar" style="padding-bottom:8px;">
+    <div class="sheet-topbar" style="padding-bottom:6px;">
       <div style="flex:1;min-width:0;">
         <div class="rp-title">Route</div>
-        <div class="rp-subtitle" id="rp-subtitle" style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">Select businesses from the list to build a route</div>
+        <div class="rp-subtitle" id="rp-subtitle">Select businesses from the list to build a route</div>
       </div>
       <button class="sheet-close dark" onclick="closeRoutePanel()">✕</button>
     </div>
