@@ -946,7 +946,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
             <div class="ind-opt" data-val="Government"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0EA5E9;margin-right:8px;flex-shrink:0;"></span>Government &amp; Institutions</div>
             <div class="ind-opt" data-val="Energy"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#EAB308;margin-right:8px;flex-shrink:0;"></span>Energy, Utilities &amp; Environmental</div>
             <div class="ind-opt" data-val="RealEstate"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#14B8A6;margin-right:8px;flex-shrink:0;"></span>Real Estate</div>
-            <div class="ind-opt" data-val="Competitors"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#EF4444;margin-right:8px;flex-shrink:0;"></span>Competitors</div>
           </div>
         </div>
       </div>
@@ -1575,12 +1574,16 @@ function normalizeRecord(b) {
     'industrial':'Industrial','services':'Services',
     'hospitality':'Hospitality','government':'Government',
     'energy':'Energy','realestate':'RealEstate','real estate':'RealEstate',
-    'competitors':'Competitors','competitor':'Competitors'
+    'competitors':'Competitors','competitor':'Competitors'  // kept for legacy data migration
   };
   b.industry = IND_NORMALIZE[rawInd.toLowerCase()] || rawInd;
 
-  // Booleans
-  b.is_competitor = !!(b.is_competitor || b.industry === 'Competitors');
+  // Booleans — migrate legacy "Competitors" industry to is_competitor flag
+  b.is_competitor = !!(b.is_competitor || b.industry === 'Competitors' || b.status === 'Competitor');
+  if (b.industry === 'Competitors') {
+    b.status = 'Competitor';
+    b.industry = '';
+  }
 
   // Score
   b.score = parseInt(b.score) || calcScore(b);
@@ -2478,7 +2481,7 @@ var IND_LABELS = {
   Automotive:'Automotive', Agribusiness:'Agribusiness', Transport:'Transportation',
   Construction:'Infrastructure', Industrial:'Industrial', Services:'Services Business',
   Hospitality:'Hospitality & Leisure', Government:'Government & Institutions',
-  Energy:'Energy, Utilities & Environmental', RealEstate:'Real Estate', Competitors:'Competitors'
+  Energy:'Energy, Utilities & Environmental', RealEstate:'Real Estate'
 };
 
 function renderIndTags() {
@@ -2679,10 +2682,6 @@ var SUB_MAP = {
     {val:'self-storage',        label:'Self-Storage Facilities'},
     {val:'re-developers',       label:'Developers / REITs / Investment Firms'},
     {val:'hoa',                 label:'HOAs / Community Associations'},
-  ],
-  Competitors: [
-    {val:'fuel-competitors',    label:'Fuel Competitors'},
-    {val:'lubricant-competitors',label:'Lubricant Competitors'},
   ]
 };
 
@@ -2733,7 +2732,7 @@ function renderSubDropdown() {
     Automotive:'Automotive', Transport:'Transportation', Construction:'Infrastructure',
     Industrial:'Industrial', Agribusiness:'Agribusiness', Energy:'Energy & Utilities',
     Services:'Services', Hospitality:'Hospitality', Government:'Government',
-    RealEstate:'Real Estate', Competitors:'Competitors'
+    RealEstate:'Real Estate'
   };
 
   dd.innerHTML = '';
@@ -3815,7 +3814,6 @@ var IND_COLORS = {
   Government:   '#0EA5E9',
   Energy:       '#EAB308',
   RealEstate:   '#14B8A6',
-  Competitors:  '#EF4444',
 };
 var IND_DEFAULT = '#9b93d4';
 
@@ -3839,7 +3837,7 @@ function unhoverBiz() {
 }
 
 function bizColor(b) {
-  if (b.is_competitor) return IND_COLORS.Competitors;
+  if (b.is_competitor || b.status === 'Competitor') return '#EF4444';
   var ind = (b.industry||'').trim();
   return IND_COLORS[ind] || IND_DEFAULT;
 }
