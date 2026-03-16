@@ -170,7 +170,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   flex:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:3px; cursor:pointer;
-  color:rgba(255,255,255,0.4);
+  color:rgba(255,255,255,0.75);
   font-size:10px; font-weight:600;
   font-family:'Inter',sans-serif;
   border:none; background:transparent;
@@ -178,7 +178,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   padding:6px 0;
 }
 .nav-item svg{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-.nav-item.active{ color:var(--accent); }
+.nav-item.active{ color:#fff; }
 .nav-item .nav-badge{
   position:absolute; top:6px; right:calc(50% - 14px);
   background:var(--accent); color:#fff;
@@ -5572,10 +5572,10 @@ function onMapClick(e) {
   </button>
   <!-- Centre + Add button -->
   <button class="nav-item" onclick="openAddBusiness()" style="flex:1.2;">
-    <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(74,54,200,.5);margin-bottom:-6px;margin-top:-10px;flex-shrink:0;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <div style="width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35);flex-shrink:0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </div>
-    <span style="color:var(--accent);font-size:10px;font-weight:600;margin-top:2px;">Add</span>
+    <span style="color:var(--accent);font-size:10px;font-weight:600;">Add</span>
   </button>
   <button class="nav-item" id="nm-list" onclick="navTo('list')" style="position:relative">
     <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
