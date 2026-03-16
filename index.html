@@ -1023,12 +1023,32 @@ function populateRepFilter() {
 
 // One-tap: filter to just the logged-in rep's assigned businesses
 function filterMyAccounts() {
-  if (!currentProfile || !currentProfile.full_name) return;
-  var repName = currentProfile.full_name;
+  if (!currentProfile) return;
+
+  // Find the best matching rep name from ALL_REPS that matches this user's profile
+  var profileName = (currentProfile.full_name || '').trim().toLowerCase();
+  var matchedRep = ALL_REPS.find(function(r){
+    return r.toLowerCase() === profileName;
+  });
+
+  // Fallback: try partial match (first name or last name)
+  if (!matchedRep && profileName) {
+    matchedRep = ALL_REPS.find(function(r){
+      var parts = r.toLowerCase().split(' ');
+      var profileParts = profileName.split(' ');
+      return parts.some(function(p){ return profileParts.indexOf(p) > -1; });
+    });
+  }
+
+  if (!matchedRep) {
+    alert('No rep name found matching your profile ("'+currentProfile.full_name+'").\nGo to Admin Settings → Reps & Markets and make sure your Full Name matches exactly.');
+    return;
+  }
+
   clearFilters();
-  filters.rep = repName;
+  filters.rep = matchedRep;
   var sel = document.getElementById('s-rep');
-  if (sel) sel.value = repName;
+  if (sel) sel.value = matchedRep;
   applyFilters();
   updateFilterBadge();
   setTimeout(function(){ navTo('list'); }, 300);
