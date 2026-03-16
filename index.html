@@ -45,6 +45,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     border-top: 1px solid var(--border) !important;
     z-index: 1800 !important;
     box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
+    overflow: hidden !important;
   }
   #sidebar.open { transform: translateY(0) !important; }
 
@@ -2114,6 +2115,9 @@ function navTo(tab) {
   } else if (tab === 'filters') {
     sidebar.classList.add('open');
     overlay.classList.add('show');
+    // Always reset scroll to top when opening filters
+    var fs = document.getElementById('filter-scroll');
+    if (fs) fs.scrollTop = 0;
   } else if (tab === 'list') {
     renderList();
     results.classList.add('open');
