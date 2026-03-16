@@ -1072,11 +1072,26 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="19" y2="12"/></svg>Radius</button>
           <button class="tbtn" id="tbtn-clear" onclick="clearArea()" style="display:none">Clear Area</button>
         </div>
-        <div id="radius-wrap" style="display:none;margin-top:.6rem">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Click anywhere on map to place circle</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <input type="range" min="1" max="50" value="5" id="rad-slider" style="flex:1" oninput="radMiles=parseInt(this.value);document.getElementById('rad-lbl').textContent=this.value+' mi'">
-            <span id="rad-lbl" style="font-size:11px;color:var(--muted);min-width:32px">5 mi</span>
+        <div id="radius-wrap" style="display:none;margin-top:.75rem;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;">Click map to place circle · drag slider to resize</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:10px;color:var(--muted);white-space:nowrap;">0.5 mi</span>
+            <input type="range" min="1" max="40" step="1" value="10" id="rad-slider"
+              style="flex:1;accent-color:var(--accent);cursor:pointer;"
+              oninput="_onRadSlider(this.value)">
+            <span style="font-size:10px;color:var(--muted);white-space:nowrap;">20 mi</span>
+          </div>
+          <div style="text-align:center;margin-top:6px;">
+            <span id="rad-lbl" style="font-size:13px;font-weight:700;color:var(--accent);">5 mi</span>
+            <span style="font-size:11px;color:var(--muted);"> radius</span>
+          </div>
+          <!-- Tick marks -->
+          <div style="display:flex;justify-content:space-between;padding:0 2px;margin-top:2px;">
+            <span style="font-size:9px;color:var(--muted);">1</span>
+            <span style="font-size:9px;color:var(--muted);">5</span>
+            <span style="font-size:9px;color:var(--muted);">10</span>
+            <span style="font-size:9px;color:var(--muted);">15</span>
+            <span style="font-size:9px;color:var(--muted);">20</span>
           </div>
         </div>
       </div>
@@ -4002,6 +4017,7 @@ async function toggleVisited() {
     }).eq('id', b.id||b._id);
     if (r.error) throw r.error;
     b.visited = newVal;
+    _logChange(newVal ? 'Marked as Visited' : 'Visited status removed', 'visited');
     renderDetailPanel(b);
     switchTab('profile');
   } catch(e) { alert('Could not update: ' + e.message); }
@@ -4015,6 +4031,8 @@ async function saveInlineIndustry() {
     var r = await sb.from('businesses').update({industry: newInd||null, updated_at:new Date().toISOString()}).eq('id',b.id||b._id);
     if (r.error) throw r.error;
     b.industry = newInd;
+    // Log the change
+    _logChange('Industry → ' + (newInd||'removed'), 'edit');
     // Update sub-industry dropdown options
     var subSel = document.getElementById('inline-sub-industry');
     if (subSel) {
@@ -4036,6 +4054,7 @@ async function saveInlineSubIndustry() {
     if (r.error) throw r.error;
     b.sub_industry = newSub;
     if (_bizById[b._id]) _bizById[b._id].sub_industry = newSub;
+    _logChange('Sub-Industry → ' + (newSub||'removed'), 'edit');
     _showToast('Sub-industry updated');
   } catch(e) { _showToast('Save failed'); }
 }
@@ -4060,6 +4079,15 @@ async function saveBusinessEdits() {
     }).eq('id', b.id||b._id);
 
     if (r.error) throw r.error;
+
+    // Build change log
+    var changes = [];
+    if (phone !== (b.phone||''))           changes.push('Phone → ' + (phone||'removed'));
+    if (website !== (b.website||''))       changes.push('Website → ' + (website||'removed'));
+    if (rep !== (b.assigned_rep||''))      changes.push('Assigned Rep → ' + (rep||'Unassigned'));
+    if (status !== (b.status||'Lead'))     changes.push('Status → ' + status);
+    if (locType !== (b.location_type||'')) changes.push('Location Type → ' + (locType||'removed'));
+    if (changes.length) _logChange('Profile updated: ' + changes.join(', '), 'edit');
 
     // Update local data
     b.phone = phone; b.website = website;
@@ -4161,13 +4189,17 @@ async function loadContacts(b) {
 
 async function setPrimaryContact(contactId, businessId) {
   try {
-    // Clear primary on all contacts for this business
     await sb.from('contacts').update({ is_primary: false }).eq('business_id', businessId);
-    // Set selected contact as primary
     await sb.from('contacts').update({ is_primary: true }).eq('id', contactId);
-    // Reload
+    // Log it
     var b = lastSelectedBiz;
-    if (b) loadContacts(b);
+    if (b) {
+      // Get the contact name for the log
+      var cRow = document.querySelector('[data-contact-id="'+contactId+'"]');
+      var cName = cRow ? cRow.getAttribute('data-contact-name') : 'contact';
+      _logChange('Primary contact set: ' + cName, 'contact');
+      loadContacts(b);
+    }
   } catch(e) { alert('Could not set primary: ' + e.message); }
 }
 
@@ -4264,6 +4296,24 @@ async function logActivity(type) {
     if (r.error) throw r.error;
     loadActivity(b);
   } catch(e) { alert('Could not save: ' + e.message); }
+}
+
+// Universal change logger — records who changed what and when
+async function _logChange(note, type) {
+  var biz = lastSelectedBiz; if (!biz) return;
+  var byName = currentProfile ? (currentProfile.full_name || 'Unknown') : 'Unknown';
+  try {
+    await sb.from('activity').insert({
+      business_id: String(biz.id||biz._id),
+      type: type || 'edit',
+      note: note,
+      client_id: currentProfile ? currentProfile.client_id : null,
+      created_by: byName
+    });
+    // Reload activity feed if it's visible
+    var actTab = document.getElementById('det-activity');
+    if (actTab && actTab.classList.contains('active')) loadActivity(biz);
+  } catch(e) { console.warn('Activity log failed:', e); }
 }
 
 async function saveNote() {
@@ -5320,7 +5370,7 @@ function deactivate() {
   try { draw.changeMode('simple_select'); } catch(e){}
 }
 function clearArea() {
-  selPoly=null; draw.deleteAll();
+  selPoly=null; _radCenter=null; draw.deleteAll();
   ['rad','rad-line'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
   if(map.getSource('rad')) map.removeSource('rad');
   document.getElementById('tbtn-clear').style.display='none';
@@ -5363,9 +5413,34 @@ function clearFilters() {
   updateFabCount();
 }
 
+// Store last radius center so slider can redraw live
+var _radCenter = null;
+
+function _onRadSlider(val) {
+  // Map slider 1-40 → 0.5-20 miles
+  radMiles = val / 2;
+  var display = radMiles === Math.floor(radMiles) ? radMiles + ' mi' : radMiles.toFixed(1) + ' mi';
+  document.getElementById('rad-lbl').textContent = display;
+  // Live-redraw if circle already placed
+  if (_radCenter && map) {
+    var c = turf.circle([_radCenter.lng, _radCenter.lat], radMiles, {units:'miles', steps:64});
+    selPoly = c;
+    if (map.getSource('rad')) {
+      map.getSource('rad').setData(c);
+    } else {
+      map.addSource('rad', {type:'geojson', data:c});
+      map.addLayer({id:'rad', type:'fill', source:'rad', paint:{'fill-color':'#4a36c8','fill-opacity':.1}});
+      map.addLayer({id:'rad-line', type:'line', source:'rad', paint:{'line-color':'#4a36c8','line-width':2,'line-dasharray':[2,2]}});
+    }
+    document.getElementById('tbtn-clear').style.display = 'inline-flex';
+    applyFilters();
+  }
+}
+
 function onMapClick(e) {
   if(activeTool!=='radius') return;
-  var c=turf.circle([e.lngLat.lng,e.lngLat.lat],radMiles,{units:'miles',steps:64});
+  _radCenter = {lng: e.lngLat.lng, lat: e.lngLat.lat};
+  var c=turf.circle([_radCenter.lng, _radCenter.lat], radMiles, {units:'miles', steps:64});
   selPoly=c;
   ['rad','rad-line'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
   if(map.getSource('rad')) map.removeSource('rad');
@@ -5373,7 +5448,10 @@ function onMapClick(e) {
   map.addLayer({id:'rad',type:'fill',source:'rad',paint:{'fill-color':'#4a36c8','fill-opacity':.1}});
   map.addLayer({id:'rad-line',type:'line',source:'rad',paint:{'line-color':'#4a36c8','line-width':2,'line-dasharray':[2,2]}});
   document.getElementById('tbtn-clear').style.display='inline-flex';
-  deactivate(); applyFilters();
+  deactivate();
+  // Keep radius-wrap visible so user can adjust size after placing
+  document.getElementById('radius-wrap').style.display='block';
+  applyFilters();
 }
 </script>
 <!-- SETTINGS MODAL -->
