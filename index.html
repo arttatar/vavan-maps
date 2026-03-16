@@ -1002,6 +1002,18 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         </select>
       </div>
 
+      <!-- STATUS FILTER -->
+      <div class="sb-sec">
+        <div class="sb-title">Status</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="pill on" id="status-pill-all"        onclick="_setStatusFilter('all')"          style="font-size:11px;">All</span>
+          <span class="pill"    id="status-pill-Lead"       onclick="_setStatusFilter('Lead')"         style="font-size:11px;">Lead</span>
+          <span class="pill"    id="status-pill-Customer"   onclick="_setStatusFilter('Customer')"     style="font-size:11px;color:#059669;border-color:#059669;">Customer</span>
+          <span class="pill"    id="status-pill-Lost Customer" onclick="_setStatusFilter('Lost Customer')" style="font-size:11px;color:#dc2626;border-color:#dc2626;">Lost</span>
+          <span class="pill"    id="status-pill-Competitor" onclick="_setStatusFilter('Competitor')"   style="font-size:11px;color:#EF4444;border-color:#EF4444;">Competitor</span>
+        </div>
+      </div>
+
       <!-- OPPORTUNITY PIPELINE FILTERS -->
       <div class="sb-sec">
         <div class="sb-title">Opportunity Pipeline</div>
@@ -1342,6 +1354,15 @@ function populateRepFilter() {
   if (reps.length) sel.style.display = 'block';
   // Init filters.reps array if not set
   if (!filters.reps) filters.reps = [];
+}
+
+// ── STATUS FILTER ──
+function _setStatusFilter(val) {
+  filters.status = val;
+  ['all','Lead','Customer','Lost Customer','Competitor'].forEach(function(s){
+    var el = document.getElementById('status-pill-'+s);
+    if (el) el.classList.toggle('on', s === val);
+  });
 }
 
 // ── REP MULTI-FILTER ──
@@ -1994,12 +2015,12 @@ function initMapHandlers() {
 }
 
 function salesStatus(b) {
-  if (b.is_competitor)                              return 'competitor';  // red
-  if ((b.status||'') === 'Customer')                return 'customer';   // green
-  if ((b.status||'') === 'Lost Customer')           return 'dead';       // dark
-  if (b.visited)                                    return 'visited';    // yellow
-  if (b.last_contacted || (b.status||'') === 'Lead' && b.pipeline_stage && b.pipeline_stage !== 'Lead Captured') return 'contacted'; // orange
-  return 'untouched'; // gray
+  if (b.is_competitor || (b.status||'') === 'Competitor') return 'competitor';
+  if ((b.status||'') === 'Customer')                      return 'customer';
+  if ((b.status||'') === 'Lost Customer')                 return 'dead';
+  if (b.visited)                                          return 'visited';
+  if (b.last_contacted || (b.pipeline_stage && b.pipeline_stage !== 'Lead Captured')) return 'contacted';
+  return 'untouched';
 }
 
 var STATUS_COLORS = {
@@ -3488,7 +3509,8 @@ async function saveNewBusiness() {
       market:         'Las Vegas',
       territory_code: currentProfile ? (currentProfile.territory_code || 'LAS-ALL') : 'LAS-ALL',
       visited:        false,
-      score:          50
+      score:          50,
+      is_competitor:  status === 'Competitor'
     };
 
     var r = await sb.from('businesses').insert(payload).select().single();
@@ -4074,6 +4096,7 @@ function renderDetailPanel(b) {
             '<option value="Lead"'+(status==='Lead'?' selected':'')+'>Lead</option>'+
             '<option value="Customer"'+(status==='Customer'?' selected':'')+'>Customer</option>'+
             '<option value="Lost Customer"'+(status==='Lost Customer'?' selected':'')+'>Lost Customer</option>'+
+            '<option value="Competitor"'+(status==='Competitor'?' selected':'')+'>Competitor</option>'+
           '</select></div>'+
         // Social links in edit mode
         '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem;">Social Links</div>'+
@@ -4397,7 +4420,8 @@ async function saveBusinessEdits() {
     var r = await sb.from('businesses').update({
       phone: phone, website: website,
       assigned_rep: rep, status: status, pipeline_stage: pipeline,
-      location_type: locType, social_links: newSocials
+      location_type: locType, social_links: newSocials,
+      is_competitor: status === 'Competitor'
     }).eq('id', b.id||b._id);
 
     if (r.error) throw r.error;
@@ -4418,6 +4442,8 @@ async function saveBusinessEdits() {
     b.phone = phone; b.website = website;
     b.assigned_rep = rep; b.status = status; b.pipeline_stage = pipeline;
     b.location_type = locType; b.social_links = newSocials;
+    b.is_competitor = status === 'Competitor';
+    if (_bizById[b._id]) _bizById[b._id].is_competitor = b.is_competitor;
 
     toggleEditMode();
     renderDetailPanel(b);
@@ -6267,6 +6293,7 @@ function clearFilters() {
   if (repEl) repEl.value = '';
   _repSetPillState('all');
   _renderRepChips();
+  _setStatusFilter('all');
   // Reset opp filter sliders
   if (typeof OPP_FILTER_PRODUCTS !== 'undefined') setOppPipelineAll();
   selectedIndustries = [];
@@ -6447,6 +6474,7 @@ function onMapClick(e) {
             <option value="Lead">Lead</option>
             <option value="Customer">Customer</option>
             <option value="Lost Customer">Lost Customer</option>
+            <option value="Competitor">Competitor</option>
           </select>
         </div>
         <div class="abiz-field">
