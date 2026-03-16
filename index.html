@@ -1014,105 +1014,23 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- OPPORTUNITY PIPELINE FILTERS -->
       <div class="sb-sec">
         <div class="sb-title">Opportunity Pipeline</div>
-        <div class="pills" style="margin-bottom:.25rem;">
+        <div class="pills" style="margin-bottom:.75rem;">
           <span class="pill on" id="opp-pill-all" onclick="setOppPipelineAll()">All</span>
           <span class="pill" id="opp-pill-none" onclick="setOppPipelineNone()" style="color:#dc2626;border-color:#dc2626;">No Pipeline</span>
         </div>
+
+        <!-- Per-product collapsible filters -->
+        <div id="opp-filter-products"></div>
       </div>
 
-      <!-- LUBE PIPELINE -->
-      <div class="sb-sec" style="padding-top:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div style="font-size:12px;font-weight:700;color:var(--ink);">Lubricants</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="f-lube-lbl" style="font-size:11px;font-weight:700;color:var(--muted);display:none;">All Stages</span>
-            <label class="opp-toggle"><input type="checkbox" id="f-lube-on" onchange="toggleOppFilter('lube','lubricants')"><span class="opp-toggle-slider"></span></label>
-          </div>
-        </div>
-        <div id="f-lube-wrap" style="display:none;padding-bottom:4px;">
-          <div style="position:relative;padding:0 0 22px;">
-            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
-              <div id="f-lube-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-lube-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FUEL PIPELINE -->
-      <div class="sb-sec" style="padding-top:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div style="font-size:12px;font-weight:700;color:var(--ink);">Fuel Delivery</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="f-fuel-lbl" style="font-size:11px;font-weight:700;color:var(--muted);display:none;">All Stages</span>
-            <label class="opp-toggle"><input type="checkbox" id="f-fuel-on" onchange="toggleOppFilter('fuel','fuel_delivery')"><span class="opp-toggle-slider"></span></label>
-          </div>
-        </div>
-        <div id="f-fuel-wrap" style="display:none;padding-bottom:4px;">
-          <div style="position:relative;padding:0 0 22px;">
-            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
-              <div id="f-fuel-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-fuel-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CARDLOCK PIPELINE -->
-      <div class="sb-sec" style="padding-top:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div style="font-size:12px;font-weight:700;color:var(--ink);">Cardlock</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="f-cardlock-lbl" style="font-size:11px;font-weight:700;color:var(--muted);display:none;">All Stages</span>
-            <label class="opp-toggle"><input type="checkbox" id="f-cardlock-on" onchange="toggleOppFilter('cardlock','cardlock')"><span class="opp-toggle-slider"></span></label>
-          </div>
-        </div>
-        <div id="f-cardlock-wrap" style="display:none;padding-bottom:4px;">
-          <div style="position:relative;padding:0 0 22px;">
-            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
-              <div id="f-cardlock-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-cardlock-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PROPANE PIPELINE -->
-      <div class="sb-sec" style="padding-top:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div style="font-size:12px;font-weight:700;color:var(--ink);">Propane</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="f-propane-lbl" style="font-size:11px;font-weight:700;color:var(--muted);display:none;">All Stages</span>
-            <label class="opp-toggle"><input type="checkbox" id="f-propane-on" onchange="toggleOppFilter('propane','propane')"><span class="opp-toggle-slider"></span></label>
-          </div>
-        </div>
-        <div id="f-propane-wrap" style="display:none;padding-bottom:4px;">
-          <div style="position:relative;padding:0 0 22px;">
-            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
-              <div id="f-propane-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-propane-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- UCO PIPELINE -->
-      <div class="sb-sec" style="padding-top:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div style="font-size:12px;font-weight:700;color:var(--ink);">Used Cooking Oil</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="f-uco-lbl" style="font-size:11px;font-weight:700;color:var(--muted);display:none;">All Stages</span>
-            <label class="opp-toggle"><input type="checkbox" id="f-uco-on" onchange="toggleOppFilter('uco','uco')"><span class="opp-toggle-slider"></span></label>
-          </div>
-        </div>
-        <div id="f-uco-wrap" style="display:none;padding-bottom:4px;">
-          <div style="position:relative;padding:0 0 22px;">
-            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
-              <div id="f-uco-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-uco-dots"></div>
-          </div>
-        </div>
+      <!-- SUPPLIER FILTER -->
+      <div class="sb-sec">
+        <div class="sb-title">Current Supplier</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Filter businesses by who supplies them</div>
+        <div id="supplier-filter-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;"></div>
+        <select id="supplier-filter-sel" onchange="_supplierFilterAdd(this)" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;font-family:'Inter',sans-serif;color:var(--muted);background:var(--paper);cursor:pointer;">
+          <option value="">+ Add supplier to filter</option>
+        </select>
       </div>
 
     </div><!-- end filter-scroll -->
@@ -1245,6 +1163,7 @@ var filters = {
   opp:'all', contact:'all', industry:'all', pipeline:'all',
   subIndustry:'all', status:'all', rep:'all', reps:[],
   opp_product:'all', opp_stage:'all', opp_min_volume:0,
+  supplierFilter:[],
   // Per-product pipeline stage filters
   opp_lube_stage:'all', opp_fuel_stage:'all', opp_cardlock_stage:'all',
   opp_propane_stage:'all', opp_uco_stage:'all'
@@ -2943,7 +2862,34 @@ function applyFilters() {
       if (!opp) return true;
       return !OPP_PRODUCTS.some(function(p){ return opp['uses_'+p.key]; });
     });
-  } else if (filters.opp_product !== 'all') {
+  } else if (Array.isArray(filters.opp_product) && filters.opp_product.length > 0) {
+    // Multi-product filter — must match ALL enabled products (AND logic per product, OR across suppliers)
+    data = data.filter(function(b){
+      var opp = _oppCache[String(b.id||b._id)];
+      if (!opp) return false;
+      return filters.opp_product.every(function(productKey){
+        if (!opp['uses_'+productKey]) return false;
+        var state = _oppFilterState[productKey] || {};
+        var prod = OPP_PRODUCTS.find(function(p){ return p.key === productKey; });
+        if (!prod) return false;
+        // Stage filter
+        if (state.stage && state.stage !== 'all') {
+          if ((opp[prod.field+'_stage'] || 'Lead Captured') !== state.stage) return false;
+        }
+        // Supplier filter — match any selected supplier
+        if (state.suppliers && state.suppliers.length > 0) {
+          var bizSup = opp[prod.field+'_supplier'] || '';
+          var bizSupArr = bizSup.split(',').map(function(s){ return s.trim().toLowerCase(); });
+          var anyMatch = state.suppliers.some(function(s){
+            return bizSupArr.indexOf(s.toLowerCase()) >= 0;
+          });
+          if (!anyMatch) return false;
+        }
+        return true;
+      });
+    });
+  } else if (filters.opp_product && filters.opp_product !== 'all') {
+    // Legacy single-product filter
     var oppStage = filters.opp_stage || 'all';
     data = data.filter(function(b){
       var opp = _oppCache[String(b.id||b._id)];
@@ -2955,6 +2901,22 @@ function applyFilters() {
         if ((opp[prod.field+'_stage'] || 'Lead Captured') !== oppStage) return false;
       }
       return true;
+    });
+  }
+
+  // Global supplier filter (cross-product — any product with matching supplier)
+  if (filters.supplierFilter && filters.supplierFilter.length > 0) {
+    data = data.filter(function(b){
+      var opp = _oppCache[String(b.id||b._id)];
+      if (!opp) return false;
+      return OPP_PRODUCTS.some(function(p){
+        if (!opp['uses_'+p.key]) return false;
+        var sup = opp[p.field+'_supplier'] || '';
+        var supArr = sup.split(',').map(function(s){ return s.trim().toLowerCase(); });
+        return filters.supplierFilter.some(function(fs){
+          return supArr.indexOf(fs.toLowerCase()) >= 0;
+        });
+      });
     });
   }
 
@@ -3945,26 +3907,6 @@ function renderDetailPanel(b) {
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'+
             'No Phone</button>'
         )+
-      '</div>'+
-      // ── QUICK ACTIONS ROW ──
-      '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">'+
-        // Add to Route
-        '<button onclick="_quickAddToRoute()" style="flex:1;min-width:0;padding:7px 4px;background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;font-size:11px;font-weight:700;color:var(--accent);cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;" title="Add to route">'+
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>'+
-          'Route'+
-        '</button>'+
-        // Mark Customer
-        (status !== 'Customer' ?
-          '<button onclick="_quickMarkCustomer()" style="flex:1;min-width:0;padding:7px 4px;background:#f0fdf4;border:1px solid #10B981;border-radius:8px;font-size:11px;font-weight:700;color:#059669;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;" title="Mark as customer">'+
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+
-            'Customer'+
-          '</button>' : '')+
-        // Mark Dead Lead
-        (status !== 'Lost Customer' ?
-          '<button onclick="_quickMarkDead()" style="flex:1;min-width:0;padding:7px 4px;background:#f9fafb;border:1px solid #9CA3AF;border-radius:8px;font-size:11px;font-weight:700;color:#6B7280;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;" title="Mark as dead lead">'+
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'+
-            'Dead Lead'+
-          '</button>' : '')+
       '</div>'+
       (function(){
         var opp = _oppCache[String(b.id||b._id)];
@@ -5465,153 +5407,174 @@ var OPP_FILTER_PRODUCTS = [
 ];
 var _oppFilterState = {}; // {key: {enabled: bool, stage: string}}
 
+var OPP_FILTER_LABELS_FULL = ['All','Lead','Qualified','Fact-Find','Proposal','Credit','Won','Lost'];
+
 function initOppFilterSliders() {
+  _renderOppFilterProducts();
+  _initSupplierFilterDropdown();
   OPP_FILTER_PRODUCTS.forEach(function(p){
-    _oppFilterState[p.key] = { enabled: false, stage: 'all' };
-    var dotsEl = document.getElementById('f-'+p.id+'-dots');
-    if (!dotsEl) return;
-    dotsEl.innerHTML = OPP_FILTER_STAGES.map(function(s,i){
-      var label = OPP_FILTER_LABELS[i];
-      var isAll = s==='all';
-      var oc = 'setOppFilterStage(&quot;'+p.key+'&quot;,&quot;'+p.id+'&quot;,&quot;'+s+'&quot;)';
-      return '<div class="pipe-dot'+(isAll?' active':'')+'" onclick="'+oc+'" title="'+(isAll?'All Stages':s)+'">'+
-        '<div class="pipe-dot-circle'+(isAll?' active':'')+(s==='Won Opportunity'?' won':s==='Lost'?' lost':'')+'"></div>'+
-        '<div class="pipe-dot-label">'+label+'</div>'+
-      '</div>';
-    }).join('');
+    _oppFilterState[p.key] = { enabled: false, stage: 'all', suppliers: [] };
   });
 }
 
-function toggleOppFilter(productId, productKey) {
-  var cb = document.getElementById('f-'+productId+'-on');
-  var wrap = document.getElementById('f-'+productId+'-wrap');
-  var lbl = document.getElementById('f-'+productId+'-lbl');
-  var enabled = cb && cb.checked;
-  _oppFilterState[productKey] = _oppFilterState[productKey] || { enabled: false, stage: 'all' };
-  _oppFilterState[productKey].enabled = enabled;
-  if (wrap) wrap.style.display = enabled ? 'block' : 'none';
-  if (lbl) lbl.style.display = enabled ? '' : 'none';
-  // If turning off, reset stage to all
-  if (!enabled) {
-    _oppFilterState[productKey].stage = 'all';
-    _resetOppSlider(productId);
-  }
+function _renderOppFilterProducts() {
+  var wrap = document.getElementById('opp-filter-products');
+  if (!wrap) return;
+  var STAGES_FULL = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity','Lost'];
+  var STAGE_COLORS = {'all':'var(--muted)','Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669','Lost':'#dc2626'};
+  var LABELS = ['All','Lead','Qualified','Fact-Find','Proposal','Credit','Won','Lost'];
+  var BASE_SUPPLIERS = ['Shell','Chevron','Mobil','Valvoline','Castrol','Citgo','BP','Phillips 66','Sunoco','Local Co-op'];
+
+  var PRODUCT_LABELS = {lubricants:'Lubricants',fuel_delivery:'Fuel Delivery',cardlock:'Cardlock',propane:'Propane',uco:'Used Cooking Oil'};
+
+  wrap.innerHTML = OPP_FILTER_PRODUCTS.map(function(p){
+    var state = _oppFilterState[p.key] || {enabled:false, stage:'all', suppliers:[]};
+    var customSup = _getCustomList('suppliers');
+    var allSup = BASE_SUPPLIERS.concat(customSup);
+    var selSups = state.suppliers || [];
+
+    var stageDotsHtml = STAGES_FULL.map(function(s,i){
+      var isActive = (state.stage||'all') === s;
+      var color = STAGE_COLORS[s] || 'var(--muted)';
+      return '<div onclick="_setOppFilterStage(\''+p.key+'\',\''+s+'\')" title="'+(s==='all'?'All Stages':s)+'" style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex:1;">'+
+        '<div style="width:12px;height:12px;border-radius:50%;border:2px solid '+(isActive?color:'var(--border)')+';background:'+(isActive?color:'#fff')+';transition:all .15s;margin:0 auto;"></div>'+
+        '<div style="font-size:8px;font-weight:600;color:'+(isActive?color:'var(--muted)')+';white-space:nowrap;text-align:center;">'+LABELS[i]+'</div>'+
+      '</div>';
+    }).join('');
+
+    var supChipsHtml = selSups.map(function(s){
+      return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;">'+
+        s+'<button type="button" onclick="_removeOppFilterSupplier(\''+p.key+'\',\''+s.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:12px;line-height:1;padding:0 0 0 2px;">×</button></span>';
+    }).join('');
+
+    var availSup = allSup.filter(function(s){ return selSups.indexOf(s)<0; });
+
+    return '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--paper2);cursor:pointer;" onclick="_toggleOppFilterProduct(\''+p.key+'\')">'+
+        '<div style="font-size:12px;font-weight:700;color:var(--ink);">'+PRODUCT_LABELS[p.key]+'</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;">'+
+          (state.enabled ? '<span style="font-size:10px;font-weight:700;color:var(--accent);">'+(state.stage==='all'?'Tracking':'Stage: '+(state.stage||'').split(' ')[0])+'</span>' : '')+
+          '<div style="width:32px;height:18px;border-radius:9px;background:'+(state.enabled?'var(--accent)':'var(--border)')+';position:relative;transition:.2s;">'+
+            '<div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(state.enabled?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      (state.enabled ?
+        '<div style="padding:10px 12px;border-top:1px solid var(--border);">'+
+          '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Pipeline Stage</div>'+
+          '<div style="display:flex;gap:2px;margin-bottom:12px;">'+stageDotsHtml+'</div>'+
+          '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Current Supplier</div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:20px;">'+supChipsHtml+'</div>'+
+          '<select onchange="_addOppFilterSupplier(\''+p.key+'\',this)" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12px;font-family:Inter,sans-serif;color:var(--muted);background:#fff;cursor:pointer;">'+
+            '<option value="">+ Filter by supplier</option>'+
+            availSup.map(function(s){ return '<option value="'+s+'">'+s+'</option>'; }).join('')+
+          '</select>'+
+        '</div>'
+      : '')+
+    '</div>';
+  }).join('');
+}
+
+function _toggleOppFilterProduct(key) {
+  if (!_oppFilterState[key]) _oppFilterState[key] = {enabled:false,stage:'all',suppliers:[]};
+  _oppFilterState[key].enabled = !_oppFilterState[key].enabled;
+  _renderOppFilterProducts();
   _syncOppFilters();
+}
+
+function _setOppFilterStage(key, stage) {
+  if (!_oppFilterState[key]) _oppFilterState[key] = {enabled:true,stage:'all',suppliers:[]};
+  _oppFilterState[key].stage = stage;
+  _renderOppFilterProducts();
+  _syncOppFilters();
+}
+
+function _addOppFilterSupplier(key, sel) {
+  var val = sel.value; if (!val) return;
+  sel.value = '';
+  if (!_oppFilterState[key]) _oppFilterState[key] = {enabled:true,stage:'all',suppliers:[]};
+  if (_oppFilterState[key].suppliers.indexOf(val) < 0) _oppFilterState[key].suppliers.push(val);
+  _renderOppFilterProducts();
+  _syncOppFilters();
+}
+
+function _removeOppFilterSupplier(key, val) {
+  if (!_oppFilterState[key]) return;
+  _oppFilterState[key].suppliers = _oppFilterState[key].suppliers.filter(function(s){ return s !== val; });
+  _renderOppFilterProducts();
+  _syncOppFilters();
+}
+
+function _initSupplierFilterDropdown() {
+  var sel = document.getElementById('supplier-filter-sel');
+  if (!sel) return;
+  var BASE_SUPPLIERS = ['Shell','Chevron','Mobil','Valvoline','Castrol','Citgo','BP','Phillips 66','Sunoco','Local Co-op'];
+  var custom = _getCustomList('suppliers');
+  var all = BASE_SUPPLIERS.concat(custom);
+  while (sel.options.length > 1) sel.remove(1);
+  all.forEach(function(s){
+    var opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+  if (!filters.supplierFilter) filters.supplierFilter = [];
+}
+
+function _supplierFilterAdd(sel) {
+  var val = sel.value; if (!val) return;
+  sel.value = '';
+  if (!filters.supplierFilter) filters.supplierFilter = [];
+  if (filters.supplierFilter.indexOf(val) >= 0) return;
+  filters.supplierFilter.push(val);
+  _renderSupplierFilterChips();
+}
+
+function _supplierFilterRemove(val) {
+  if (!filters.supplierFilter) return;
+  filters.supplierFilter = filters.supplierFilter.filter(function(s){ return s !== val; });
+  _renderSupplierFilterChips();
+}
+
+function _renderSupplierFilterChips() {
+  var wrap = document.getElementById('supplier-filter-chips');
+  if (!wrap) return;
+  wrap.innerHTML = (filters.supplierFilter||[]).map(function(s){
+    return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">'+
+      s+'<button onclick="_supplierFilterRemove(\''+s.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button></span>';
+  }).join('');
+}
+
+
+function toggleOppFilter(productId, productKey) {
+  _toggleOppFilterProduct(productKey);
 }
 
 function setOppPipelineAll() {
   OPP_FILTER_PRODUCTS.forEach(function(p){
-    _oppFilterState[p.key] = { enabled: false, stage: 'all' };
-    _resetOppSlider(p.id);
+    _oppFilterState[p.key] = { enabled: false, stage: 'all', suppliers: [] };
   });
-  filters.opp_product = 'all';
-  filters.opp_stage = 'all';
-  var allPill = document.getElementById('opp-pill-all');
-  var nonePill = document.getElementById('opp-pill-none');
-  if (allPill) allPill.classList.add('on');
-  if (nonePill) nonePill.classList.remove('on');
+  filters.opp_product = 'all'; filters.opp_stage = 'all';
+  var a = document.getElementById('opp-pill-all'), n = document.getElementById('opp-pill-none');
+  if (a) a.classList.add('on'); if (n) n.classList.remove('on');
+  _renderOppFilterProducts();
 }
 
 function setOppPipelineNone() {
   OPP_FILTER_PRODUCTS.forEach(function(p){
-    _oppFilterState[p.key] = { enabled: false, stage: 'all' };
-    _resetOppSlider(p.id);
+    _oppFilterState[p.key] = { enabled: false, stage: 'all', suppliers: [] };
   });
-  filters.opp_product = 'none';
-  filters.opp_stage = 'all';
-  var allPill = document.getElementById('opp-pill-all');
-  var nonePill = document.getElementById('opp-pill-none');
-  if (nonePill) nonePill.classList.add('on');
-  if (allPill) allPill.classList.remove('on');
-}
-
-function _syncOppFilters() {
-  var activeProduct = null, activeStage = 'all';
-  OPP_FILTER_PRODUCTS.forEach(function(p){
-    var state = _oppFilterState[p.key];
-    if (state && state.enabled) {
-      activeProduct = p.key;
-      activeStage = state.stage || 'all';
-    }
-  });
-  var allPill = document.getElementById('opp-pill-all');
-  var nonePill = document.getElementById('opp-pill-none');
-  if (activeProduct) {
-    filters.opp_product = activeProduct;
-    filters.opp_stage   = activeStage;
-    if (allPill) allPill.classList.remove('on');
-    if (nonePill) nonePill.classList.remove('on');
-  } else if (filters.opp_product !== 'none') {
-    filters.opp_product = 'all';
-    filters.opp_stage   = 'all';
-    if (allPill) allPill.classList.add('on');
-    if (nonePill) nonePill.classList.remove('on');
-  }
+  filters.opp_product = 'none'; filters.opp_stage = 'all';
+  var a = document.getElementById('opp-pill-all'), n = document.getElementById('opp-pill-none');
+  if (n) n.classList.add('on'); if (a) a.classList.remove('on');
+  _renderOppFilterProducts();
 }
 
 function setOppFilterStage(productKey, productId, stage) {
-  _oppFilterState[productKey] = _oppFilterState[productKey] || { enabled: true, stage: 'all' };
-  _oppFilterState[productKey].stage = stage;
-
-  var STAGES = OPP_FILTER_STAGES;
-  var idx = STAGES.indexOf(stage);
-  var isAll = stage === 'all';
-  var isWon = stage === 'Won Opportunity';
-  var isLost = stage === 'Lost';
-  var color = isWon ? '#059669' : isLost ? '#dc2626' : 'var(--accent)';
-  var pct = isAll ? 0 : Math.round((idx/(STAGES.length-1))*100);
-
-  var fill = document.getElementById('f-'+productId+'-fill');
-  if (fill){ fill.style.width=pct+'%'; fill.style.background=color; }
-
-  var lbl = document.getElementById('f-'+productId+'-lbl');
-  if (lbl){ lbl.textContent=isAll?'All Stages':OPP_FILTER_LABELS[idx]; lbl.style.color=color; }
-
-  var dotsEl = document.getElementById('f-'+productId+'-dots');
-  if (dotsEl) {
-    dotsEl.querySelectorAll('.pipe-dot').forEach(function(dot,i){
-      var s = STAGES[i];
-      var isActive = s===stage;
-      var isPast = !isAll && i>0 && i<idx;
-      var circle = dot.querySelector('.pipe-dot-circle');
-      circle.className = 'pipe-dot-circle';
-      if (isActive && s==='Won Opportunity') circle.classList.add('won-active');
-      else if (isActive && s==='Lost') circle.classList.add('lost-active');
-      else if (isActive) circle.classList.add('active');
-      else if (isPast) circle.classList.add('past');
-      else if (s==='Won Opportunity') circle.classList.add('won');
-      else if (s==='Lost') circle.classList.add('lost');
-      dot.classList.toggle('active', isActive||(isAll&&i===0));
-      dot.classList.toggle('past', isPast);
-    });
-  }
-
-  _syncOppFilters();
+  _setOppFilterStage(productKey, stage);
 }
 
-function _resetOppSlider(productId) {
-  var cb = document.getElementById('f-'+productId+'-on');
-  if (cb) cb.checked = false;
-  var wrap = document.getElementById('f-'+productId+'-wrap');
-  if (wrap) wrap.style.display = 'none';
-  var lbl = document.getElementById('f-'+productId+'-lbl');
-  if (lbl){ lbl.textContent='All Stages'; lbl.style.color='var(--muted)'; lbl.style.display='none'; }
-  var fill = document.getElementById('f-'+productId+'-fill');
-  if (fill){ fill.style.width='0%'; fill.style.background='var(--accent)'; }
-  var dotsEl = document.getElementById('f-'+productId+'-dots');
-  if (dotsEl) {
-    dotsEl.querySelectorAll('.pipe-dot').forEach(function(dot,i){
-      var s = OPP_FILTER_STAGES[i];
-      var circle = dot.querySelector('.pipe-dot-circle');
-      circle.className = 'pipe-dot-circle';
-      if (s==='Won Opportunity') circle.classList.add('won');
-      else if (s==='Lost') circle.classList.add('lost');
-      else if (i===0) circle.classList.add('active');
-      dot.classList.toggle('active', i===0);
-      dot.classList.remove('past');
-    });
-  }
-}
+function _resetOppSlider(productId) { /* no-op — new UI */ }
+
 
 // ── ROUTE BUILDER ──
 var _routeMode     = false;
@@ -6257,7 +6220,10 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', reps:[], opp_product:'all', opp_stage:'all', opp_min_volume:0 };
+  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', reps:[], opp_product:'all', opp_stage:'all', opp_min_volume:0, supplierFilter:[] };
+  OPP_FILTER_PRODUCTS.forEach(function(p){ _oppFilterState[p.key] = {enabled:false,stage:'all',suppliers:[]}; });
+  _renderOppFilterProducts();
+  _renderSupplierFilterChips();
   filtersApplied = false;
   filteredData = [];
   setPipelineStage('all', null);
