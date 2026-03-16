@@ -27,8 +27,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   /* Header */
   #header { padding: 0 .75rem; gap: .5rem; }
   #pcount-wrap { display: none; }
-  #uinfo { display: none; }
-  #signout-btn { padding: 3px 8px; font-size: 10px; }
+  /* account menu handled by JS */
 
   /* Map — leave room for bottom nav */
   #map { top: calc(var(--header) + env(safe-area-inset-top,0px)); bottom: 60px; }
@@ -111,9 +110,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #filter-badge.visible{display:block;}
 #pcount-wrap{font-size:12px;color:rgba(255,255,255,.4);}
 #pcount-wrap b{color:#fff;font-weight:600;}
-#uinfo{font-size:12px;color:rgba(255,255,255,.4);}
-#uinfo b{color:rgba(255,255,255,.7);font-weight:500;}
-#signout-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;}
+/* uinfo/signout removed — replaced by account menu */
 
 /* ── SHEET COMPONENTS — unified across all panels ── */
 /*
@@ -827,11 +824,34 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     <button onclick="openAddBusiness()" style="background:var(--accent);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">+ Add</button>
     <button id="my-accounts-btn" onclick="filterMyAccounts()" style="display:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">My Accounts</button>
     <button id="route-btn" onclick="toggleRouteMode()">Route</button>
-    <button id="settings-btn" onclick="openSettings()" style="display:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:5px 9px;cursor:pointer;color:rgba(255,255,255,.6);line-height:1;display:flex;align-items:center;justify-content:center;" title="Admin Settings">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <!-- Account button — replaces uinfo + signout + settings in header -->
+    <button id="account-btn" onclick="toggleAccountMenu()" style="width:32px;height:32px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:'Inter',sans-serif;letter-spacing:.03em;" title="Account">
+      <span id="account-initials">?</span>
     </button>
-    <div id="uinfo">Signed in as <b id="uemail"></b></div>
-    <button id="signout-btn" onclick="doSignOut()">Sign out</button>
+  </div>
+
+  <!-- Account dropdown menu -->
+  <div id="account-menu" style="display:none;position:fixed;top:calc(var(--header) + 6px);right:12px;z-index:2000;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid var(--border);min-width:220px;overflow:hidden;font-family:'Inter',sans-serif;">
+    <!-- User info row -->
+    <div style="padding:14px 16px 12px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;" id="account-menu-avatar">?</div>
+        <div style="min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="account-menu-name">—</div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="account-menu-email">—</div>
+        </div>
+      </div>
+    </div>
+    <!-- Settings — admin only -->
+    <button id="account-menu-settings" onclick="closeAccountMenu();openSettings();" style="display:none;width:100%;padding:12px 16px;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--ink);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Admin Settings
+    </button>
+    <!-- Sign out -->
+    <button onclick="closeAccountMenu();doSignOut();" style="width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:#dc2626;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
   </div>
 
   <div id="map"></div>
@@ -1204,12 +1224,80 @@ async function doLogin() {
     var r = await sb.auth.signInWithPassword({ email: email, password: pass });
     if (r.error) { err.textContent = r.error.message; btn.disabled = false; btn.textContent = 'Sign in'; return; }
     document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('uemail').textContent = email.split('@')[0];
+    _updateAccountEmail(email);
     startApp();
   } catch(e) { err.textContent = e.message; btn.disabled = false; btn.textContent = 'Sign in'; }
 }
 
 async function doSignOut() { await sb.auth.signOut(); location.reload(); }
+
+// ── ACCOUNT MENU ──
+function _getInitials(name) {
+  if (!name) return '?';
+  var parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+}
+
+function _updateAccountEmail(email) {
+  var el = document.getElementById('account-menu-email');
+  if (el) el.textContent = email || '';
+  // Set initials from email if no profile yet
+  var initials = email ? email[0].toUpperCase() : '?';
+  var btn = document.getElementById('account-initials');
+  if (btn) btn.textContent = initials;
+  var av = document.getElementById('account-menu-avatar');
+  if (av) av.textContent = initials;
+  var ndAv = document.getElementById('nd-account-avatar');
+  if (ndAv) ndAv.textContent = initials;
+}
+
+function _updateAccountUI(fullName, isAdmin) {
+  var initials = _getInitials(fullName);
+  // Header avatar button
+  var btn = document.getElementById('account-initials');
+  if (btn) btn.textContent = initials;
+  // Desktop nav avatar
+  var ndAv = document.getElementById('nd-account-avatar');
+  if (ndAv) ndAv.textContent = initials;
+  // Menu avatar + name
+  var menuAv = document.getElementById('account-menu-avatar');
+  if (menuAv) menuAv.textContent = initials;
+  var menuName = document.getElementById('account-menu-name');
+  if (menuName) menuName.textContent = fullName || '—';
+  // Show admin settings option
+  var settingsRow = document.getElementById('account-menu-settings');
+  if (settingsRow) settingsRow.style.display = isAdmin ? 'flex' : 'none';
+}
+
+function toggleAccountMenu() {
+  var menu = document.getElementById('account-menu');
+  if (!menu) return;
+  var isOpen = menu.style.display !== 'none';
+  if (isOpen) {
+    closeAccountMenu();
+  } else {
+    menu.style.display = 'block';
+    // Close when clicking outside
+    setTimeout(function(){
+      document.addEventListener('click', _closeMenuOutside, {once:true});
+    }, 10);
+  }
+}
+
+function closeAccountMenu() {
+  var menu = document.getElementById('account-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+function _closeMenuOutside(e) {
+  var menu = document.getElementById('account-menu');
+  var btn  = document.getElementById('account-btn');
+  var ndBtn = document.getElementById('nd-account');
+  if (menu && !menu.contains(e.target) && e.target !== btn && e.target !== ndBtn) {
+    closeAccountMenu();
+  }
+}
 
 // Handle magic link / password reset tokens in URL hash
 sb.auth.onAuthStateChange(function(event, session) {
@@ -1218,7 +1306,7 @@ sb.auth.onAuthStateChange(function(event, session) {
     if (loginScreen && !loginScreen.classList.contains('hidden')) {
       window.history.replaceState(null, '', window.location.pathname);
       loginScreen.classList.add('hidden');
-      document.getElementById('uemail').textContent = session.user.email.split('@')[0];
+      _updateAccountEmail(session.user.email);
       startApp();
     }
   }
@@ -1227,7 +1315,7 @@ sb.auth.onAuthStateChange(function(event, session) {
 sb.auth.getSession().then(function(r) {
   if (r.data && r.data.session) {
     document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('uemail').textContent = r.data.session.user.email.split('@')[0];
+    _updateAccountEmail(r.data.session.user.email);
     startApp();
   }
 });
@@ -1277,13 +1365,8 @@ async function loadProfile() {
       var routeBtn = document.getElementById('route-btn');
       if (routeBtn) routeBtn.style.display = '';
 
-      // Show settings in desktop nav for admins only
-      if (currentProfile.role === 'admin') {
-        var navSettingsBtn = document.getElementById('nd-settings');
-        if (navSettingsBtn) navSettingsBtn.style.display = '';
-      }
-      var headerSettingsBtn = document.getElementById('settings-btn');
-      if (headerSettingsBtn) headerSettingsBtn.style.display = 'none';
+      // Populate account menu
+      _updateAccountUI(currentProfile.full_name || '', currentProfile.role === 'admin');
 
       populateRepFilter();
     }
@@ -5467,10 +5550,10 @@ function onMapClick(e) {
     <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
     Route
   </button>
-  <!-- Settings — admin only, pushed to bottom, desktop only -->
-  <button class="nav-item-desk" id="nd-settings" onclick="openSettings()" style="display:none;margin-top:auto;">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    Settings
+  <!-- Account — bottom of desktop nav, always visible -->
+  <button class="nav-item-desk" id="nd-account" onclick="toggleAccountMenu()" style="margin-top:auto;position:relative;">
+    <div id="nd-account-avatar" style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin:0 auto 2px;">?</div>
+    Account
   </button>
 </nav>
 
