@@ -115,26 +115,47 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #uinfo b{color:rgba(255,255,255,.7);font-weight:500;}
 #signout-btn{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;}
 
-/* ── SHEET COMPONENTS ── */
-.sheet-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:10px auto 0;display:block;}
+/* ── SHEET COMPONENTS — unified across all panels ── */
+/*
+  Structure for every panel:
+  <div class="sheet-hdr">
+    <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+    <div class="sheet-topbar">
+      <div class="sheet-title">Title</div>
+      <button class="sheet-close">✕</button>
+    </div>
+  </div>
+*/
+.sheet-handle-wrap{
+  display:flex;justify-content:center;align-items:center;
+  padding:10px 0 6px;
+  flex-shrink:0;
+}
+.sheet-handle{
+  width:36px;height:4px;background:#ddd;border-radius:2px;
+  display:block;flex-shrink:0;
+}
 .sheet-topbar{
   display:flex;align-items:center;
-  padding:8px 12px 10px;
-  border-bottom:1px solid var(--border);
+  padding:0 16px 12px;
   position:relative;
+  flex-shrink:0;
 }
 .sheet-title{
   font-size:15px;font-weight:600;color:var(--ink);
   flex:1;text-align:center;
 }
 .sheet-close{
-  position:absolute;left:12px;top:50%;transform:translateY(-50%);
   width:32px;height:32px;
   display:flex;align-items:center;justify-content:center;
   background:#f0f0f0;border:none;border-radius:50%;
   cursor:pointer;font-size:13px;color:var(--ink);flex-shrink:0;
+  margin-left:auto;
 }
 .sheet-close:active{background:#e0e0e0;}
+/* Dark variant for route panel */
+.sheet-close.dark{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);}
+.sheet-close.dark:active{background:rgba(255,255,255,.2);}
 /* ── NAVIGATION ── */
 /* Bottom nav — mobile */
 #nav{
@@ -286,7 +307,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #overlay.show{display:block;}
 
 /* PANEL HEADER */
-.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-hdr{display:flex;flex-direction:column;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;}
 .panel-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--ink);}
 .panel-close{width:28px;height:28px;border-radius:50%;background:var(--paper2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--muted);}
 
@@ -343,7 +364,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 /* DETAIL PANEL */
 #detail{position:fixed;top:var(--header);right:0;bottom:0;width:360px;z-index:960;background:#fff;border-left:1px solid var(--border);transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;}
 #detail.open{transform:translateX(0);}
-#det-x{position:sticky;top:0;z-index:10;width:100%;padding:0;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;min-height:48px;}
+#det-x{position:sticky;top:0;z-index:10;width:100%;background:#fff;border-bottom:1px solid var(--border);display:flex;flex-direction:column;}
 #det-body{overflow-y:auto;flex:1;display:flex;flex-direction:column;}
 
 /* Detail hero */
@@ -681,10 +702,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 /* Route panel header */
 .rp-header{
-  padding:10px 14px 8px;
+  padding:0 0 8px;
   background:var(--ink);
   border-bottom:1px solid rgba(255,255,255,.08);
   flex-shrink:0;
+  display:flex;
+  flex-direction:column;
 }
 .rp-title-row{display:flex;align-items:center;justify-content:space-between;}
 .rp-title{font-size:15px;font-weight:700;color:#fff;font-family:'Syne',sans-serif;}
@@ -820,11 +843,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <div id="overlay" onclick="closeSidebar();closeResults();"></div>
 
   <div id="sidebar">
-    <div class="panel-hdr">
-      <div class="sheet-handle"></div>
+    <div class="panel-hdr" style="flex-direction:column;padding:0;border-bottom:1px solid var(--border);">
+      <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
       <div class="sheet-topbar">
+        <div class="sheet-title">Filters</div>
         <button class="sheet-close" onclick="closeSidebar()">✕</button>
-        <div class="sheet-title">Filters &amp; Search</div>
       </div>
     </div>
 
@@ -1038,11 +1061,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   </div>
 
   <div id="results-panel">
-    <div class="rp-hdr">
-      <div class="sheet-handle"></div>
+    <div style="flex-direction:column;padding:0;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;">
+      <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
       <div class="sheet-topbar">
-        <button class="sheet-close" onclick="closeResults()">✕</button>
         <div class="sheet-title">Results</div>
+        <button class="sheet-close" onclick="closeResults()">✕</button>
       </div>
     </div>
 
@@ -1080,10 +1103,10 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
   <div id="detail">
     <div id="det-x">
-      <div class="sheet-handle"></div>
+      <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
       <div class="sheet-topbar">
-        <button class="sheet-close" onclick="closeDetail()">✕</button>
         <div id="det-x-title" class="sheet-title"></div>
+        <button class="sheet-close" onclick="closeDetail()">✕</button>
       </div>
     </div>
     <div id="det-body"></div>
@@ -3264,19 +3287,165 @@ function locateMe() {
   }, { enableHighAccuracy: true, timeout: 8000 });
 }
 
-function openNav(address) {
-  var enc = encodeURIComponent(address);
-  // Detect iOS vs Android vs desktop
-  var ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/i.test(ua)) {
-    // Try Apple Maps first on iOS
-    window.open('maps://maps.apple.com/?daddr='+enc, '_blank');
-  } else if (/Android/i.test(ua)) {
-    window.open('https://www.google.com/maps/dir/?api=1&destination='+enc, '_blank');
+// ── NAVIGATION SHEET ──
+// Shows: Copy Address | Open in Maps → Apple Maps / Google Maps
+var _navSheetAddr = '';
+var _navSheetLat  = null;
+var _navSheetLon  = null;
+
+function openNav(address, lat, lon) {
+  _navSheetAddr = address || '';
+  _navSheetLat  = lat  || null;
+  _navSheetLon  = lon  || null;
+  _showNavSheet();
+}
+
+function _showNavSheet() {
+  _removeNavSheet();
+  var overlay = document.createElement('div');
+  overlay.id = 'nav-sheet-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;display:flex;align-items:flex-end;justify-content:center;';
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) _removeNavSheet(); });
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = [
+    'background:#fff','width:100%','max-width:480px',
+    'border-radius:16px 16px 0 0',
+    'padding:0 0 env(safe-area-inset-bottom,16px)',
+    'box-shadow:0 -4px 32px rgba(0,0,0,.18)',
+    'font-family:Inter,sans-serif',
+    'overflow:hidden'
+  ].join(';');
+
+  var addrDisplay = _navSheetAddr || 'this location';
+
+  sheet.innerHTML =
+    // Handle + header
+    '<div style="padding:12px 20px 8px;border-bottom:1px solid #f0f0f0;">' +
+      '<div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px;"></div>' +
+      '<div style="font-size:11px;color:#999;font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Navigate to</div>' +
+      '<div style="font-size:14px;font-weight:600;color:#0d0d14;line-height:1.3;">'+addrDisplay+'</div>' +
+    '</div>' +
+
+    // Option 1: Copy address
+    '<button onclick="_navCopyAddress()" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 20px;background:none;border:none;border-bottom:1px solid #f5f5f5;cursor:pointer;text-align:left;">' +
+      '<div style="width:36px;height:36px;border-radius:10px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:15px;font-weight:600;color:#0d0d14;">Copy Address</div>' +
+        '<div style="font-size:12px;color:#999;margin-top:1px;">Copies to clipboard</div>' +
+      '</div>' +
+    '</button>' +
+
+    // Option 2: Open in Maps — expands to show app choice
+    '<div id="nav-maps-section">' +
+      '<button onclick="_navShowMapApps()" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px 20px;background:none;border:none;cursor:pointer;text-align:left;">' +
+        '<div style="width:36px;height:36px;border-radius:10px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:15px;font-weight:600;color:#0d0d14;">Open in Maps</div>' +
+          '<div style="font-size:12px;color:#999;margin-top:1px;">Choose navigation app</div>' +
+        '</div>' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</button>' +
+
+      // App choices — hidden until tapped
+      '<div id="nav-app-choices" style="display:none;border-top:1px solid #f5f5f5;">' +
+        '<button onclick="_navOpenAppleMaps()" style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 20px 13px 70px;background:none;border:none;border-bottom:1px solid #f5f5f5;cursor:pointer;text-align:left;">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d0d14" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>' +
+          '<span style="font-size:15px;font-weight:500;color:#0d0d14;">Apple Maps</span>' +
+        '</button>' +
+        '<button onclick="_navOpenGoogleMaps()" style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 20px 13px 70px;background:none;border:none;cursor:pointer;text-align:left;">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d0d14" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' +
+          '<span style="font-size:15px;font-weight:500;color:#0d0d14;">Google Maps</span>' +
+        '</button>' +
+      '</div>' +
+    '</div>' +
+
+    // Cancel
+    '<button onclick="_removeNavSheet()" style="width:100%;padding:16px;background:none;border:none;border-top:8px solid #f5f5f5;font-size:15px;font-weight:600;color:#666;cursor:pointer;font-family:Inter,sans-serif;">Cancel</button>';
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+
+  // Slide up animation
+  sheet.style.transform = 'translateY(100%)';
+  sheet.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ sheet.style.transform = 'translateY(0)'; }); });
+}
+
+function _removeNavSheet() {
+  var el = document.getElementById('nav-sheet-overlay');
+  if (el) el.remove();
+}
+
+function _navCopyAddress() {
+  var addr = _navSheetAddr;
+  if (!addr) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(function(){
+      _removeNavSheet();
+      _showToast('Address copied');
+    }).catch(function(){
+      _fallbackCopy(addr);
+    });
   } else {
-    // Desktop — open Google Maps in new tab
-    window.open('https://www.google.com/maps/dir/?api=1&destination='+enc, '_blank');
+    _fallbackCopy(addr);
   }
+}
+
+function _fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  _removeNavSheet();
+  _showToast('Address copied');
+}
+
+function _showToast(msg) {
+  var t = document.createElement('div');
+  t.style.cssText = [
+    'position:fixed','bottom:calc(env(safe-area-inset-bottom,0px)+80px)',
+    'left:50%','transform:translateX(-50%)',
+    'background:#1a1830','color:#fff',
+    'padding:9px 18px','border-radius:100px',
+    'font-size:13px','font-weight:600','font-family:Inter,sans-serif',
+    'z-index:4000','pointer-events:none',
+    'box-shadow:0 4px 16px rgba(0,0,0,.3)'
+  ].join(';');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2200);
+}
+
+function _navShowMapApps() {
+  var choices = document.getElementById('nav-app-choices');
+  if (choices) {
+    choices.style.display = choices.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function _navOpenAppleMaps() {
+  _removeNavSheet();
+  var lat = _navSheetLat, lon = _navSheetLon, addr = _navSheetAddr;
+  if (lat && lon) {
+    window.location.href = 'maps://maps.apple.com/?daddr='+lat+','+lon+'&dirflg=d';
+  } else {
+    window.location.href = 'maps://maps.apple.com/?daddr='+encodeURIComponent(addr);
+  }
+}
+
+function _navOpenGoogleMaps() {
+  _removeNavSheet();
+  var lat = _navSheetLat, lon = _navSheetLon, addr = _navSheetAddr;
+  var dest = (lat && lon) ? lat+','+lon : encodeURIComponent(addr);
+  window.open('https://www.google.com/maps/dir/?api=1&destination='+dest+'&travelmode=driving', '_blank');
 }
 
 var lastSelectedBiz = null;
@@ -3398,7 +3567,7 @@ function renderDetailPanel(b) {
       '</div>'+
       // Quick action buttons
       '<div style="display:flex;gap:8px;margin-top:10px;">'+
-        '<button onclick="openNav(\''+addr.replace(/'/g,"\\'")+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;">'+
+        '<button onclick="openNav(\''+addr.replace(/'/g,"\\'")+'\',' + (b.lat||null) + ',' + (b.lon||null) + ')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;">'+
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
           'Navigate</button>'+
         (b.phone ?
@@ -3468,7 +3637,7 @@ function renderDetailPanel(b) {
       // View mode
       '<div id="det-view" class="det-view-mode">'+
         '<div class="det-field-row"><span class="det-field-label">Address</span>'+
-          '<span class="det-field-value" style="cursor:pointer" onclick="openNav('+JSON.stringify(addr)+')">'+
+          '<span class="det-field-value" style="cursor:pointer" onclick="openNav('+JSON.stringify(addr)+','+( b.lat||null)+','+( b.lon||null)+')">'+
             (b.street||'—')+'<br>'+(b.locality||'')+'</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Location Type</span>'+
           '<span class="det-field-value">'+
@@ -4912,15 +5081,12 @@ function _rpRemove(idx) {
 }
 
 function _rpNavigate(idx) {
-  var stop=_routeStops[idx]; if(!stop) return;
-  var lat=stop.biz.lat, lon=stop.biz.lon;
-  var addr=encodeURIComponent(stop.biz.full_address||stop.biz.street||stop.biz.name);
-  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
-  // Try Apple Maps on iOS (works offline too), Google Maps everywhere else
-  var url=isIOS
-    ? 'maps://maps.apple.com/?daddr='+lat+','+lon+'&dirflg=d'
-    : 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lon+'&travelmode=driving';
-  window.open(url,'_blank');
+  var stop = _routeStops[idx]; if (!stop) return;
+  openNav(
+    stop.biz.full_address || stop.biz.street || stop.biz.name,
+    stop.biz.lat,
+    stop.biz.lon
+  );
 }
 
 // ── RE-OPTIMIZE ──
@@ -5254,13 +5420,13 @@ function onMapClick(e) {
 <!-- ROUTE PANEL -->
 <div id="route-panel">
   <div class="rp-header">
-    <div class="sheet-handle" style="background:rgba(255,255,255,.3);"></div>
-    <div class="rp-title-row" style="margin-top:6px;">
-      <div>
+    <div class="sheet-handle-wrap"><div class="sheet-handle" style="background:rgba(255,255,255,.3);"></div></div>
+    <div class="sheet-topbar" style="padding-bottom:8px;">
+      <div style="flex:1;min-width:0;">
         <div class="rp-title">Route</div>
-        <div class="rp-subtitle" id="rp-subtitle">Select businesses from the list to build a route</div>
+        <div class="rp-subtitle" id="rp-subtitle" style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">Select businesses from the list to build a route</div>
       </div>
-      <button class="rp-close" onclick="closeRoutePanel()">✕</button>
+      <button class="sheet-close dark" onclick="closeRoutePanel()">✕</button>
     </div>
     <div class="rp-actions">
       <button class="rp-action-btn blue" onclick="reoptimizeRoute()">Re-Optimize</button>
@@ -5330,11 +5496,11 @@ function onMapClick(e) {
 
 <!-- CONTACTS PANEL -->
 <div id="contacts-panel">
-  <div id="det-x" style="position:sticky;top:0;z-index:10;background:#fff;">
-    <div class="sheet-handle"></div>
+  <div style="position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
     <div class="sheet-topbar">
-      <button class="sheet-close" onclick="navTo('map')">✕</button>
       <div class="sheet-title">Contacts</div>
+      <button class="sheet-close" onclick="navTo('map')">✕</button>
     </div>
   </div>
   <div id="contacts-panel-list" style="overflow-y:auto;flex:1;padding:.5rem 0;">
