@@ -651,12 +651,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 /* ── ROUTE BUILDER ── */
 #route-btn{display:none;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;}
 #route-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.route-select-bar{display:none;position:sticky;top:0;z-index:20;background:var(--ink);padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.1);gap:6px;flex-wrap:wrap;align-items:center;}
-.route-select-bar.active{display:flex;}
-.route-sel-count{font-size:12px;font-weight:700;color:#fff;margin-right:4px;flex-shrink:0;}
-.route-sel-btn{background:rgba(255,255,255,.1);border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;}
-.route-sel-btn.accent{background:var(--accent);}
-.route-sel-btn.red{background:#dc2626;}
 .bitem-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;}
 .bitem-check.checked{background:var(--accent);border-color:var(--accent);}
 .bitem-check.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:700;}
@@ -1051,13 +1045,35 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         <div class="sheet-title">Results</div>
       </div>
     </div>
-    <!-- Route Selection Bar — shown in route mode -->
-    <div class="route-select-bar" id="route-select-bar">
-      <span class="route-sel-count" id="route-sel-count">0 selected</span>
-      <button class="route-sel-btn" onclick="routeSelectAll()">Select All</button>
-      <button class="route-sel-btn" onclick="routeClearSelection()">Clear</button>
-      <button class="route-sel-btn accent" onclick="buildRouteFromSelection()">Build Route</button>
+
+    <!-- Persistent toolbar: sort + route controls -->
+    <div id="list-toolbar" style="display:flex;align-items:center;gap:6px;padding:7px 10px;border-bottom:1px solid var(--border);background:var(--paper);flex-shrink:0;flex-wrap:wrap;">
+      <!-- Sort -->
+      <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">Sort</span>
+        <select id="list-sort" onchange="sortList(this.value)" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 7px;font-size:11px;font-family:'Inter',sans-serif;color:var(--ink);background:#fff;outline:none;cursor:pointer;">
+          <option value="default">Default</option>
+          <option value="closest">Closest to Me</option>
+          <option value="pipeline">Pipeline Stage</option>
+          <option value="name">Name A–Z</option>
+          <option value="industry">Industry</option>
+        </select>
+      </div>
+      <!-- Route controls — always visible -->
+      <div id="route-list-controls" style="display:none;align-items:center;gap:5px;flex-shrink:0;">
+        <button onclick="routeSelectAll()" style="background:var(--paper2);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">All</button>
+        <button onclick="routeClearSelection()" style="background:var(--paper2);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">None</button>
+        <button onclick="buildRouteFromSelection()" id="build-route-btn" style="background:var(--accent);border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Build Route</button>
+      </div>
+      <!-- View Route button — shown when route exists -->
+      <button id="view-route-btn" onclick="openRoutePanel()" style="display:none;background:var(--accent-light);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--accent);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">View Route</button>
     </div>
+
+    <!-- Route selection count — only shown in route mode -->
+    <div id="route-sel-bar" style="display:none;padding:5px 10px;background:var(--ink);font-size:11px;font-weight:600;color:rgba(255,255,255,.7);flex-shrink:0;">
+      <span id="route-sel-count">0 selected</span>
+    </div>
+
     <div id="rcount"></div>
     <div id="biz-list"></div>
   </div>
@@ -2716,11 +2732,14 @@ function getVisibleData() {
 }
 
 function renderList() {
-  var data = getVisibleData().filter(function(b){ return b.lat&&b.lon; });
+  var raw = getVisibleData().filter(function(b){ return b.lat&&b.lon; });
   var source = filtersApplied ? filteredData : allData;
   var total = source.length;
 
-  // In route mode, always show what's in view (even without filters)
+  // Show/hide View Route button
+  var vrBtn = document.getElementById('view-route-btn');
+  if (vrBtn) vrBtn.style.display = (_routeStops.length > 0 && !_routeMode) ? 'block' : 'none';
+
   if (!filtersApplied && !_routeMode) {
     document.getElementById('rcount').textContent = 'Apply filters to see businesses';
     document.getElementById('biz-list').innerHTML =
@@ -2730,53 +2749,55 @@ function renderList() {
   }
 
   if (!filtersApplied && _routeMode) {
-    // Route mode with no filters — show all in-viewport businesses
-    data = allData.filter(function(b){
-      if (!b.lat||!b.lon) return false;
-      try {
-        var bounds = map.getBounds();
-        return b.lon>=bounds.getWest()&&b.lon<=bounds.getEast()&&
+    try {
+      var bounds = map.getBounds();
+      raw = allData.filter(function(b){
+        return b.lat&&b.lon&&b.lon>=bounds.getWest()&&b.lon<=bounds.getEast()&&
                b.lat>=bounds.getSouth()&&b.lat<=bounds.getNorth();
-      } catch(e){ return false; }
-    });
+      });
+    } catch(e){}
   }
 
-  if (!data.length && total > 0) {
+  if (!raw.length && total > 0) {
     document.getElementById('rcount').textContent = total.toLocaleString()+' filtered · none in view';
     document.getElementById('biz-list').innerHTML =
       '<div style="padding:1.5rem;font-size:12px;color:var(--muted);text-align:center;">'+
-      ''+
-      total.toLocaleString()+' businesses match your filters<br>'+
-      '<strong>Zoom or pan the map</strong> to see them here.</div>';
+      total.toLocaleString()+' businesses match your filters.<br><strong>Zoom or pan</strong> to see them here.</div>';
     return;
   }
 
-  if (!data.length) {
+  if (!raw.length) {
     document.getElementById('rcount').textContent = 'No results in view';
-    document.getElementById('biz-list').innerHTML =
-      '<div style="padding:1.5rem;font-size:12px;color:var(--muted);text-align:center;">No businesses found.</div>';
+    document.getElementById('biz-list').innerHTML = '<div style="padding:1.5rem;font-size:12px;color:var(--muted);text-align:center;">No businesses found.</div>';
     return;
   }
 
+  var data = _applySortToData(raw);
+
+  var sortNote = (_currentSort === 'closest' && _userLat === null)
+    ? ' &nbsp;<span style="color:var(--red);font-size:10px;">Enable location for closest sort</span>' : '';
   var countLabel = data.length.toLocaleString() + ' in view';
   if (total > data.length) countLabel += ' · ' + total.toLocaleString() + ' total filtered';
-  document.getElementById('rcount').textContent = countLabel;
+  document.getElementById('rcount').innerHTML = countLabel + sortNote;
+
   document.getElementById('biz-list').innerHTML = data.slice(0,200).map(function(b){
     var idx = b._id;
     var color = bizColor(b);
+    var pipeLabel = (b.pipeline_stage && _currentSort === 'pipeline')
+      ? '<span style="font-size:10px;color:var(--accent);font-weight:600;margin-left:5px;">'+b.pipeline_stage+'</span>' : '';
     if (_routeMode) {
       var isChecked = !!_routeSelected[idx];
       return '<div class="bitem" style="display:flex;align-items:center;gap:10px;" onclick="toggleRouteSelect('+idx+')">'+
         '<div class="bitem-check'+(isChecked?' checked':'')+'" id="rcb-'+idx+'"></div>'+
         '<div style="flex:1;min-width:0;">'+
           '<div class="bname"><span class="sdot" style="background:'+color+'"></span>'+b.name+'</div>'+
-          '<div class="baddr">'+b.street+(b.industry?' · <em style=color:var(--muted)>'+b.industry+'</em>':'')+'</div>'+
+          '<div class="baddr">'+b.street+(b.industry?' · <em style="color:var(--muted)">'+b.industry+'</em>':'')+'</div>'+
         '</div>'+
       '</div>';
     }
     return '<div class="bitem" onclick="selectBiz('+idx+')">'+
-      '<div class="bname"><span class="sdot" style="background:'+color+'"></span>'+b.name+'</div>'+
-      '<div class="baddr">'+b.street+(b.industry?' · <em style=color:var(--muted)>'+b.industry+'</em>':'')+'</div>'+
+      '<div class="bname"><span class="sdot" style="background:'+color+'"></span>'+b.name+pipeLabel+'</div>'+
+      '<div class="baddr">'+b.street+(b.industry?' · <em style="color:var(--muted)">'+b.industry+'</em>':'')+'</div>'+
       (b.phone?'<div class="bphone"><a href="tel:'+b.phone.replace(/\D/g,'')+'" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">'+b.phone+'</a></div>':'')+
     '</div>';
   }).join('') + (data.length>200?'<div style="padding:.75rem;font-size:12px;color:var(--muted);text-align:center">Showing 200 of '+data.length.toLocaleString()+' — zoom in to narrow</div>':'');
@@ -4430,20 +4451,87 @@ function _fmtDist(m) {
 }
 
 // ── SELECTION MODE ──
+var _currentSort = 'default';
+var _userLat = null, _userLon = null;
+
+// Keep GPS position updated for "closest" sort
+if (navigator.geolocation) {
+  navigator.geolocation.watchPosition(function(p){
+    _userLat = p.coords.latitude; _userLon = p.coords.longitude;
+  }, null, {enableHighAccuracy:true, maximumAge:10000});
+}
+
 function toggleRouteMode() {
   _routeMode = !_routeMode;
   var btn = document.getElementById('route-btn');
-  var bar = document.getElementById('route-select-bar');
   btn.classList.toggle('active', _routeMode);
   btn.textContent = _routeMode ? 'Cancel' : 'Route';
-  if (bar) bar.classList.toggle('active', _routeMode);
+
+  // Show/hide route controls in list toolbar
+  var ctrl = document.getElementById('route-list-controls');
+  var selBar = document.getElementById('route-sel-bar');
+  if (ctrl) ctrl.style.display = _routeMode ? 'flex' : 'none';
+  if (selBar) selBar.style.display = _routeMode ? 'block' : 'none';
+
   ['nd-route','nm-route'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.classList.toggle('active', _routeMode);
   });
-  if (!_routeMode) { _routeSelected = {}; updateRouteSelCount(); }
+
+  if (!_routeMode) {
+    _routeSelected = {};
+    updateRouteSelCount();
+  }
   renderList();
-  if (_routeMode) navTo('list');
+  navTo('list');
+}
+
+// Route nav button — if route exists, toggle route panel; else enter selection mode
+function toggleRouteNav() {
+  if (_routeStops.length > 0) {
+    var panel = document.getElementById('route-panel');
+    if (panel.classList.contains('open')) {
+      closeRoutePanel();
+    } else {
+      openRoutePanel();
+    }
+  } else {
+    toggleRouteMode();
+  }
+}
+
+function sortList(val) {
+  _currentSort = val;
+  renderList();
+}
+
+function _applySortToData(data) {
+  if (_currentSort === 'name') {
+    return data.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  }
+  if (_currentSort === 'industry') {
+    return data.slice().sort(function(a,b){ return (a.industry||'').localeCompare(b.industry||''); });
+  }
+  if (_currentSort === 'pipeline') {
+    var ORDER = {'Lead Captured':0,'Qualified':1,'Fact-Finding':2,'Proposal Sent':3,'Credit Application':4,'Won Opportunity':5,'Lost':6};
+    return data.slice().sort(function(a,b){
+      var ai = ORDER[a.pipeline_stage]!==undefined ? ORDER[a.pipeline_stage] : 99;
+      var bi = ORDER[b.pipeline_stage]!==undefined ? ORDER[b.pipeline_stage] : 99;
+      return ai - bi;
+    });
+  }
+  if (_currentSort === 'closest') {
+    if (_userLat !== null && _userLon !== null) {
+      return data.slice().sort(function(a,b){
+        var da = Math.pow(a.lat-_userLat,2)+Math.pow(a.lon-_userLon,2);
+        var db = Math.pow(b.lat-_userLat,2)+Math.pow(b.lon-_userLon,2);
+        return da - db;
+      });
+    }
+    // No GPS yet — show message and return unsorted
+    return data;
+  }
+  return data; // default
 }
 
 function toggleRouteSelect(id) {
@@ -4460,6 +4548,12 @@ function updateRouteSelCount() {
   var n = Object.keys(_routeSelected).length;
   var el = document.getElementById('route-sel-count');
   if (el) el.textContent = n + ' selected';
+  // Update Build Route button state
+  var btn = document.getElementById('build-route-btn');
+  if (btn) {
+    btn.style.opacity = n > 0 ? '1' : '0.5';
+    btn.textContent = n > 0 ? 'Build Route ('+n+')' : 'Build Route';
+  }
 }
 
 function routeSelectAll() {
@@ -4531,13 +4625,16 @@ async function _buildRoute() {
     .map(function(b){ return {biz:b, done:false}; });
   if (!stops.length) { alert('No businesses with coordinates selected.'); return; }
 
-  // Exit selection mode
+  // Exit selection mode cleanly
   _routeMode = false;
   _routeSelected = {};
   var btn = document.getElementById('route-btn');
   if (btn) { btn.classList.remove('active'); btn.textContent = 'Route'; }
-  var bar = document.getElementById('route-select-bar');
-  if (bar) bar.classList.remove('active');
+  // Hide route selection controls
+  var ctrl = document.getElementById('route-list-controls');
+  if (ctrl) ctrl.style.display = 'none';
+  var selBar = document.getElementById('route-sel-bar');
+  if (selBar) selBar.style.display = 'none';
   renderList();
 
   // Open panel with loading state
@@ -4677,9 +4774,24 @@ function _drawRouteOnMap() {
     var bg=isDone?'#059669':'#4a36c8';
     var label=isDone?'✓':(i+1);
     var el=document.createElement('div');
+    el.style.cssText='cursor:pointer;';
     el.innerHTML='<div style="width:28px;height:28px;border-radius:50%;background:'+bg+
       ';color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;'+
       'border:2px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(0,0,0,.35);">'+label+'</div>';
+    // Click on route pin — scroll to that stop in the panel, fly map to it. Do NOT open business profile.
+    el.addEventListener('click', function(e){
+      e.stopPropagation();
+      // Open route panel and scroll to this stop
+      openRoutePanel();
+      setTimeout(function(){
+        var stopEl = document.getElementById('rpstop-'+i);
+        if (stopEl) stopEl.scrollIntoView({behavior:'smooth', block:'center'});
+        // Briefly highlight it
+        stopEl && stopEl.classList.add('drag-over');
+        setTimeout(function(){ stopEl && stopEl.classList.remove('drag-over'); }, 1200);
+      }, 150);
+      map.flyTo({center:[stop.biz.lon, stop.biz.lat], zoom:16, speed:1.4});
+    });
     _routeMarkers.push(new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([stop.biz.lon,stop.biz.lat]).addTo(map));
   });
 }
@@ -4687,17 +4799,22 @@ function _drawRouteOnMap() {
 // ── ROUTE PANEL ──
 function openRoutePanel() {
   document.getElementById('route-panel').classList.add('open');
+  var vrBtn = document.getElementById('view-route-btn');
+  if (vrBtn) vrBtn.style.display = 'none'; // hidden while panel is open
   if (_routeStops.length) {
-    var bounds=new mapboxgl.LngLatBounds();
-    if (_routeStartPoint) bounds.extend([_routeStartPoint.lon,_routeStartPoint.lat]);
+    var bounds = new mapboxgl.LngLatBounds();
+    if (_routeStartPoint) bounds.extend([_routeStartPoint.lon, _routeStartPoint.lat]);
     _routeStops.forEach(function(s){ if(s.biz.lon&&s.biz.lat) bounds.extend([s.biz.lon,s.biz.lat]); });
-    if (!bounds.isEmpty()) map.fitBounds(bounds,{padding:60,maxZoom:14});
+    if (!bounds.isEmpty()) map.fitBounds(bounds, {padding:60, maxZoom:14});
   }
   _renderRPStops();
 }
 
 function closeRoutePanel() {
   document.getElementById('route-panel').classList.remove('open');
+  // Show View Route button in list if route exists
+  var vrBtn = document.getElementById('view-route-btn');
+  if (vrBtn) vrBtn.style.display = _routeStops.length > 0 ? 'block' : 'none';
 }
 
 function _setRPSubtitle(txt) {
@@ -4720,16 +4837,16 @@ function _renderRPStops() {
       var parts=[];
       if (stop._legDur)  parts.push(_fmtDur(stop._legDur));
       if (stop._legDist) parts.push(_fmtDist(stop._legDist));
-      leg='<div class="rp-stop-leg">🚗 '+parts.join(' · ')+'</div>';
+      leg='<div class="rp-stop-leg">'+parts.join(' · ')+'</div>';
     }
     return '<div class="rp-stop'+(isDone?' done':'')+'" id="rpstop-'+i+'" draggable="true" '+
       'ondragstart="_rpDragStart(event,'+i+')" ondragover="_rpDragOver(event,'+i+')" '+
       'ondrop="_rpDrop(event,'+i+')" ondragleave="_rpDragLeave(event)">'+
-      '<div class="rp-drag-handle" title="Drag to reorder">⠿</div>'+
+      '<div class="rp-drag-handle" title="Drag to reorder"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" style="display:block;"><circle cx="3" cy="3" r="1.5" fill="#ccc"/><circle cx="7" cy="3" r="1.5" fill="#ccc"/><circle cx="3" cy="8" r="1.5" fill="#ccc"/><circle cx="7" cy="8" r="1.5" fill="#ccc"/><circle cx="3" cy="13" r="1.5" fill="#ccc"/><circle cx="7" cy="13" r="1.5" fill="#ccc"/></svg></div>'+
       '<div class="rp-num'+(isDone?' done-num':'')+'">'+( isDone?'✓':(i+1) )+'</div>'+
       '<div class="rp-stop-info">'+
-        '<div class="rp-stop-name">'+stop.biz.name+'</div>'+
-        '<div class="rp-stop-addr">'+(stop.biz.street||stop.biz.full_address||'')+'</div>'+
+        '<div class="rp-stop-name" onclick="_rpFlyTo('+i+')" style="cursor:pointer;" title="Show on map">'+stop.biz.name+'</div>'+
+        '<div class="rp-stop-addr" onclick="_rpFlyTo('+i+')" style="cursor:pointer;">'+(stop.biz.street||stop.biz.full_address||'')+'</div>'+
         leg+
         '<div class="rp-stop-btns">'+
           '<button class="rp-btn nav" onclick="_rpNavigate('+i+')">↗ Open in Maps</button>'+
@@ -4761,6 +4878,15 @@ function _rpDrop(e,toIdx){
 }
 
 // ── STOP ACTIONS ──
+function _rpFlyTo(idx) {
+  var stop = _routeStops[idx];
+  if (!stop || !stop.biz.lat) return;
+  // Close panel on mobile so the map is visible
+  var isMobile = window.innerWidth <= 768;
+  if (isMobile) closeRoutePanel();
+  map.flyTo({center:[stop.biz.lon, stop.biz.lat], zoom:17, speed:1.4});
+}
+
 function _rpDone(idx) {
   _routeStops[idx].done=true;
   var b=_routeStops[idx].biz;
@@ -4830,8 +4956,10 @@ function clearRoute() {
   if(map.getSource('route-line-src')){try{map.removeSource('route-line-src');}catch(e){}}
   _routeLine=null;
   localStorage.removeItem('vavan_route');
-  closeRoutePanel();
+  document.getElementById('route-panel').classList.remove('open');
+  var vrBtn=document.getElementById('view-route-btn'); if(vrBtn) vrBtn.style.display='none';
   var btn=document.getElementById('route-btn'); if(btn) btn.textContent='Route';
+  renderList();
 }
 
 function changeRouteStart() {
@@ -5164,7 +5292,7 @@ function onMapClick(e) {
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Contacts
   </button>
-  <button class="nav-item-desk" id="nd-route" onclick="toggleRouteMode();navTo('list')">
+  <button class="nav-item-desk" id="nd-route" onclick="toggleRouteNav()">
     <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
     Route
   </button>
@@ -5194,7 +5322,7 @@ function onMapClick(e) {
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Contacts
   </button>
-  <button class="nav-item" id="nm-route" onclick="toggleRouteMode();navTo('list')">
+  <button class="nav-item" id="nm-route" onclick="toggleRouteNav()">
     <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
     Route
   </button>
