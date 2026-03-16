@@ -274,7 +274,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 @media (max-width:768px){
   #nav-desktop{ display:none; }
-  #header-add-btn{ display:block; } /* show on mobile */
+  #header-add-btn{ display:none; } /* now in bottom nav */
   #map{ bottom:60px; }
   #contacts-panel{
     top:auto !important; bottom:60px !important;
@@ -5562,22 +5562,29 @@ function onMapClick(e) {
 
 <!-- MOBILE BOTTOM NAV -->
 <nav id="nav">
-  <button class="nav-item" id="nm-filters" onclick="navTo('filters')">
-    <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-    Filters
+  <button class="nav-item" id="nm-route" onclick="toggleRouteNav()">
+    <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
+    Route
+  </button>
+  <button class="nav-item" id="nm-contacts" onclick="navTo('contacts')">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Contacts
+  </button>
+  <!-- Centre + Add button -->
+  <button class="nav-item" onclick="openAddBusiness()" style="flex:1.2;">
+    <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(74,54,200,.5);margin-bottom:-6px;margin-top:-10px;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    <span style="color:var(--accent);font-size:10px;font-weight:600;margin-top:2px;">Add</span>
   </button>
   <button class="nav-item" id="nm-list" onclick="navTo('list')" style="position:relative">
     <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     List
     <span class="nav-badge" id="nm-list-badge">0</span>
   </button>
-  <button class="nav-item" id="nm-contacts" onclick="navTo('contacts')">
-    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    Contacts
-  </button>
-  <button class="nav-item" id="nm-route" onclick="toggleRouteNav()">
-    <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
-    Route
+  <button class="nav-item" id="nm-filters" onclick="navTo('filters')">
+    <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+    Filters
   </button>
 </nav>
 
