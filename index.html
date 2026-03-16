@@ -3804,7 +3804,7 @@ function renderDetailPanel(b) {
     // ── TABS ──
     '<div class="det-tabs">'+
       '<div class="det-tab active" onclick="switchTab(\'profile\')">Profile</div>'+
-      '<div class="det-tab" onclick="switchTab(\'opportunities\')">Opps</div>'+
+      '<div class="det-tab" onclick="switchTab(\'opportunities\')">Opportunities</div>'+
       '<div class="det-tab" onclick="switchTab(\'contacts\')">Contacts</div>'+
       '<div class="det-tab" onclick="switchTab(\'activity\')">Activity</div>'+
     '</div>'+
@@ -4707,11 +4707,11 @@ async function saveNote() {
 
 // ── OPPORTUNITIES ──
 var OPP_PRODUCTS = [
-  { key:'lubricants',     label:'Lubricants',       field:'lube',       unit:'gal/mo',  max:1000,  maxLabel:'1,000+' },
-  { key:'fuel_delivery',  label:'Fuel Delivery',    field:'fuel',       unit:'gal/mo',  max:50000, maxLabel:'50,000+' },
-  { key:'cardlock',       label:'Cardlock',         field:'cardlock',   unit:'gal/mo',  max:50000, maxLabel:'50,000+' },
-  { key:'propane',        label:'Propane',          field:'propane',    unit:'gal/mo',  max:5000,  maxLabel:'5,000+' },
-  { key:'uco',            label:'Used Cooking Oil', field:'uco',        unit:'gal/mo',  max:500,   maxLabel:'500+' }
+  { key:'lubricants',     label:'Lubricants',       field:'lube',       unit:'Gallons / Month',  max:1000,  maxLabel:'1,000+' },
+  { key:'fuel_delivery',  label:'Fuel Delivery',    field:'fuel',       unit:'Gallons / Month',  max:50000, maxLabel:'50,000+' },
+  { key:'cardlock',       label:'Cardlock',         field:'cardlock',   unit:'Gallons / Month',  max:50000, maxLabel:'50,000+' },
+  { key:'propane',        label:'Propane',          field:'propane',    unit:'Gallons / Month',  max:5000,  maxLabel:'5,000+' },
+  { key:'uco',            label:'Used Cooking Oil', field:'uco',        unit:'Gallons / Month',  max:500,   maxLabel:'500+' }
 ];
 
 function fmtGallons(n, maxVal) {
