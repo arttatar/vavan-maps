@@ -779,58 +779,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         </div>
       </div>
 
-      <!-- PIPELINE STAGE -->
-      <div class="sb-sec">
-        <div class="sb-title">Pipeline Stage</div>
-        <div id="pipeline-slider-wrap">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-size:12px;font-weight:600;color:var(--accent)" id="pipe-stage-label">All Stages</span>
-            <span id="pipe-clear-btn" onclick="clearPipelineFilter()" style="display:none;font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;">Clear</span>
-          </div>
-          <!-- Stage track -->
-          <div style="position:relative;padding:0 0 28px;">
-            <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:10px 0 0;">
-              <div id="pipe-track-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;transition:width .2s;width:0%"></div>
-            </div>
-            <!-- Stage dots -->
-            <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;">
-              <div class="pipe-dot" data-stage="all" onclick="setPipelineStage('all',this)" title="All Stages">
-                <div class="pipe-dot-circle active"></div>
-                <div class="pipe-dot-label">All</div>
-              </div>
-              <div class="pipe-dot" data-stage="Lead Captured" onclick="setPipelineStage('Lead Captured',this)" title="Lead Captured">
-                <div class="pipe-dot-circle"></div>
-                <div class="pipe-dot-label">Lead</div>
-              </div>
-              <div class="pipe-dot" data-stage="Qualified" onclick="setPipelineStage('Qualified',this)" title="Qualified">
-                <div class="pipe-dot-circle"></div>
-                <div class="pipe-dot-label">Qualified</div>
-              </div>
-              <div class="pipe-dot" data-stage="Fact-Finding" onclick="setPipelineStage('Fact-Finding',this)" title="Fact-Finding">
-                <div class="pipe-dot-circle"></div>
-                <div class="pipe-dot-label">Fact-Find</div>
-              </div>
-              <div class="pipe-dot" data-stage="Proposal Sent" onclick="setPipelineStage('Proposal Sent',this)" title="Proposal Sent">
-                <div class="pipe-dot-circle"></div>
-                <div class="pipe-dot-label">Proposal</div>
-              </div>
-              <div class="pipe-dot" data-stage="Credit Application" onclick="setPipelineStage('Credit Application',this)" title="Credit Application">
-                <div class="pipe-dot-circle"></div>
-                <div class="pipe-dot-label">Credit</div>
-              </div>
-              <div class="pipe-dot" data-stage="Won Opportunity" onclick="setPipelineStage('Won Opportunity',this)" title="Won Opportunity">
-                <div class="pipe-dot-circle won"></div>
-                <div class="pipe-dot-label">Won ✓</div>
-              </div>
-              <div class="pipe-dot" data-stage="Lost" onclick="setPipelineStage('Lost',this)" title="Lost">
-                <div class="pipe-dot-circle lost"></div>
-                <div class="pipe-dot-label">Lost ✗</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ASSIGNED REP -->
       <div class="sb-sec">
         <div class="sb-title">Assigned Rep</div>
@@ -841,45 +789,90 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         </select>
       </div>
 
-      <!-- OPPORTUNITY PIPELINE -->
+      <!-- OPPORTUNITY PIPELINE FILTERS -->
       <div class="sb-sec">
         <div class="sb-title">Opportunity Pipeline</div>
-        <!-- Step 1: pick product line -->
-        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Product Line</div>
-        <div class="pills" id="opp-filter-pills" style="margin-bottom:.75rem;">
+        <div class="pills" style="margin-bottom:.5rem;">
           <span class="pill on" data-f="opp_product" data-v="all">All</span>
           <span class="pill" data-f="opp_product" data-v="none" style="color:#dc2626;border-color:#dc2626;">No Pipeline</span>
-          <span class="pill" data-f="opp_product" data-v="lubricants">🛢 Lubricants</span>
-          <span class="pill" data-f="opp_product" data-v="fuel_delivery">⛽ Fuel Delivery</span>
-          <span class="pill" data-f="opp_product" data-v="cardlock">💳 Cardlock</span>
-          <span class="pill" data-f="opp_product" data-v="propane">🔥 Propane</span>
-          <span class="pill" data-f="opp_product" data-v="uco">🍳 Used Cooking Oil</span>
         </div>
+      </div>
 
-        <!-- Step 2: pick pipeline stage for that product (shows when product selected) -->
-        <div id="opp-stage-filter-wrap" style="display:none;">
-          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Pipeline Stage</div>
-          <div class="pills" id="opp-stage-pills">
-            <span class="pill on" data-f="opp_stage" data-v="all">All Stages</span>
-            <span class="pill" data-f="opp_stage" data-v="Lead Captured">Lead</span>
-            <span class="pill" data-f="opp_stage" data-v="Qualified">Qualified</span>
-            <span class="pill" data-f="opp_stage" data-v="Fact-Finding">Fact-Find</span>
-            <span class="pill" data-f="opp_stage" data-v="Proposal Sent">Proposal</span>
-            <span class="pill" data-f="opp_stage" data-v="Credit Application">Credit</span>
-            <span class="pill" data-f="opp_stage" data-v="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
-            <span class="pill" data-f="opp_stage" data-v="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
-          </div>
+      <!-- LUBE PIPELINE -->
+      <div class="sb-sec" style="padding-top:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);">🛢 Lubricants</div>
+          <span id="lube-stage-lbl" style="font-size:11px;font-weight:600;color:var(--accent);display:none;"></span>
+        </div>
+        <div class="pills" id="lube-stage-pills">
+          <span class="pill on" data-f="opp_product" data-pf="lubricants" data-v="all_lube">All</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Lead Captured">Lead</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Qualified">Qualified</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Fact-Finding">Fact-Find</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Proposal Sent">Proposal</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Credit Application">Credit</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
+          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        </div>
+      </div>
 
-          <!-- Step 3: optional min volume -->
-          <div style="margin-top:.75rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Min Volume</span>
-              <span style="font-size:12px;font-weight:700;color:var(--accent);" id="opp-vol-filter-lbl">0 gal/mo</span>
-            </div>
-            <input type="range" id="opp-vol-filter-slider" min="0" max="10000" step="100" value="0"
-              style="width:100%;accent-color:var(--accent);"
-              oninput="updateOppVolumeFilter()">
-          </div>
+      <!-- FUEL PIPELINE -->
+      <div class="sb-sec" style="padding-top:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">⛽ Fuel Delivery</div>
+        <div class="pills">
+          <span class="pill on" data-f="opp_product" data-pf="fuel_delivery" data-v="all_fuel">All</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Lead Captured">Lead</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Qualified">Qualified</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Fact-Finding">Fact-Find</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Proposal Sent">Proposal</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Credit Application">Credit</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
+          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        </div>
+      </div>
+
+      <!-- CARDLOCK PIPELINE -->
+      <div class="sb-sec" style="padding-top:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">💳 Cardlock</div>
+        <div class="pills">
+          <span class="pill on" data-f="opp_product" data-pf="cardlock" data-v="all_cardlock">All</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Lead Captured">Lead</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Qualified">Qualified</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Fact-Finding">Fact-Find</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Proposal Sent">Proposal</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Credit Application">Credit</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
+          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        </div>
+      </div>
+
+      <!-- PROPANE PIPELINE -->
+      <div class="sb-sec" style="padding-top:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">🔥 Propane</div>
+        <div class="pills">
+          <span class="pill on" data-f="opp_product" data-pf="propane" data-v="all_propane">All</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Lead Captured">Lead</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Qualified">Qualified</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Fact-Finding">Fact-Find</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Proposal Sent">Proposal</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Credit Application">Credit</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
+          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        </div>
+      </div>
+
+      <!-- UCO PIPELINE -->
+      <div class="sb-sec" style="padding-top:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">🍳 Used Cooking Oil</div>
+        <div class="pills">
+          <span class="pill on" data-f="opp_product" data-pf="uco" data-v="all_uco">All</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Lead Captured">Lead</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Qualified">Qualified</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Fact-Finding">Fact-Find</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Proposal Sent">Proposal</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Credit Application">Credit</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
+          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
         </div>
       </div>
 
@@ -997,7 +990,14 @@ function _buildLookup() {
   _bizById = {};
   allData.forEach(function(b){ _bizById[b._id] = b; });
 }
-var filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_stage:'all', opp_min_volume:0 };
+var filters = {
+  opp:'all', contact:'all', industry:'all', pipeline:'all',
+  subIndustry:'all', status:'all', rep:'all',
+  opp_product:'all', opp_stage:'all', opp_min_volume:0,
+  // Per-product pipeline stage filters
+  opp_lube_stage:'all', opp_fuel_stage:'all', opp_cardlock_stage:'all',
+  opp_propane_stage:'all', opp_uco_stage:'all'
+};
 var activeTool = null, selPoly = null, radMiles = 5;
 
 // ── LOGIN ──
@@ -2012,22 +2012,47 @@ function updateFilterBadge() {
 // ── FILTER PILLS ──
 document.querySelectorAll('.pill[data-f]').forEach(function(p){
   p.addEventListener('click', function(){
+    // Per-product pipeline stage pills use data-pf + data-sv
+    if (p.dataset.pf && p.dataset.sv) {
+      document.querySelectorAll('[data-pf="'+p.dataset.pf+'"]').forEach(function(x){ x.classList.remove('on'); });
+      p.classList.add('on');
+      // Set the stage filter for this specific product
+      var stageKey = 'opp_'+p.dataset.pf+'_stage';
+      // map fuel_delivery -> fuel
+      var fieldMap = {lubricants:'lube',fuel_delivery:'fuel',cardlock:'cardlock',propane:'propane',uco:'uco'};
+      var field = fieldMap[p.dataset.pf] || p.dataset.pf;
+      filters['opp_'+field+'_stage'] = p.dataset.sv;
+      // Deselect the top All/No Pipeline pills
+      document.querySelectorAll('[data-v="all"],[data-v="none"]').forEach(function(x){ x.classList.remove('on'); });
+      return;
+    }
+    // Per-product All pill (data-v="all_lube" etc)
+    if (p.dataset.v && p.dataset.v.startsWith('all_') && p.dataset.pf) {
+      document.querySelectorAll('[data-pf="'+p.dataset.pf+'"]').forEach(function(x){ x.classList.remove('on'); });
+      p.classList.add('on');
+      var fieldMap = {lubricants:'lube',fuel_delivery:'fuel',cardlock:'cardlock',propane:'propane',uco:'uco'};
+      var field = fieldMap[p.dataset.pf] || p.dataset.pf;
+      filters['opp_'+field+'_stage'] = 'all';
+      return;
+    }
+    // Top-level All / No Pipeline pills
+    if (p.dataset.v === 'all' || p.dataset.v === 'none') {
+      document.querySelectorAll('[data-pf]').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('[data-v^="all_"]').forEach(function(x){ x.classList.add('on'); });
+      document.querySelectorAll('[data-v="all"],[data-v="none"]').forEach(function(x){ x.classList.remove('on'); });
+      p.classList.add('on');
+      filters.opp_product = p.dataset.v;
+      filters.opp_stage   = 'all';
+      // Reset all per-product stages
+      filters.opp_lube_stage = 'all'; filters.opp_fuel_stage = 'all';
+      filters.opp_cardlock_stage = 'all'; filters.opp_propane_stage = 'all';
+      filters.opp_uco_stage = 'all';
+      return;
+    }
+    // All other pills (industry, rep, etc)
     document.querySelectorAll('[data-f="'+p.dataset.f+'"]').forEach(function(x){ x.classList.remove('on'); });
     p.classList.add('on');
     filters[p.dataset.f] = p.dataset.v;
-    // Show stage + volume filters when opp product selected (not for 'none')
-    if (p.dataset.f === 'opp_product') {
-      var stageWrap = document.getElementById('opp-stage-filter-wrap');
-      var showStage = p.dataset.v !== 'all' && p.dataset.v !== 'none';
-      if (stageWrap) stageWrap.style.display = showStage ? 'block' : 'none';
-      if (!showStage) {
-        filters.opp_stage = 'all';
-        filters.opp_min_volume = 0;
-        document.querySelectorAll('[data-f="opp_stage"]').forEach(function(x){ x.classList.remove('on'); });
-        var allStagePill = document.querySelector('[data-f="opp_stage"][data-v="all"]');
-        if (allStagePill) allStagePill.classList.add('on');
-      }
-    }
   });
 });
 
@@ -2468,33 +2493,33 @@ function applyFilters() {
     });
   }
 
-  // Opportunity pipeline filter — product line + stage + min volume
-  if (filters.opp_product && filters.opp_product !== 'all') {
-    if (filters.opp_product === 'none') {
-      // Show only businesses with NO active opportunity pipelines
-      data = data.filter(function(b){
-        var opp = _oppCache[String(b.id||b._id)];
-        if (!opp) return true; // no opp record at all = no pipeline
-        return !OPP_PRODUCTS.some(function(p){ return opp['uses_'+p.key]; });
-      });
-    } else {
-      var minVol = filters.opp_min_volume || 0;
-      var oppStage = filters.opp_stage || 'all';
+  // Opportunity pipeline filter — independent per product line
+  var productFieldMap = {lubricants:'lube',fuel_delivery:'fuel',cardlock:'cardlock',propane:'propane',uco:'uco'};
+  if (filters.opp_product === 'none') {
+    // No pipeline at all on any product
+    data = data.filter(function(b){
+      var opp = _oppCache[String(b.id||b._id)];
+      if (!opp) return true;
+      return !OPP_PRODUCTS.some(function(p){ return opp['uses_'+p.key]; });
+    });
+  } else {
+    // Check each product's stage filter independently — can combine e.g. Lube=Proposal AND Fuel=Qualified
+    var hasAnyProductFilter = OPP_PRODUCTS.some(function(p){
+      var field = productFieldMap[p.key];
+      var sf = filters['opp_'+field+'_stage'];
+      return sf && sf !== 'all';
+    });
+    if (hasAnyProductFilter) {
       data = data.filter(function(b){
         var opp = _oppCache[String(b.id||b._id)];
         if (!opp) return false;
-        if (!opp['uses_'+filters.opp_product]) return false;
-        var prod = OPP_PRODUCTS.find(function(p){ return p.key === filters.opp_product; });
-        if (!prod) return false;
-        if (oppStage !== 'all') {
-          var productStage = opp[prod.field+'_stage'] || 'Lead Captured';
-          if (productStage !== oppStage) return false;
-        }
-        if (minVol > 0) {
-          var vol = opp[prod.field+'_gallons'] || 0;
-          if (vol < minVol) return false;
-        }
-        return true;
+        return OPP_PRODUCTS.every(function(p){
+          var field = productFieldMap[p.key];
+          var sf = filters['opp_'+field+'_stage'];
+          if (!sf || sf === 'all') return true;
+          if (!opp['uses_'+p.key]) return false;
+          return (opp[p.field+'_stage'] || 'Lead Captured') === sf;
+        });
       });
     }
   }
@@ -3080,23 +3105,6 @@ function renderDetailPanel(b) {
       '<div class="det-hero-top">'+
         '<div class="det-biz-name">'+b.name+'</div>'+
         '<button class="det-edit-btn" onclick="toggleEditMode()">✏️ Edit</button>'+
-      '</div>'+
-      // Pipeline stage slider under name
-      '<div style="margin:8px 0 10px;">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
-          '<span style="font-size:11px;color:var(--muted);font-weight:500;">Pipeline Stage</span>'+
-          '<span style="font-size:12px;font-weight:700;color:'+labelColor+'">'+stage+'</span>'+
-        '</div>'+
-        '<div style="position:relative;padding-bottom:22px;">'+
-          // Track behind dots
-          '<div style="position:absolute;left:0;right:0;top:8px;height:4px;background:var(--paper2);border-radius:2px;">'+
-            '<div style="position:absolute;left:0;top:0;height:100%;width:'+stagePct+'%;background:'+trackColor+';border-radius:2px;transition:width .3s;"></div>'+
-          '</div>'+
-          // Dots on top of track
-          '<div style="position:relative;display:flex;justify-content:space-between;">'+
-            pipeDotsHtml+
-          '</div>'+
-        '</div>'+
       '</div>'+
       '<div class="det-badges">'+
         '<span class="status-badge '+statusClass(status)+'">'+status+'</span>'+
@@ -3978,18 +3986,23 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_stage:'all', opp_min_volume:0 };
+  filters = {
+    opp:'all', contact:'all', industry:'all', pipeline:'all',
+    subIndustry:'all', status:'all', rep:'all',
+    opp_product:'all', opp_stage:'all', opp_min_volume:0,
+    opp_lube_stage:'all', opp_fuel_stage:'all', opp_cardlock_stage:'all',
+    opp_propane_stage:'all', opp_uco_stage:'all'
+  };
   filtersApplied = false;
   filteredData = [];
   setPipelineStage('all', null);
   var repEl = document.getElementById('s-rep');
   if (repEl) repEl.value = 'all';
-  var oppVolSlider = document.getElementById('opp-vol-filter-slider');
-  if (oppVolSlider) oppVolSlider.value = 0;
-  var oppVolLbl = document.getElementById('opp-vol-filter-lbl');
-  if (oppVolLbl) oppVolLbl.textContent = '0 gal/mo';
-  var oppStageWrap = document.getElementById('opp-stage-filter-wrap');
-  if (oppStageWrap) oppStageWrap.style.display = 'none'; // reset slider
+  // Reset all per-product pipeline pills
+  document.querySelectorAll('[data-pf]').forEach(function(x){ x.classList.remove('on'); });
+  document.querySelectorAll('[data-v^="all_"]').forEach(function(x){ x.classList.add('on'); });
+  document.querySelectorAll('[data-v="all"]').forEach(function(x){ x.classList.add('on'); });
+  document.querySelectorAll('[data-v="none"]').forEach(function(x){ x.classList.remove('on'); }); // reset slider
   selectedIndustries = [];
   selectedSubIndustries = [];
   document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
