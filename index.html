@@ -871,17 +871,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     </svg>
   </button>
 
-  <!-- Map Legend -->
-  <div id="map-legend" style="position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+72px);left:12px;z-index:800;background:rgba(13,13,20,.82);border-radius:10px;padding:7px 10px;font-family:Inter,sans-serif;font-size:10px;font-weight:600;color:rgba(255,255,255,.75);backdrop-filter:blur(6px);display:none;">
-    <div style="display:flex;flex-direction:column;gap:4px;">
-      <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#9b93d4;flex-shrink:0;display:inline-block;"></span>Untouched</div>
-      <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;flex-shrink:0;display:inline-block;"></span>Visited</div>
-      <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#F97316;flex-shrink:0;display:inline-block;"></span>Contacted</div>
-      <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#10B981;flex-shrink:0;display:inline-block;"></span>Customer</div>
-      <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#EF4444;flex-shrink:0;display:inline-block;"></span>Competitor</div>
-      <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#374151;flex-shrink:0;display:inline-block;"></span>Dead Lead</div>
-    </div>
-  </div>
+  <!-- Map Legend (hidden — reserved for future status mode) -->
+  <div id="map-legend" style="display:none;"></div>
   <div id="overlay" onclick="closeSidebar();closeResults();"></div>
 
   <div id="sidebar">
@@ -2053,26 +2044,24 @@ function renderPins() {
   map.addLayer({ id:'biz-cn', type:'symbol', source:'biz', filter:['has','point_count'], layout:{'text-field':'{point_count_abbreviated}','text-size':12}, paint:{'text-color':'#fff'} });
   map.addLayer({ id:'biz', type:'circle', source:'biz', filter:['!',['has','point_count']],
     paint:{
-      'circle-radius':['case',
-        ['==',['get','sales_status'],'customer'], 8,
-        ['==',['get','sales_status'],'competitor'], 7,
-        6
-      ],
+      'circle-radius':6,
       'circle-color':['case',
-        ['==',['get','sales_status'],'competitor'], '#EF4444',
-        ['==',['get','sales_status'],'customer'],   '#10B981',
-        ['==',['get','sales_status'],'dead'],        '#374151',
-        ['==',['get','sales_status'],'visited'],     '#F59E0B',
-        ['==',['get','sales_status'],'contacted'],   '#F97316',
-        '#9b93d4'  // untouched
+        ['==',['get','is_competitor'],true],'#EF4444',
+        ['==',['get','industry'],'Automotive'],'#3B82F6',
+        ['==',['get','industry'],'Agribusiness'],'#84CC16',
+        ['in',['get','industry'],['literal',['Transport','Transportation']]],'#F97316',
+        ['in',['get','industry'],['literal',['Construction','Infrastructure']]],'#D97706',
+        ['==',['get','industry'],'Industrial'],'#6B7280',
+        ['==',['get','industry'],'Services'],'#8B5CF6',
+        ['==',['get','industry'],'Hospitality'],'#EC4899',
+        ['==',['get','industry'],'Government'],'#0EA5E9',
+        ['in',['get','industry'],['literal',['Energy','Fuel Stations']]],'#EAB308',
+        ['==',['get','industry'],'RealEstate'],'#14B8A6',
+        '#9b93d4'
       ],
       'circle-opacity':0.9,
-      'circle-stroke-width':['case',
-        ['==',['get','sales_status'],'customer'], 2,
-        ['==',['get','sales_status'],'competitor'], 2,
-        1
-      ],
-      'circle-stroke-color':'rgba(255,255,255,0.6)'
+      'circle-stroke-width':1,
+      'circle-stroke-color':'rgba(255,255,255,0.5)'
     }
   });
 
