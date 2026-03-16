@@ -3380,6 +3380,16 @@ async function saveNewBusiness() {
     allData.unshift(newBiz);
     _bizById[newBiz._id] = newBiz;
 
+    // Log business creation to activity feed
+    var creatorName = currentProfile ? (currentProfile.full_name || '') : '';
+    sb.from('activity').insert({
+      business_id: String(r.data.id),
+      type: 'created',
+      note: 'Business added to Vavan' + (creatorName ? ' by ' + creatorName : ''),
+      client_id: currentProfile ? currentProfile.client_id : null,
+      created_by: creatorName || 'Unknown'
+    });
+
     var pcount = document.getElementById('pcount');
     if (pcount) pcount.textContent = allData.length.toLocaleString();
     updateFabCount();
@@ -4434,9 +4444,9 @@ async function loadActivity(b) {
       return;
     }
     el.innerHTML = '<div class="activity-feed">'+r.data.map(function(a){
-      var icon    = a.type==='contacted'?'C':a.type==='visited'?'V':a.type==='pipeline'?'P':a.type==='contact'?'CT':a.type==='opportunities'?'OPP':a.type==='claimed'?'CL':a.type==='abandoned'?'X':'N';
-      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'||a.type==='opportunities'||a.type==='claimed'||a.type==='abandoned'?'pipeline':a.type==='contact'?'pipeline':'note';
-      var text    = (a.type==='note'||a.type==='pipeline'||a.type==='contact') ? a.note : (a.type.charAt(0).toUpperCase()+a.type.slice(1));
+      var icon    = a.type==='contacted'?'C':a.type==='visited'?'V':a.type==='pipeline'?'P':a.type==='contact'?'CT':a.type==='opportunities'?'OPP':a.type==='claimed'?'CL':a.type==='abandoned'?'X':a.type==='created'?'★':'N';
+      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'||a.type==='opportunities'||a.type==='claimed'||a.type==='abandoned'||a.type==='created'?'pipeline':a.type==='contact'?'pipeline':'note';
+      var text    = (a.type==='note'||a.type==='pipeline'||a.type==='contact'||a.type==='created'||a.type==='edit'||a.type==='claimed'||a.type==='abandoned'||a.type==='opportunities') ? a.note : (a.type==='contacted'?'Contacted':a.type==='visited'?'Visited':a.type.charAt(0).toUpperCase()+a.type.slice(1));
       var byLine  = a.created_by ? '<span style="color:var(--accent);font-weight:600;">'+a.created_by+'</span> · ' : '';
       return '<div class="activity-item">'+
         '<div class="act-icon '+iconCls+'">'+icon+'</div>'+
