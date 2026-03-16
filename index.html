@@ -660,48 +660,107 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .bitem-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;}
 .bitem-check.checked{background:var(--accent);border-color:var(--accent);}
 .bitem-check.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:700;}
-/* Route Panel */
-#route-panel{position:fixed;top:calc(var(--header) + env(safe-area-inset-top,0px));right:0;bottom:0;width:320px;background:#fff;z-index:850;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.15);}
+
+/* Route Panel — slides in from right on desktop, up from bottom on mobile */
+#route-panel{
+  position:fixed;top:calc(var(--header) + env(safe-area-inset-top,0px));
+  right:0;bottom:0;width:340px;
+  background:#fff;z-index:850;
+  transform:translateX(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  box-shadow:-4px 0 24px rgba(0,0,0,.18);
+}
 #route-panel.open{transform:translateX(0);}
 @media(max-width:768px){
-  #route-panel{width:100%;top:calc(var(--header) + env(safe-area-inset-top,0px));bottom:60px;}
+  #route-panel{
+    top:auto !important;bottom:60px !important;
+    left:0 !important;right:0 !important;
+    width:100% !important;height:88vh !important;
+    border-radius:20px 20px 0 0 !important;
+    transform:translateY(110%) !important;
+    transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
+    box-shadow:0 -4px 32px rgba(0,0,0,.22) !important;
+  }
+  #route-panel.open{transform:translateY(0) !important;}
 }
-.route-panel-header{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--ink);}
-.route-panel-title{font-size:14px;font-weight:700;color:#fff;}
-.route-panel-close{background:none;border:none;color:rgba(255,255,255,.6);font-size:20px;cursor:pointer;padding:0;line-height:1;}
-.route-top-actions{padding:.5rem .75rem;display:flex;gap:6px;flex-shrink:0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
-.route-action-btn{flex:1;min-width:80px;padding:7px 6px;border:none;border-radius:8px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
-.route-action-btn.green{background:#dcfce7;color:#059669;}
-.route-action-btn.blue{background:var(--accent-light);color:var(--accent);}
-.route-action-btn.red{background:#fef2f2;color:#dc2626;}
-.route-stops{flex:1;overflow-y:auto;}
-.route-stop{display:flex;align-items:flex-start;gap:10px;padding:.75rem 1rem;border-bottom:1px solid var(--border);transition:background .15s;}
-.route-stop.active-stop{background:var(--accent-light);}
-.route-stop.completed{opacity:.5;}
-.route-stop.skipped{opacity:.4;text-decoration:line-through;}
-.route-stop-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-.route-stop-num.completed{background:#059669;}
-.route-stop-num.skipped{background:#9ca3af;}
-.route-stop-num.active{background:var(--accent);box-shadow:0 0 0 3px rgba(108,92,231,.3);}
-.route-stop-info{flex:1;min-width:0;}
-.route-stop-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.route-stop-addr{font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.route-stop-status{font-size:10px;font-weight:700;margin-top:3px;}
-.route-stop-actions{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
-.route-stop-btn{padding:3px 8px;border-radius:6px;border:none;font-size:10px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
-.route-stop-btn.nav{background:#e0f2fe;color:#0369a1;}
-.route-stop-btn.done{background:#dcfce7;color:#059669;}
-.route-stop-btn.skip{background:#f3f4f6;color:#6b7280;}
-.route-stop-btn.remove{background:#fef2f2;color:#dc2626;}
-.route-empty{padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;}
-/* Start point modal */
+
+/* Route panel header */
+.rp-header{
+  padding:10px 14px 8px;
+  background:var(--ink);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  flex-shrink:0;
+}
+.rp-title-row{display:flex;align-items:center;justify-content:space-between;}
+.rp-title{font-size:15px;font-weight:700;color:#fff;font-family:'Syne',sans-serif;}
+.rp-subtitle{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+.rp-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:0;line-height:1;}
+.rp-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.rp-action-btn{
+  flex:1;min-width:80px;padding:7px 6px;
+  border:none;border-radius:8px;
+  font-size:11px;font-weight:700;
+  font-family:'Inter',sans-serif;cursor:pointer;
+  white-space:nowrap;
+}
+.rp-action-btn.green{background:#dcfce7;color:#059669;}
+.rp-action-btn.blue{background:var(--accent-light);color:var(--accent);}
+.rp-action-btn.red{background:#fef2f2;color:#dc2626;}
+
+/* Stop list */
+.rp-stops{flex:1;overflow-y:auto;}
+.rp-stop{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  background:#fff;transition:background .15s;
+  cursor:grab;
+  position:relative;
+}
+.rp-stop:active{cursor:grabbing;}
+.rp-stop.dragging{background:var(--accent-light);opacity:.85;box-shadow:0 4px 16px rgba(0,0,0,.12);}
+.rp-stop.drag-over{border-top:2px solid var(--accent);}
+.rp-stop.done{opacity:.5;}
+.rp-stop.done .rp-stop-name{text-decoration:line-through;}
+.rp-num{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.rp-num.done-num{background:#059669;}
+.rp-stop-info{flex:1;min-width:0;}
+.rp-stop-name{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:1px;}
+.rp-stop-addr{font-size:11px;color:var(--muted);}
+.rp-stop-leg{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10px;font-weight:700;color:var(--accent);
+  background:var(--accent-light);padding:2px 7px;border-radius:100px;
+  margin-top:3px;
+}
+.rp-stop-btns{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
+.rp-btn{
+  padding:4px 10px;border-radius:7px;border:none;
+  font-size:11px;font-weight:600;cursor:pointer;
+  font-family:'Inter',sans-serif;
+}
+.rp-btn.nav{background:#dbeafe;color:#1d4ed8;}
+.rp-btn.done{background:#dcfce7;color:#059669;}
+.rp-btn.remove{background:#fef2f2;color:#dc2626;}
+.rp-drag-handle{
+  color:#ccc;font-size:16px;padding-top:4px;
+  flex-shrink:0;cursor:grab;user-select:none;
+}
+.rp-empty{padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;}
+
+/* Start-point modal */
 #route-start-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1200;display:none;align-items:center;justify-content:center;}
 #route-start-modal.open{display:flex;}
 .route-start-box{background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:360px;}
 .route-start-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:1rem;}
 .route-start-opt{display:flex;align-items:center;gap:12px;padding:.75rem;border:2px solid var(--border);border-radius:10px;cursor:pointer;margin-bottom:.75rem;transition:.15s;}
-.route-start-opt:hover{border-color:var(--accent);}
-.route-start-opt.selected{border-color:var(--accent);background:var(--accent-light);}
+.route-start-opt:hover,.route-start-opt.selected{border-color:var(--accent);background:var(--accent-light);}
 .route-start-opt-icon{font-size:24px;flex-shrink:0;}
 .route-start-opt-text{font-size:13px;font-weight:600;color:var(--ink);}
 .route-start-opt-sub{font-size:11px;color:var(--muted);}
@@ -4264,134 +4323,13 @@ function _resetOppSlider(productId) {
 }
 
 // ── ROUTE BUILDER ──
-var _routeMode = false;
-var _routeSelected = {}; // business _id → business object
-var _routeStops = [];    // ordered array of {biz, status:'pending'|'completed'|'skipped'}
-var _routeActive = false;
-var _routeCurrentStop = 0;
-var _routeStartPoint = null; // {lat, lon, label}
-var _routeStartType = 'gps'; // 'gps' or 'custom'
-var _routeMarkers = [];
-var _routeLine = null;
-
-function toggleRouteMode() {
-  _routeMode = !_routeMode;
-  var btn = document.getElementById('route-btn');
-  var bar = document.getElementById('route-select-bar');
-  var ndRoute = document.getElementById('nd-route');
-  var nmRoute = document.getElementById('nm-route');
-  btn.classList.toggle('active', _routeMode);
-  btn.textContent = _routeMode ? '✕ Exit Route' : '🗺 Route';
-  if (ndRoute) ndRoute.classList.toggle('active', _routeMode);
-  if (nmRoute) nmRoute.classList.toggle('active', _routeMode);
-  if (bar) bar.classList.toggle('active', _routeMode);
-  renderList();
-  if (_routeMode) {
-    navTo('list');
-  } else {
-    _routeSelected = {};
-    updateRouteSelCount();
-    renderList();
-  }
-}
-
-function toggleRouteSelect(id) {
-  var data = filtersApplied ? filteredData : allData;
-  var b = _bizById[id] || data.find(function(x){ return String(x._id)===String(id); });
-  if (!b) return;
-  if (_routeSelected[id]) {
-    delete _routeSelected[id];
-  } else {
-    _routeSelected[id] = b;
-  }
-  updateRouteSelCount();
-  // Update checkbox visual
-  var cb = document.getElementById('rcb-'+id);
-  if (cb) cb.classList.toggle('checked', !!_routeSelected[id]);
-}
-
-function updateRouteSelCount() {
-  var count = Object.keys(_routeSelected).length;
-  var el = document.getElementById('route-sel-count');
-  if (el) el.textContent = count + ' selected';
-}
-
-function routeSelectAll() {
-  // Only select what's currently visible in the map — not all filtered data
-  var data = getVisibleData().filter(function(b){ return b.lat&&b.lon; });
-  data.forEach(function(b){ _routeSelected[b._id] = b; });
-  updateRouteSelCount();
-  renderList();
-}
-
-function routeClearSelection() {
-  _routeSelected = {};
-  updateRouteSelCount();
-  renderList();
-}
-
-function buildRouteFromSelection() {
-  var selected = Object.values(_routeSelected);
-  if (selected.length < 1) { alert('Select at least 1 business to build a route.'); return; }
-  if (selected.length > 50) { alert('Maximum 50 stops per route. Please narrow your selection.'); return; }
-  // Show start point modal
-  document.getElementById('route-start-modal').classList.add('open');
-}
-
-function selectRouteStart(type) {
-  _routeStartType = type;
-  document.getElementById('rso-gps').classList.toggle('selected', type==='gps');
-  document.getElementById('rso-custom').classList.toggle('selected', type==='custom');
-  var customInput = document.getElementById('route-custom-addr');
-  customInput.style.display = type==='custom' ? 'block' : 'none';
-  if (type==='custom') customInput.focus();
-}
-
-function closeRouteStartModal() {
-  document.getElementById('route-start-modal').classList.remove('open');
-}
-
-function changeRouteStart() {
-  document.getElementById('route-start-modal').classList.add('open');
-}
-
-async function confirmRouteStart() {
-  closeRouteStartModal();
-  if (_routeStartType === 'gps') {
-    if (!navigator.geolocation) {
-      alert('GPS not available. Please use a custom address.');
-      return;
-    }
-    var btn = document.querySelector('#route-start-modal .route-start-box button:last-child');
-    navigator.geolocation.getCurrentPosition(function(pos){
-      _routeStartPoint = { lat: pos.coords.latitude, lon: pos.coords.longitude, label: 'My Location' };
-      _generateRoute();
-    }, function(){
-      alert('Could not get GPS location. Please try a custom address.');
-    }, { enableHighAccuracy: true, timeout: 8000 });
-  } else {
-    var addr = document.getElementById('route-custom-addr').value.trim();
-    if (!addr) { alert('Please enter a starting address.'); return; }
-    // Geocode using Mapbox
-    try {
-      var token = 'pk.eyJ1IjoiYXJ0dGF0YXIiLCJhIjoiY21pdWppYThlMjEzcjNxb3JjaDZkdWs4dyJ9.d-lDV_T6-_T2_10CHxfvVg';
-      var url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/'+encodeURIComponent(addr)+'.json?access_token='+token+'&limit=1';
-      var r = await fetch(url);
-      var data = await r.json();
-      if (data.features && data.features.length) {
-        var coords = data.features[0].center;
-        _routeStartPoint = { lat: coords[1], lon: coords[0], label: addr };
-        _generateRoute();
-      } else {
-        alert('Could not find that address. Try being more specific.');
-      }
-    } catch(e) {
-      alert('Geocoding failed: ' + e.message);
-    }
-  }
-}
-
-// ── ROUTE HELPERS ──
+var _routeMode     = false;
+var _routeSelected = {};   // _id → biz object (during selection)
+var _routeStops    = [];   // [{biz, done:bool, _legDur, _legDist}]
+var _routeStartPoint = null;
+var _routeStartType  = 'gps';
+var _routeMarkers    = [];
+var _routeLine       = null;
 var _routeGeomCache  = null;
 var _routeTotalDur   = 0;
 var _routeTotalDist  = 0;
@@ -4403,94 +4341,109 @@ function _fmtDur(sec) {
 }
 function _fmtDist(m) {
   if (!m) return '';
-  var mi = m/1609.34;
-  return (mi < 10 ? mi.toFixed(1) : Math.round(mi))+' mi';
+  return ((m/1609.34) < 10 ? (m/1609.34).toFixed(1) : Math.round(m/1609.34))+' mi';
 }
 
-// Straight-line nearest-neighbor fallback
-function _distNearestNeighbor(start, stops) {
-  var rem = stops.slice(), ordered = [], cur = start;
-  while (rem.length) {
-    var bi = 0, bd = Infinity;
-    rem.forEach(function(s,i){
-      var d = Math.pow(s.biz.lat-cur.lat,2)+Math.pow(s.biz.lon-cur.lon,2);
-      if (d < bd) { bd=d; bi=i; }
-    });
-    ordered.push(rem[bi]);
-    cur = {lat:rem[bi].biz.lat, lon:rem[bi].biz.lon};
-    rem.splice(bi,1);
-  }
-  return ordered;
-}
-
-// Mapbox Optimization API — up to 11 stops, auto-orders, returns road geometry
-async function _optimizeAPI(startPt, stops) {
-  var coords = [startPt.lon+','+startPt.lat]
-    .concat(stops.map(function(s){ return s.biz.lon+','+s.biz.lat; }))
-    .join(';');
-  var url = 'https://api.mapbox.com/optimized-trips/v1/mapbox/driving-traffic/'+coords
-    +'?roundtrip=false&source=first&destination=last'
-    +'&overview=full&geometries=geojson&steps=false'
-    +'&access_token='+MBOX;
-  var res = await fetch(url);
-  var data = await res.json();
-  if (!data.trips || !data.trips[0]) throw new Error('No trip returned');
-  var trip = data.trips[0];
-  // Re-order stops by trip_index
-  var ordered = data.waypoints
-    .filter(function(w){ return w.waypoint_index > 0; })
-    .sort(function(a,b){ return a.trip_index - b.trip_index; })
-    .map(function(w){ return stops[w.waypoint_index-1]; });
-  // Tag per-leg stats
-  var cumDur = 0;
-  if (trip.legs) trip.legs.forEach(function(leg,i){
-    if (ordered[i]) {
-      ordered[i]._legDur  = leg.duration;
-      ordered[i]._legDist = leg.distance;
-      cumDur += leg.duration;
-      ordered[i]._eta = cumDur;
-    }
+// ── SELECTION MODE ──
+function toggleRouteMode() {
+  _routeMode = !_routeMode;
+  var btn = document.getElementById('route-btn');
+  var bar = document.getElementById('route-select-bar');
+  btn.classList.toggle('active', _routeMode);
+  btn.textContent = _routeMode ? '✕ Cancel' : '🗺 Route';
+  if (bar) bar.classList.toggle('active', _routeMode);
+  ['nd-route','nm-route'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('active', _routeMode);
   });
-  return { ordered:ordered, geom:trip.geometry.coordinates, dur:trip.duration, dist:trip.distance };
+  if (!_routeMode) { _routeSelected = {}; updateRouteSelCount(); }
+  renderList();
+  if (_routeMode) navTo('list');
 }
 
-// Mapbox Directions API — any size, chunked at 25, keeps order
-async function _directionsAPI(waypoints) {
-  var allCoords=[], totalDur=0, totalDist=0, CHUNK=25;
-  for (var i=0; i<waypoints.length-1; i+=CHUNK-1) {
-    var chunk = waypoints.slice(i, Math.min(i+CHUNK, waypoints.length));
-    if (chunk.length < 2) break;
-    var coordStr = chunk.map(function(p){ return p.lon+','+p.lat; }).join(';');
-    var url = 'https://api.mapbox.com/directions/v5/mapbox/driving-traffic/'+coordStr
-      +'?access_token='+MBOX+'&overview=full&geometries=geojson&steps=false';
-    var res = await fetch(url);
-    var d = await res.json();
-    if (!d.routes || !d.routes[0]) continue;
-    var route = d.routes[0];
-    totalDur  += route.duration||0;
-    totalDist += route.distance||0;
-    var coords = route.geometry.coordinates;
-    if (allCoords.length) coords = coords.slice(1);
-    allCoords = allCoords.concat(coords);
-    if (route.legs) route.legs.forEach(function(leg,li){
-      var si = i+li; // stop index (0-based, stop 0 = first stop after start)
-      if (_routeStops[si]) {
-        _routeStops[si]._legDur  = leg.duration;
-        _routeStops[si]._legDist = leg.distance;
-      }
-    });
+function toggleRouteSelect(id) {
+  var b = _bizById[id] || allData.find(function(x){ return String(x._id)==String(id); });
+  if (!b) return;
+  if (_routeSelected[id]) delete _routeSelected[id];
+  else _routeSelected[id] = b;
+  updateRouteSelCount();
+  var cb = document.getElementById('rcb-'+id);
+  if (cb) cb.classList.toggle('checked', !!_routeSelected[id]);
+}
+
+function updateRouteSelCount() {
+  var n = Object.keys(_routeSelected).length;
+  var el = document.getElementById('route-sel-count');
+  if (el) el.textContent = n + ' selected';
+}
+
+function routeSelectAll() {
+  getVisibleData().filter(function(b){ return b.lat&&b.lon; })
+    .forEach(function(b){ _routeSelected[b._id] = b; });
+  updateRouteSelCount();
+  renderList();
+}
+
+function routeClearSelection() {
+  _routeSelected = {};
+  updateRouteSelCount();
+  renderList();
+}
+
+function buildRouteFromSelection() {
+  var sel = Object.values(_routeSelected);
+  if (!sel.length) { alert('Select at least 1 business.'); return; }
+  if (sel.length > 50) { alert('Max 50 stops per route.'); return; }
+  document.getElementById('route-start-modal').classList.add('open');
+}
+
+// ── START POINT MODAL ──
+function selectRouteStart(type) {
+  _routeStartType = type;
+  document.getElementById('rso-gps').classList.toggle('selected', type==='gps');
+  document.getElementById('rso-custom').classList.toggle('selected', type==='custom');
+  var inp = document.getElementById('route-custom-addr');
+  inp.style.display = type==='custom' ? 'block' : 'none';
+  if (type==='custom') inp.focus();
+}
+
+function closeRouteStartModal() {
+  document.getElementById('route-start-modal').classList.remove('open');
+}
+
+async function confirmRouteStart() {
+  closeRouteStartModal();
+  if (_routeStartType === 'gps') {
+    if (!navigator.geolocation) { alert('GPS not available. Use a custom address.'); return; }
+    navigator.geolocation.getCurrentPosition(function(p){
+      _routeStartPoint = {lat:p.coords.latitude, lon:p.coords.longitude, label:'My Location'};
+      _buildRoute();
+    }, function(){
+      alert('Could not get GPS location.');
+    }, {enableHighAccuracy:true, timeout:8000});
+  } else {
+    var addr = document.getElementById('route-custom-addr').value.trim();
+    if (!addr) { alert('Enter a starting address.'); return; }
+    try {
+      var r = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/'+
+        encodeURIComponent(addr)+'.json?access_token='+MBOX+'&limit=1');
+      var d = await r.json();
+      if (d.features && d.features[0]) {
+        _routeStartPoint = {lat:d.features[0].center[1], lon:d.features[0].center[0], label:addr};
+        _buildRoute();
+      } else { alert('Address not found.'); }
+    } catch(e) { alert('Geocoding failed: '+e.message); }
   }
-  return { geom:allCoords, dur:totalDur, dist:totalDist };
 }
 
-async function _generateRoute() {
-  var selected = Object.values(_routeSelected);
-  var stops = selected
-    .filter(function(b){ return b.lat&&b.lon; })
-    .map(function(b){ return {biz:b, status:'pending'}; });
-  if (!stops.length) { alert('Selected businesses have no coordinates.'); return; }
+// ── BUILD + OPTIMIZE ──
+async function _buildRoute() {
+  var sel = Object.values(_routeSelected);
+  var stops = sel.filter(function(b){ return b.lat&&b.lon; })
+    .map(function(b){ return {biz:b, done:false}; });
+  if (!stops.length) { alert('No businesses with coordinates selected.'); return; }
 
-  // Exit selection mode immediately
+  // Exit selection mode
   _routeMode = false;
   _routeSelected = {};
   var btn = document.getElementById('route-btn');
@@ -4499,580 +4452,334 @@ async function _generateRoute() {
   if (bar) bar.classList.remove('active');
   renderList();
 
-  // Set stops and open panel with loading state
+  // Open panel with loading state
   _routeStops = stops;
-  _routeActive = false;
-  _routeCurrentStop = 0;
   _routeGeomCache = null;
   openRoutePanel();
-
-  var subEl = document.getElementById('route-panel-subtitle');
-  var listEl = document.getElementById('route-stops-list');
-  if (subEl) subEl.textContent = 'Calculating optimal route…';
-  if (listEl) listEl.innerHTML =
+  _setRPSubtitle('Optimizing route…');
+  document.getElementById('rp-stops-list').innerHTML =
     '<div style="padding:2rem;text-align:center;">'+
     '<div style="font-size:28px;margin-bottom:.75rem;">🗺</div>'+
-    '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:.25rem;">Optimizing route…</div>'+
+    '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;">Building route…</div>'+
     '<div style="font-size:11px;color:var(--muted);">Checking real roads &amp; traffic</div></div>';
 
   try {
-    var geom;
     if (stops.length <= 11) {
       var r = await _optimizeAPI(_routeStartPoint, stops);
       _routeStops = r.ordered;
-      geom = r.geom;
+      _routeGeomCache = r.geom;
       _routeTotalDur  = r.dur;
       _routeTotalDist = r.dist;
     } else {
-      _routeStops = _distNearestNeighbor(_routeStartPoint, stops);
+      _routeStops = _distNNN(_routeStartPoint, stops);
       var wpts = [{lat:_routeStartPoint.lat,lon:_routeStartPoint.lon}]
         .concat(_routeStops.map(function(s){ return {lat:s.biz.lat,lon:s.biz.lon}; }));
       var r2 = await _directionsAPI(wpts);
-      geom = r2.geom;
+      _routeGeomCache = r2.geom;
       _routeTotalDur  = r2.dur;
       _routeTotalDist = r2.dist;
     }
-    _routeGeomCache = geom;
-    _saveRouteSession();
-    _drawRouteOnMap();
-    if (subEl) subEl.textContent =
-      _routeStops.length+' stops · '+_fmtDur(_routeTotalDur)+' · '+_fmtDist(_routeTotalDist)+
-      (_routeStartPoint?' · from '+_routeStartPoint.label:'');
   } catch(e) {
-    console.error('Route error:',e);
-    _routeStops = _distNearestNeighbor(_routeStartPoint, stops);
+    console.warn('Route API error, using straight-line order:', e);
+    _routeStops = _distNNN(_routeStartPoint, stops);
     _routeGeomCache = null;
-    _saveRouteSession();
-    _drawRouteOnMap();
-    if (subEl) subEl.textContent = _routeStops.length+' stops (offline — no road data)';
+    _routeTotalDur = 0; _routeTotalDist = 0;
   }
+
+  _saveRoute();
+  _drawRouteOnMap();
+  _renderRPStops();
+  _setRPSubtitle(
+    _routeStops.length+' stops'+
+    (_routeTotalDur  ? ' · '+_fmtDur(_routeTotalDur)  : '')+
+    (_routeTotalDist ? ' · '+_fmtDist(_routeTotalDist) : '')+
+    (_routeStartPoint ? ' · from '+_routeStartPoint.label : '')
+  );
 }
 
-function _drawRouteOnMap() {
-  // Clear old markers
-  _routeMarkers.forEach(function(m){ m.remove(); });
-  _routeMarkers = [];
-  // Clear old line layers safely
-  ['route-line-casing','route-line'].forEach(function(id){
-    if (map.getLayer(id)) { try{map.removeLayer(id);}catch(e){} }
+// Mapbox Optimization API — ≤11 stops
+async function _optimizeAPI(startPt, stops) {
+  var coords = [startPt.lon+','+startPt.lat]
+    .concat(stops.map(function(s){ return s.biz.lon+','+s.biz.lat; })).join(';');
+  var res = await fetch('https://api.mapbox.com/optimized-trips/v1/mapbox/driving-traffic/'+coords
+    +'?roundtrip=false&source=first&destination=last&overview=full&geometries=geojson&steps=false&access_token='+MBOX);
+  var data = await res.json();
+  if (!data.trips||!data.trips[0]) throw new Error('No trip');
+  var trip = data.trips[0];
+  var ordered = data.waypoints
+    .filter(function(w){ return w.waypoint_index>0; })
+    .sort(function(a,b){ return a.trip_index-b.trip_index; })
+    .map(function(w){ return stops[w.waypoint_index-1]; });
+  if (trip.legs) trip.legs.forEach(function(leg,i){
+    if (ordered[i]) { ordered[i]._legDur=leg.duration; ordered[i]._legDist=leg.distance; }
   });
-  if (map.getSource('route-line-src')) { try{map.removeSource('route-line-src');}catch(e){} }
-  _routeLine = null;
+  return {ordered:ordered, geom:trip.geometry.coordinates, dur:trip.duration, dist:trip.distance};
+}
 
-  if (!_routeStops.length) { renderRouteStops(); return; }
+// Mapbox Directions API — any size, chunked
+async function _directionsAPI(waypoints) {
+  var allCoords=[],totalDur=0,totalDist=0,CHUNK=25;
+  for (var i=0;i<waypoints.length-1;i+=CHUNK-1) {
+    var chunk=waypoints.slice(i,Math.min(i+CHUNK,waypoints.length));
+    if (chunk.length<2) break;
+    var res=await fetch('https://api.mapbox.com/directions/v5/mapbox/driving-traffic/'+
+      chunk.map(function(p){ return p.lon+','+p.lat; }).join(';')+
+      '?access_token='+MBOX+'&overview=full&geometries=geojson&steps=false');
+    var d=await res.json();
+    if (!d.routes||!d.routes[0]) continue;
+    var route=d.routes[0];
+    totalDur+=route.duration||0; totalDist+=route.distance||0;
+    var coords=route.geometry.coordinates;
+    if (allCoords.length) coords=coords.slice(1);
+    allCoords=allCoords.concat(coords);
+    if (route.legs) route.legs.forEach(function(leg,li){
+      var si=i+li;
+      if (_routeStops[si]) { _routeStops[si]._legDur=leg.duration; _routeStops[si]._legDist=leg.distance; }
+    });
+  }
+  return {geom:allCoords,dur:totalDur,dist:totalDist};
+}
 
-  // Build line geometry
-  var geom = _routeGeomCache;
-  if (!geom || !geom.length) {
-    // Fallback straight lines
-    geom = [];
-    if (_routeStartPoint) geom.push([_routeStartPoint.lon, _routeStartPoint.lat]);
+// Straight-line nearest-neighbor fallback
+function _distNNN(start, stops) {
+  var rem=stops.slice(),out=[],cur=start;
+  while(rem.length){
+    var bi=0,bd=Infinity;
+    rem.forEach(function(s,i){
+      var d=Math.pow(s.biz.lat-cur.lat,2)+Math.pow(s.biz.lon-cur.lon,2);
+      if(d<bd){bd=d;bi=i;}
+    });
+    out.push(rem[bi]);
+    cur={lat:rem[bi].biz.lat,lon:rem[bi].biz.lon};
+    rem.splice(bi,1);
+  }
+  return out;
+}
+
+// ── DRAW ROUTE ON MAP ──
+function _drawRouteOnMap() {
+  _routeMarkers.forEach(function(m){ m.remove(); });
+  _routeMarkers=[];
+  ['route-line-casing','route-line'].forEach(function(id){
+    if(map.getLayer(id)){try{map.removeLayer(id);}catch(e){}}
+  });
+  if(map.getSource('route-line-src')){try{map.removeSource('route-line-src');}catch(e){}}
+  _routeLine=null;
+
+  if (!_routeStops.length) return;
+
+  var geom=_routeGeomCache;
+  if (!geom||!geom.length) {
+    geom=[];
+    if(_routeStartPoint) geom.push([_routeStartPoint.lon,_routeStartPoint.lat]);
     _routeStops.forEach(function(s){ if(s.biz.lon&&s.biz.lat) geom.push([s.biz.lon,s.biz.lat]); });
   }
-
-  if (geom.length > 1) {
+  if (geom.length>1) {
     try {
-      map.addSource('route-line-src', {type:'geojson', data:{type:'Feature',geometry:{type:'LineString',coordinates:geom}}});
-      map.addLayer({id:'route-line-casing', type:'line', source:'route-line-src',
-        paint:{'line-color':'#fff','line-width':7,'line-opacity':0.2}});
-      map.addLayer({id:'route-line', type:'line', source:'route-line-src',
-        paint:{'line-color':'#6c5ce7','line-width':4,'line-opacity':0.95}});
-      _routeLine = true;
-    } catch(e){ console.warn('line draw err',e); }
+      map.addSource('route-line-src',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:geom}}});
+      map.addLayer({id:'route-line-casing',type:'line',source:'route-line-src',paint:{'line-color':'#fff','line-width':7,'line-opacity':.2}});
+      map.addLayer({id:'route-line',type:'line',source:'route-line-src',paint:{'line-color':'#4a36c8','line-width':4,'line-opacity':.95}});
+      _routeLine=true;
+    } catch(e){}
   }
 
-  // Draw stop markers — NO floating badge (it breaks layout), show drive time inline in list instead
   _routeStops.forEach(function(stop,i){
     if (!stop.biz.lat||!stop.biz.lon) return;
-    var isDone    = stop.status==='completed';
-    var isSkipped = stop.status==='skipped';
-    var isActive  = _routeActive && i===_routeCurrentStop;
-    var bg = isDone?'#059669':isSkipped?'#9ca3af':isActive?'#fff':'#4a36c8';
-    var fg = isActive?'#4a36c8':'#fff';
-    var sz = isActive?'36px':'28px';
-    var border = isActive?'3px solid #4a36c8':'2px solid rgba(255,255,255,.8)';
-    var shadow = isActive
-      ?'0 0 0 5px rgba(74,54,200,.3),0 3px 12px rgba(0,0,0,.5)'
-      :'0 2px 8px rgba(0,0,0,.4)';
-    var label = isDone?'✓':isSkipped?'–':(i+1);
-    var el = document.createElement('div');
-    el.innerHTML =
-      '<div style="width:'+sz+';height:'+sz+';border-radius:50%;background:'+bg+
-      ';color:'+fg+';font-size:12px;font-weight:800;display:flex;align-items:center;'+
-      'justify-content:center;border:'+border+';box-shadow:'+shadow+';transition:all .2s;">'+
-      label+'</div>';
-    var m = new mapboxgl.Marker({element:el,anchor:'center'})
-      .setLngLat([stop.biz.lon,stop.biz.lat]).addTo(map);
-    _routeMarkers.push(m);
+    var isDone=stop.done;
+    var bg=isDone?'#059669':'#4a36c8';
+    var label=isDone?'✓':(i+1);
+    var el=document.createElement('div');
+    el.innerHTML='<div style="width:28px;height:28px;border-radius:50%;background:'+bg+
+      ';color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;'+
+      'border:2px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(0,0,0,.35);">'+label+'</div>';
+    _routeMarkers.push(new mapboxgl.Marker({element:el,anchor:'center'}).setLngLat([stop.biz.lon,stop.biz.lat]).addTo(map));
   });
-
-  renderRouteStops();
 }
 
-function getRouteMapStyle() {
-  var h = new Date().getHours();
-  return (h>=6&&h<20)
-    ? 'mapbox://styles/mapbox/navigation-day-v1'
-    : 'mapbox://styles/mapbox/navigation-night-v1';
-}
-
+// ── ROUTE PANEL ──
 function openRoutePanel() {
-  _removeNavBrief();
-  map.setStyle(getRouteMapStyle());
-  map.once('styledata', function(){ _drawRouteOnMap(); });
   document.getElementById('route-panel').classList.add('open');
   if (_routeStops.length) {
-    var bounds = new mapboxgl.LngLatBounds();
-    if (_routeStartPoint) bounds.extend([_routeStartPoint.lon, _routeStartPoint.lat]);
-    _routeStops.forEach(function(s){
-      if (s.biz.lon&&s.biz.lat) bounds.extend([s.biz.lon,s.biz.lat]);
-    });
-    if (!bounds.isEmpty()) map.fitBounds(bounds, {padding:60, maxZoom:14});
+    var bounds=new mapboxgl.LngLatBounds();
+    if (_routeStartPoint) bounds.extend([_routeStartPoint.lon,_routeStartPoint.lat]);
+    _routeStops.forEach(function(s){ if(s.biz.lon&&s.biz.lat) bounds.extend([s.biz.lon,s.biz.lat]); });
+    if (!bounds.isEmpty()) map.fitBounds(bounds,{padding:60,maxZoom:14});
   }
-  renderRouteStops();
+  _renderRPStops();
 }
 
 function closeRoutePanel() {
   document.getElementById('route-panel').classList.remove('open');
-  map.setStyle('mapbox://styles/mapbox/dark-v11');
-  map.once('styledata', function(){ _drawRouteOnMap(); });
-  if (_routeActive) _showNavBrief();
 }
 
-function renderRouteStops() {
-  var el  = document.getElementById('route-stops-list');
-  var sub = document.getElementById('route-panel-subtitle');
+function _setRPSubtitle(txt) {
+  var el=document.getElementById('rp-subtitle');
+  if (el) el.textContent=txt;
+}
+
+// ── RENDER STOPS LIST (with drag-to-reorder) ──
+function _renderRPStops() {
+  var el=document.getElementById('rp-stops-list');
   if (!el) return;
   if (!_routeStops.length) {
-    el.innerHTML = '<div class="route-empty">No stops. Select businesses from the list.</div>';
+    el.innerHTML='<div class="rp-empty">No stops yet.<br>Select businesses from the list then tap Route.</div>';
     return;
   }
-  var done = _routeStops.filter(function(s){ return s.status==='completed'; }).length;
-  if (sub && _routeTotalDur) {
-    sub.textContent = _routeStops.length+' stops · '+_fmtDur(_routeTotalDur)+' · '+
-      _fmtDist(_routeTotalDist)+(_routeStartPoint?' · from '+_routeStartPoint.label:'');
-  } else if (sub) {
-    sub.textContent = _routeStops.length+' stops · '+done+' done'+
-      (_routeStartPoint?' · from '+_routeStartPoint.label:'');
-  }
-  el.innerHTML = _routeStops.map(function(stop,i){
-    var isActive  = _routeActive && i===_routeCurrentStop;
-    var isDone    = stop.status==='completed';
-    var isSkipped = stop.status==='skipped';
-    var cls = 'route-stop'+(isActive?' active-stop':'')+(isDone?' completed':'')+(isSkipped?' skipped':'');
-    var numCls = 'route-stop-num'+(isDone?' completed':isSkipped?' skipped':isActive?' active':'');
-    var numIcon = isDone?'✓':isSkipped?'–':(i+1);
-    var statusColor = isDone?'#059669':isSkipped?'#9ca3af':'var(--accent)';
-    var statusText  = isDone?'✓ Completed':isSkipped?'↷ Skipped':'⏳ Pending';
-    // Drive time for this leg (shown inline, not as floating badge)
-    var leg = '';
+  el.innerHTML=_routeStops.map(function(stop,i){
+    var isDone=stop.done;
+    var leg='';
     if (stop._legDur||stop._legDist) {
       var parts=[];
       if (stop._legDur)  parts.push(_fmtDur(stop._legDur));
       if (stop._legDist) parts.push(_fmtDist(stop._legDist));
-      leg = '<span style="background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;white-space:nowrap;">🚗 '+parts.join(' · ')+'</span>';
+      leg='<div class="rp-stop-leg">🚗 '+parts.join(' · ')+'</div>';
     }
-    return '<div class="'+cls+'" id="rstop-'+i+'">'+
-      '<div class="'+numCls+'">'+numIcon+'</div>'+
-      '<div class="route-stop-info">'+
-        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px;">'+
-          '<span class="route-stop-name" style="margin:0;">'+stop.biz.name+'</span>'+leg+
-        '</div>'+
-        '<div class="route-stop-addr">'+(stop.biz.street||stop.biz.full_address||'')+'</div>'+
-        '<div class="route-stop-status" style="color:'+statusColor+';">'+statusText+'</div>'+
-        '<div class="route-stop-actions">'+
-          '<button class="route-stop-btn nav" onclick="navigateToStop('+i+')">Navigate</button>'+
-          (isDone?'':'<button class="route-stop-btn done" onclick="completeStop('+i+')">✓ Done</button>')+
-          (stop.status==='pending'?'<button class="route-stop-btn skip" onclick="skipStop('+i+')">Skip</button>':'')+
-          '<button class="route-stop-btn remove" onclick="removeStop('+i+')">Remove</button>'+
+    return '<div class="rp-stop'+(isDone?' done':'')+'" id="rpstop-'+i+'" draggable="true" '+
+      'ondragstart="_rpDragStart(event,'+i+')" ondragover="_rpDragOver(event,'+i+')" '+
+      'ondrop="_rpDrop(event,'+i+')" ondragleave="_rpDragLeave(event)">'+
+      '<div class="rp-drag-handle" title="Drag to reorder">⠿</div>'+
+      '<div class="rp-num'+(isDone?' done-num':'')+'">'+( isDone?'✓':(i+1) )+'</div>'+
+      '<div class="rp-stop-info">'+
+        '<div class="rp-stop-name">'+stop.biz.name+'</div>'+
+        '<div class="rp-stop-addr">'+(stop.biz.street||stop.biz.full_address||'')+'</div>'+
+        leg+
+        '<div class="rp-stop-btns">'+
+          '<button class="rp-btn nav" onclick="_rpNavigate('+i+')">↗ Open in Maps</button>'+
+          (isDone
+            ? '<button class="rp-btn done" onclick="_rpUndone('+i+')" style="background:#f3f4f6;color:#6b7280;">↩ Undo</button>'
+            : '<button class="rp-btn done" onclick="_rpDone('+i+')">✓ Done</button>')+
+          '<button class="rp-btn remove" onclick="_rpRemove('+i+')">Remove</button>'+
         '</div>'+
       '</div>'+
     '</div>';
   }).join('');
-  if (_routeActive) {
-    var a = document.getElementById('rstop-'+_routeCurrentStop);
-    if (a) a.scrollIntoView({behavior:'smooth',block:'nearest'});
-  }
 }
 
-async function startRoute() {
-  if (!_routeStops.length) return;
-  _routeActive = true;
-  _routeCurrentStop = _routeStops.findIndex(function(s){ return s.status==='pending'; });
-  if (_routeCurrentStop < 0) _routeCurrentStop = 0;
-  _saveRouteSession();
+// ── DRAG TO REORDER ──
+var _rpDragIdx = null;
+function _rpDragStart(e,i){ _rpDragIdx=i; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+function _rpDragOver(e,i){ e.preventDefault(); e.dataTransfer.dropEffect='move'; document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); }); if(i!==_rpDragIdx){ var el=document.getElementById('rpstop-'+i); if(el) el.classList.add('drag-over'); } }
+function _rpDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+function _rpDrop(e,toIdx){
+  e.preventDefault();
+  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
+  if (_rpDragIdx===null||_rpDragIdx===toIdx){ _rpDragIdx=null; return; }
+  var moved=_routeStops.splice(_rpDragIdx,1)[0];
+  _routeStops.splice(toIdx,0,moved);
+  _rpDragIdx=null;
+  _saveRoute();
   _drawRouteOnMap();
-  renderRouteStops();
-  // Close panel → show map in nav mode
-  document.getElementById('route-panel').classList.remove('open');
-
-  var stop = _routeStops[_routeCurrentStop];
-  if (stop && stop.biz.lat) {
-    map.flyTo({ center:[stop.biz.lon, stop.biz.lat], zoom:16, pitch:45, bearing:0, speed:1.4 });
-  }
-
-  // Fetch first-leg turn-by-turn steps for the nav banner
-  var steps = null;
-  if (_routeStartPoint && stop) {
-    steps = await _getNavSteps(_routeStartPoint, { lat:stop.biz.lat, lon:stop.biz.lon });
-  }
-  _navSteps = steps || [];
-  _navStepIdx = 0;
-
-  _showNavBrief();
+  _renderRPStops();
 }
 
-// Fetch turn-by-turn steps from current position to next stop
-async function _getNavSteps(from, to) {
-  try {
-    var url = 'https://api.mapbox.com/directions/v5/mapbox/driving-traffic/'+
-      from.lon+','+from.lat+';'+to.lon+','+to.lat+
-      '?access_token='+MBOX+'&steps=true&geometries=geojson&overview=full&voice_instructions=false&banner_instructions=true';
-    var res = await fetch(url);
-    var d = await res.json();
-    if (d.routes && d.routes[0] && d.routes[0].legs[0]) return d.routes[0].legs[0].steps;
-    return [];
-  } catch(e) { return []; }
-}
-
-var _navSteps   = [];
-var _navStepIdx = 0;
-
-// ── NAV BRIEF UI ──
-// Mimics Google Maps: teal top banner with maneuver + street, bottom bar with ETA + Exit
-function _showNavBrief() {
-  _removeNavBrief();
-  var stop = _routeStops[_routeCurrentStop];
-  if (!stop) return;
-
-  var total   = _routeStops.length;
-  var done    = _routeStops.filter(function(s){ return s.status==='completed'; }).length;
-  var durTxt  = stop._legDur  ? _fmtDur(stop._legDur)   : '';
-  var distTxt = stop._legDist ? _fmtDist(stop._legDist)  : '';
-
-  // Current nav step
-  var step     = _navSteps[_navStepIdx] || null;
-  var maneuver = step ? _maneuverIcon(step) : '↑';
-  var street   = step ? (step.name || step.maneuver.instruction || 'Continue') : ('toward '+stop.biz.name);
-  var stepDist = step ? _fmtDist(step.distance) : distTxt;
-
-  // ETA
-  var now    = new Date();
-  var etaSec = stop._legDur || 0;
-  var etaDate = new Date(now.getTime() + etaSec*1000);
-  var etaStr  = etaSec
-    ? etaDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
-    : '';
-
-  // ── TOP BANNER (like Google Maps teal bar) ──
-  var top = document.createElement('div');
-  top.id = 'nav-top';
-  top.style.cssText = [
-    'position:fixed',
-    'top:calc(env(safe-area-inset-top,0px) + 52px)',   // below app header
-    'left:0','right:0',
-    'background:#1a6b5a',
-    'padding:14px 18px 14px 16px',
-    'z-index:1600',
-    'display:flex','align-items:center','gap:14px',
-    'box-shadow:0 4px 24px rgba(0,0,0,.5)'
-  ].join(';');
-
-  top.innerHTML =
-    // Maneuver arrow
-    '<div style="width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,.15);'+
-      'display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+
-      '<div style="font-size:30px;line-height:1;">'+maneuver+'</div>'+
-    '</div>'+
-    // Street + distance
-    '<div style="flex:1;min-width:0;">'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;margin-bottom:2px;letter-spacing:.04em;text-transform:uppercase;">'+stepDist+'</div>'+
-      '<div id="nav-street" style="font-size:22px;font-weight:800;color:#fff;line-height:1.15;'+
-        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+street+'</div>'+
-    '</div>'+
-    // Stop indicator + next steps button
-    '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">'+
-      '<div style="width:36px;height:36px;border-radius:50%;background:#fff;'+
-        'display:flex;align-items:center;justify-content:center;">'+
-        '<div style="font-size:15px;font-weight:900;color:#1a6b5a;">'+(_routeCurrentStop+1)+'</div>'+
-      '</div>'+
-      '<div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;white-space:nowrap;">'+done+'/'+total+' done</div>'+
-    '</div>';
-
-  // ── BOTTOM BAR (ETA + distance + action buttons) ──
-  var bot = document.createElement('div');
-  bot.id = 'nav-bottom';
-  bot.style.cssText = [
-    'position:fixed',
-    'bottom:calc(env(safe-area-inset-bottom,0px) + 60px)',
-    'left:0','right:0',
-    'background:#1c1c1e',
-    'padding:12px 16px',
-    'z-index:1600',
-    'display:flex','align-items:center','gap:10px',
-    'box-shadow:0 -2px 20px rgba(0,0,0,.6)'
-  ].join(';');
-
-  bot.innerHTML =
-    // ETA + dist block
-    '<div style="flex:1;">'+
-      '<div style="display:flex;align-items:baseline;gap:8px;">'+
-        (durTxt ? '<span style="font-size:28px;font-weight:800;color:#4ade80;line-height:1;">'+durTxt+'</span>' : '')+
-        (distTxt ? '<span style="font-size:14px;color:rgba(255,255,255,.5);font-weight:500;">'+distTxt+'</span>' : '')+
-      '</div>'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">'+
-        stop.biz.name+
-        (etaStr ? ' · '+etaStr : '')+
-      '</div>'+
-    '</div>'+
-    // Action buttons
-    '<div style="display:flex;gap:8px;flex-shrink:0;">'+
-      '<button onclick="_hudSkip()" '+
-        'style="background:#3a3a3c;border:none;border-radius:10px;padding:10px 14px;'+
-        'font-size:12px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;font-family:Inter,sans-serif;">'+
-        'Skip</button>'+
-      '<button onclick="_hudDone('+_routeCurrentStop+')" '+
-        'style="background:#059669;border:none;border-radius:10px;padding:10px 16px;'+
-        'font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">'+
-        '✓ Arrived</button>'+
-      '<button onclick="openRoutePanel()" '+
-        'style="background:#ef4444;border:none;border-radius:10px;padding:10px 14px;'+
-        'font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">'+
-        'Exit</button>'+
-    '</div>';
-
-  document.body.appendChild(top);
-  document.body.appendChild(bot);
-}
-
-function _removeNavBrief() {
-  ['nav-top','nav-bottom'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) el.remove();
-  });
-}
-
-// Returns an emoji arrow for a maneuver type
-function _maneuverIcon(step) {
-  if (!step || !step.maneuver) return '↑';
-  var t = step.maneuver.type || '';
-  var m = step.maneuver.modifier || '';
-  if (t === 'arrive') return '📍';
-  if (t === 'depart') return '↑';
-  if (t === 'turn') {
-    if (m === 'left')        return '←';
-    if (m === 'right')       return '→';
-    if (m === 'slight left') return '↖';
-    if (m === 'slight right')return '↗';
-    if (m === 'sharp left')  return '↩';
-    if (m === 'sharp right') return '↪';
-    if (m === 'uturn')       return '↩';
-  }
-  if (t === 'merge')         return '↑';
-  if (t === 'on ramp')       return m.includes('left') ? '↖' : '↗';
-  if (t === 'off ramp')      return m.includes('left') ? '↙' : '↘';
-  if (t === 'fork')          return m.includes('left') ? '↖' : '↗';
-  if (t === 'roundabout' || t === 'rotary') return '🔄';
-  if (t === 'continue')      return '↑';
-  return '↑';
-}
-
-// Called from bottom bar Skip button
-function _hudSkip() {
-  skipStop(_routeCurrentStop);
-  if (_routeActive) {
-    _fetchAndShowNavBrief();
-  } else {
-    _removeNavBrief();
-  }
-}
-
-// Called from bottom bar Done/Arrived button
-function _hudDone(idx) {
-  completeStop(idx);
-  if (_routeActive) {
-    _fetchAndShowNavBrief();
-  } else {
-    _removeNavBrief();
-  }
-}
-
-async function _fetchAndShowNavBrief() {
-  var stop = _routeStops[_routeCurrentStop];
-  if (!stop) { _removeNavBrief(); return; }
-  // Try GPS first, fall back to previous stop
-  var fromPt = _routeStartPoint;
-  if (navigator.geolocation) {
-    try {
-      fromPt = await new Promise(function(res,rej){
-        navigator.geolocation.getCurrentPosition(
-          function(p){ res({lat:p.coords.latitude,lon:p.coords.longitude,label:'My Location'}); },
-          function(){ res(_routeStartPoint); },
-          {enableHighAccuracy:true,timeout:3000}
-        );
-      });
-    } catch(e) {}
-  }
-  var steps = await _getNavSteps(fromPt, {lat:stop.biz.lat,lon:stop.biz.lon});
-  _navSteps   = steps || [];
-  _navStepIdx = 0;
-  _showNavBrief();
-  map.flyTo({center:[stop.biz.lon,stop.biz.lat],zoom:16,pitch:45,speed:1.4});
-}
-
-function navigateToStop(idx) {
-  var stop = _routeStops[idx];
-  if (!stop) return;
-  var lat = stop.biz.lat, lon = stop.biz.lon;
-  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  var url = isIOS
-    ? 'maps://maps.apple.com/?daddr='+lat+','+lon
-    : 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lon;
-  window.open(url, '_blank');
-}
-
-function completeStop(idx) {
-  _routeStops[idx].status = 'completed';
-  var b = _routeStops[idx].biz;
+// ── STOP ACTIONS ──
+function _rpDone(idx) {
+  _routeStops[idx].done=true;
+  var b=_routeStops[idx].biz;
   sb.from('activity').insert({
-    business_id:String(b.id||b._id), type:'visited',
+    business_id:String(b.id||b._id),type:'visited',
     note:'Visited during route',
-    client_id: currentProfile?currentProfile.client_id:null,
-    created_by: currentProfile?(currentProfile.full_name||''):''
+    client_id:currentProfile?currentProfile.client_id:null,
+    created_by:currentProfile?(currentProfile.full_name||''):''
   }).then(function(){});
-  if (_routeActive) {
-    var next = _routeStops.findIndex(function(s,i){ return i>idx&&s.status==='pending'; });
-    if (next >= 0) {
-      _routeCurrentStop = next;
-    } else {
-      _routeActive = false;
-      _removeNavBrief();
-      _saveRouteSession();
-      _drawRouteOnMap();
-      renderRouteStops();
-      setTimeout(function(){ alert('🎉 Route complete! All stops visited.'); }, 300);
-      return;
-    }
-  }
-  _saveRouteSession();
-  _drawRouteOnMap();
-  renderRouteStops();
+  _saveRoute(); _drawRouteOnMap(); _renderRPStops();
+  var allDone=_routeStops.every(function(s){ return s.done; });
+  if (allDone) setTimeout(function(){ alert('🎉 Route complete! All stops visited.'); },300);
 }
 
-function skipStop(idx) {
-  _routeStops[idx].status = 'skipped';
-  if (_routeActive) {
-    var next = _routeStops.findIndex(function(s,i){ return i>idx&&s.status==='pending'; });
-    if (next >= 0) _routeCurrentStop = next;
-  }
-  _saveRouteSession();
-  _drawRouteOnMap();
-  renderRouteStops();
+function _rpUndone(idx) {
+  _routeStops[idx].done=false;
+  _saveRoute(); _drawRouteOnMap(); _renderRPStops();
 }
 
-function removeStop(idx) {
+function _rpRemove(idx) {
   _routeStops.splice(idx,1);
-  if (_routeCurrentStop >= _routeStops.length) _routeCurrentStop = Math.max(0,_routeStops.length-1);
-  _saveRouteSession();
-  _drawRouteOnMap();
+  _saveRoute(); _drawRouteOnMap(); _renderRPStops();
 }
 
+function _rpNavigate(idx) {
+  var stop=_routeStops[idx]; if(!stop) return;
+  var lat=stop.biz.lat, lon=stop.biz.lon;
+  var addr=encodeURIComponent(stop.biz.full_address||stop.biz.street||stop.biz.name);
+  var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  // Try Apple Maps on iOS (works offline too), Google Maps everywhere else
+  var url=isIOS
+    ? 'maps://maps.apple.com/?daddr='+lat+','+lon+'&dirflg=d'
+    : 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lon+'&travelmode=driving';
+  window.open(url,'_blank');
+}
+
+// ── RE-OPTIMIZE ──
 async function reoptimizeRoute() {
   if (!_routeStartPoint||!_routeStops.length) return;
-  var pending = _routeStops.filter(function(s){ return s.status==='pending'; });
-  var done    = _routeStops.filter(function(s){ return s.status!=='pending'; });
+  var pending=_routeStops.filter(function(s){ return !s.done; });
+  var done=_routeStops.filter(function(s){ return s.done; });
   if (!pending.length) return;
-  var subEl = document.getElementById('route-panel-subtitle');
-  if (subEl) subEl.textContent = 'Re-optimizing…';
+  _setRPSubtitle('Re-optimizing…');
   try {
-    var geom;
-    if (pending.length <= 11) {
-      var r = await _optimizeAPI(_routeStartPoint, pending);
-      pending = r.ordered;
-      _routeTotalDur  = r.dur;
-      _routeTotalDist = r.dist;
-      geom = r.geom;
+    if (pending.length<=11) {
+      var r=await _optimizeAPI(_routeStartPoint,pending);
+      _routeStops=done.concat(r.ordered);
+      _routeGeomCache=r.geom; _routeTotalDur=r.dur; _routeTotalDist=r.dist;
     } else {
-      pending = _distNearestNeighbor(_routeStartPoint, pending);
-      var wpts = [{lat:_routeStartPoint.lat,lon:_routeStartPoint.lon}]
+      pending=_distNNN(_routeStartPoint,pending);
+      _routeStops=done.concat(pending);
+      var wpts=[{lat:_routeStartPoint.lat,lon:_routeStartPoint.lon}]
         .concat(pending.map(function(s){ return {lat:s.biz.lat,lon:s.biz.lon}; }));
-      var r2 = await _directionsAPI(wpts);
-      geom = r2.geom; _routeTotalDur=r2.dur; _routeTotalDist=r2.dist;
+      var r2=await _directionsAPI(wpts);
+      _routeGeomCache=r2.geom; _routeTotalDur=r2.dur; _routeTotalDist=r2.dist;
     }
-    _routeStops = done.concat(pending);
-    _routeCurrentStop = done.length;
-    _routeGeomCache = geom;
-    _saveRouteSession();
-    _drawRouteOnMap();
-    if (subEl) subEl.textContent = _routeStops.length+' stops · '+_fmtDur(_routeTotalDur)+' · '+_fmtDist(_routeTotalDist);
-  } catch(e) {
-    pending = _distNearestNeighbor(_routeStartPoint, pending);
-    _routeStops = done.concat(pending);
-    _routeCurrentStop = done.length;
-    _routeGeomCache = null;
-    _saveRouteSession();
-    _drawRouteOnMap();
-  }
+    _saveRoute(); _drawRouteOnMap(); _renderRPStops();
+    _setRPSubtitle(_routeStops.length+' stops'+(_routeTotalDur?' · '+_fmtDur(_routeTotalDur):'')+(_routeTotalDist?' · '+_fmtDist(_routeTotalDist):''));
+  } catch(e) { _setRPSubtitle(_routeStops.length+' stops'); }
 }
 
 function clearRoute() {
-  if (_routeStops.length && !confirm('Clear the current route?')) return;
-  _routeStops=[];_routeActive=false;_routeCurrentStop=0;
-  _routeTotalDur=0;_routeTotalDist=0;_routeGeomCache=null;
-  _navSteps=[];_navStepIdx=0;
-  _removeNavBrief();
-  _routeMarkers.forEach(function(m){ m.remove(); });
-  _routeMarkers=[];
-  ['route-line-casing','route-line'].forEach(function(id){
-    if(map.getLayer(id)){ try{map.removeLayer(id);}catch(e){} }
-  });
-  if(map.getSource('route-line-src')){ try{map.removeSource('route-line-src');}catch(e){} }
+  if (_routeStops.length&&!confirm('Clear this route?')) return;
+  _routeStops=[]; _routeGeomCache=null; _routeTotalDur=0; _routeTotalDist=0;
+  _routeMarkers.forEach(function(m){ m.remove(); }); _routeMarkers=[];
+  ['route-line-casing','route-line'].forEach(function(id){ if(map.getLayer(id)){try{map.removeLayer(id);}catch(e){}} });
+  if(map.getSource('route-line-src')){try{map.removeSource('route-line-src');}catch(e){}}
   _routeLine=null;
   localStorage.removeItem('vavan_route');
-  renderRouteStops();
-  document.getElementById('route-panel').classList.remove('open');
-  map.setStyle('mapbox://styles/mapbox/dark-v11');
-  var btn=document.getElementById('route-btn');
-  if(btn) btn.textContent='🗺 Route';
+  closeRoutePanel();
+  var btn=document.getElementById('route-btn'); if(btn) btn.textContent='🗺 Route';
 }
 
-function _saveRouteSession() {
+function changeRouteStart() {
+  document.getElementById('route-start-modal').classList.add('open');
+}
+
+// ── SESSION PERSISTENCE ──
+function _saveRoute() {
   try {
-    localStorage.setItem('vavan_route', JSON.stringify({
-      stops: _routeStops.map(function(s){ return {bizId:String(s.biz._id||s.biz.id),status:s.status}; }),
-      startPoint: _routeStartPoint,
-      currentStop: _routeCurrentStop,
-      active: _routeActive,
-      totalDur: _routeTotalDur,
-      totalDist: _routeTotalDist
+    localStorage.setItem('vavan_route',JSON.stringify({
+      stops:_routeStops.map(function(s){ return {bizId:String(s.biz._id||s.biz.id),done:s.done,_legDur:s._legDur,_legDist:s._legDist}; }),
+      startPoint:_routeStartPoint,
+      totalDur:_routeTotalDur, totalDist:_routeTotalDist
     }));
-  } catch(e) {}
+  } catch(e){}
 }
 
 function _restoreRouteSession() {
   try {
-    var saved = localStorage.getItem('vavan_route');
-    if (!saved) return;
-    var data = JSON.parse(saved);
-    if (!data.stops||!data.stops.length) return;
+    var saved=localStorage.getItem('vavan_route'); if(!saved) return;
+    var data=JSON.parse(saved); if(!data.stops||!data.stops.length) return;
     var stops=[];
     data.stops.forEach(function(s){
-      var b = _bizById[s.bizId]||allData.find(function(x){ return String(x._id||x.id)===s.bizId; });
-      if(b) stops.push({biz:b,status:s.status});
+      var b=_bizById[s.bizId]||allData.find(function(x){ return String(x._id||x.id)===s.bizId; });
+      if(b) stops.push({biz:b,done:s.done||false,_legDur:s._legDur,_legDist:s._legDist});
     });
-    if (!stops.length) return;
+    if(!stops.length) return;
     _routeStops=stops;
     _routeStartPoint=data.startPoint;
-    _routeCurrentStop=data.currentStop||0;
-    _routeActive=data.active||false;
-    _routeTotalDur=data.totalDur||0;
-    _routeTotalDist=data.totalDist||0;
-    _routeGeomCache=null; // can't restore geometry, will draw straight lines
-    var btn=document.getElementById('route-btn');
-    if(btn) btn.style.display='';
+    _routeTotalDur=data.totalDur||0; _routeTotalDist=data.totalDist||0;
+    _routeGeomCache=null;
     openRoutePanel();
-  } catch(e) {}
+    _setRPSubtitle(_routeStops.length+' stops'+(_routeTotalDur?' · '+_fmtDur(_routeTotalDur):'')+(_routeTotalDist?' · '+_fmtDist(_routeTotalDist):''));
+  } catch(e){}
 }
+
 
 function activateTool(t) {
   if (activeTool===t) { deactivate(); return; }
@@ -5262,16 +4969,16 @@ function onMapClick(e) {
 <!-- ROUTE START MODAL -->
 <div id="route-start-modal">
   <div class="route-start-box">
-    <div class="route-start-title">📍 Set Starting Point</div>
+    <div class="route-start-title">📍 Starting Point</div>
     <div class="route-start-opt selected" id="rso-gps" onclick="selectRouteStart('gps')">
       <div class="route-start-opt-icon">📡</div>
-      <div><div class="route-start-opt-text">My Current Location</div><div class="route-start-opt-sub">Uses your GPS position</div></div>
+      <div><div class="route-start-opt-text">My Current Location</div><div class="route-start-opt-sub">Uses your GPS</div></div>
     </div>
     <div class="route-start-opt" id="rso-custom" onclick="selectRouteStart('custom')">
       <div class="route-start-opt-icon">🏠</div>
-      <div><div class="route-start-opt-text">Custom Address</div><div class="route-start-opt-sub">Office, hotel, or any location</div></div>
+      <div><div class="route-start-opt-text">Custom Address</div><div class="route-start-opt-sub">Office, hotel, or any address</div></div>
     </div>
-    <input id="route-custom-addr" placeholder="Enter starting address...">
+    <input id="route-custom-addr" placeholder="Enter starting address…">
     <div style="display:flex;gap:8px;margin-top:1rem;">
       <button onclick="closeRouteStartModal()" style="flex:1;padding:10px;background:#f3f4f6;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Cancel</button>
       <button onclick="confirmRouteStart()" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Build Route</button>
@@ -5281,21 +4988,23 @@ function onMapClick(e) {
 
 <!-- ROUTE PANEL -->
 <div id="route-panel">
-  <div class="route-panel-header">
-    <div>
-      <div class="route-panel-title">🗺 Route</div>
-      <div id="route-panel-subtitle" style="font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;"></div>
+  <div class="rp-header">
+    <div class="sheet-handle" style="background:rgba(255,255,255,.3);"></div>
+    <div class="rp-title-row" style="margin-top:6px;">
+      <div>
+        <div class="rp-title">🗺 Route</div>
+        <div class="rp-subtitle" id="rp-subtitle">Select businesses from the list to build a route</div>
+      </div>
+      <button class="rp-close" onclick="closeRoutePanel()">✕</button>
     </div>
-    <button class="route-panel-close" onclick="closeRoutePanel()">✕</button>
+    <div class="rp-actions">
+      <button class="rp-action-btn blue" onclick="reoptimizeRoute()">⟳ Re-Optimize</button>
+      <button class="rp-action-btn blue" onclick="changeRouteStart()">📍 Start Point</button>
+      <button class="rp-action-btn red" onclick="clearRoute()">✕ Clear</button>
+    </div>
   </div>
-  <div class="route-top-actions">
-    <button class="route-action-btn green" onclick="startRoute()">▶ Start</button>
-    <button class="route-action-btn blue" onclick="reoptimizeRoute()">⟳ Re-Optimize</button>
-    <button class="route-action-btn blue" onclick="changeRouteStart()">📍 Start Point</button>
-    <button class="route-action-btn red" onclick="clearRoute()">✕ Clear</button>
-  </div>
-  <div class="route-stops" id="route-stops-list">
-    <div class="route-empty">No stops yet. Select businesses from the list.</div>
+  <div class="rp-stops" id="rp-stops-list">
+    <div class="rp-empty">Select businesses from the list,<br>then tap <strong>Build Route</strong>.</div>
   </div>
 </div>
 
