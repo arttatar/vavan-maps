@@ -3803,6 +3803,24 @@ function renderDetailPanel(b) {
     '<div id="det-profile" class="det-section active">'+
       // View mode
       '<div id="det-view" class="det-view-mode">'+
+        // ── QUICK LOG — at top, above assigned rep ──
+        '<div style="padding:.75rem 0 .875rem;border-bottom:1px solid var(--border);margin-bottom:.25rem;">'+
+          '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">Log Activity</div>'+
+          '<div style="display:flex;gap:8px;margin-bottom:.75rem;">'+
+            '<button onclick="_openActivitySheet(\'visited\')" style="flex:1;padding:9px;border:1.5px solid #d97706;border-radius:9px;background:'+(b.visited?'#fff7e6':'#fff')+';color:#d97706;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
+              (b.visited ? '✓ Visited' : 'Visited')+
+            '</button>'+
+            '<button onclick="_openActivitySheet(\'contacted\')" style="flex:1;padding:9px;border:1.5px solid #059669;border-radius:9px;background:#fff;color:#059669;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'+
+              'Contacted'+
+            '</button>'+
+          '</div>'+
+          '<div style="display:flex;gap:6px;">'+
+            '<textarea id="quick-note-input" placeholder="Add a note..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:Inter,sans-serif;color:var(--ink);background:var(--paper);outline:none;resize:none;min-height:56px;"></textarea>'+
+            '<button onclick="_saveQuickNote()" style="align-self:flex-end;padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Add</button>'+
+          '</div>'+
+        '</div>'+
         // 1. Assigned Rep
         (b.assigned_rep
           ? '<div class="det-field-row"><span class="det-field-label">Assigned Rep</span><span class="det-field-value">'+b.assigned_rep+'</span></div>'
@@ -3872,25 +3890,6 @@ function renderDetailPanel(b) {
         })()+
         // 9. Location type — only if set
         (b.location_type ? '<div class="det-field-row"><span class="det-field-label">Location Type</span><span class="det-field-value">'+b.location_type+'</span></div>' : '')+
-        // ── QUICK LOG — always at bottom of profile ──
-        '<div style="border-top:1px solid var(--border);margin-top:.5rem;padding-top:.875rem;">'+
-          '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">Log Activity</div>'+
-          '<div style="display:flex;gap:8px;margin-bottom:.75rem;">'+
-            '<button onclick="_openActivitySheet(\'contacted\')" style="flex:1;padding:9px;border:1.5px solid #059669;border-radius:9px;background:'+(b.visited?'#f0fdf4':'#fff')+';color:#059669;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
-              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'+
-              'Contacted'+
-            '</button>'+
-            '<button onclick="_openActivitySheet(\'visited\')" style="flex:1;padding:9px;border:1.5px solid #d97706;border-radius:9px;background:'+(b.visited?'#fff7e6':'#fff')+';color:#d97706;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
-              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
-              (b.visited ? '✓ Visited' : 'Visited')+
-            '</button>'+
-          '</div>'+
-          // Quick note inline
-          '<div style="display:flex;gap:6px;">'+
-            '<textarea id="quick-note-input" placeholder="Add a note..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:Inter,sans-serif;color:var(--ink);background:var(--paper);outline:none;resize:none;min-height:56px;"></textarea>'+
-            '<button onclick="_saveQuickNote()" style="align-self:flex-end;padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Add</button>'+
-          '</div>'+
-        '</div>'+
       '</div>'+
       // Edit mode — shows ALL fields regardless of whether they're set
       '<div id="det-edit" class="det-edit-form">'+
