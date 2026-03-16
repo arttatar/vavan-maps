@@ -984,10 +984,18 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- ASSIGNED REP -->
       <div class="sb-sec">
         <div class="sb-title">Assigned Rep</div>
-        <select class="sinput" id="s-rep" onchange="filters.rep=this.value">
-          <option value="all">All</option>
-          <option value="unassigned">Unassigned only</option>
-          <option disabled>──────────────</option>
+        <!-- Quick options -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.5rem;">
+          <span class="pill on" id="rep-pill-all" onclick="_repFilterAll()" style="font-size:11px;">All</span>
+          <span class="pill" id="rep-pill-assigned" onclick="_repFilterAssigned()" style="font-size:11px;">Assigned</span>
+          <span class="pill" id="rep-pill-unassigned" onclick="_repFilterUnassigned()" style="font-size:11px;">Unassigned</span>
+        </div>
+        <!-- Individual rep chips -->
+        <div id="rep-chips-wrap" style="display:flex;flex-wrap:wrap;gap:5px;min-height:24px;"></div>
+        <!-- Rep dropdown to add -->
+        <select id="s-rep" onchange="_repFilterAdd(this)" style="width:100%;border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;font-family:'Inter',sans-serif;color:var(--muted);background:var(--paper);margin-top:.4rem;display:none;">
+          <option value="">+ Select rep to filter</option>
+          <option value="unassigned">Unassigned</option>
         </select>
       </div>
 
@@ -1223,7 +1231,7 @@ function _buildLookup() {
 }
 var filters = {
   opp:'all', contact:'all', industry:'all', pipeline:'all',
-  subIndustry:'all', status:'all', rep:'all',
+  subIndustry:'all', status:'all', rep:'all', reps:[],
   opp_product:'all', opp_stage:'all', opp_min_volume:0,
   // Per-product pipeline stage filters
   opp_lube_stage:'all', opp_fuel_stage:'all', opp_cardlock_stage:'all',
@@ -1401,17 +1409,72 @@ function populateRepFilter() {
   var sel = document.getElementById('s-rep');
   if (!sel) return;
   var reps = getTerritoryReps();
-  // Remove any previously added rep options (keep first 3: all, unassigned, divider)
-  while (sel.options.length > 3) sel.remove(3);
+  // Clear existing rep options (keep first 2: empty + unassigned)
+  while (sel.options.length > 2) sel.remove(2);
   reps.forEach(function(r){
     var opt = document.createElement('option');
-    opt.value = r;
-    opt.textContent = r;
+    opt.value = r; opt.textContent = r;
     sel.appendChild(opt);
   });
+  // Show the dropdown if there are reps
+  if (reps.length) sel.style.display = 'block';
+  // Init filters.reps array if not set
+  if (!filters.reps) filters.reps = [];
 }
 
-// One-tap: filter to just the logged-in rep's assigned businesses
+// ── REP MULTI-FILTER ──
+function _repFilterAll() {
+  filters.reps = [];
+  filters.rep = 'all';
+  _renderRepChips();
+  _repSetPillState('all');
+}
+function _repFilterAssigned() {
+  filters.reps = ['__assigned__'];
+  filters.rep = '__assigned__';
+  _renderRepChips();
+  _repSetPillState('assigned');
+}
+function _repFilterUnassigned() {
+  filters.reps = ['unassigned'];
+  filters.rep = 'unassigned';
+  _renderRepChips();
+  _repSetPillState('unassigned');
+}
+function _repFilterAdd(sel) {
+  var val = sel.value; if (!val) return;
+  sel.value = '';
+  if (!filters.reps) filters.reps = [];
+  if (filters.reps.indexOf(val) >= 0) return;
+  // Clear mode pills when individual rep selected
+  filters.reps = filters.reps.filter(function(r){ return r !== '__assigned__' && r !== 'unassigned'; });
+  filters.reps.push(val);
+  filters.rep = 'multi';
+  _renderRepChips();
+  _repSetPillState('none');
+}
+function _repRemoveChip(val) {
+  if (!filters.reps) return;
+  filters.reps = filters.reps.filter(function(r){ return r !== val; });
+  if (filters.reps.length === 0) { filters.rep = 'all'; _repSetPillState('all'); }
+  _renderRepChips();
+}
+function _repSetPillState(active) {
+  ['all','assigned','unassigned'].forEach(function(k){
+    var el = document.getElementById('rep-pill-'+k);
+    if (el) el.classList.toggle('on', k === active);
+  });
+}
+function _renderRepChips() {
+  var wrap = document.getElementById('rep-chips-wrap');
+  if (!wrap) return;
+  var reps = filters.reps || [];
+  wrap.innerHTML = reps.map(function(r){
+    var label = r === 'unassigned' ? 'Unassigned' : r === '__assigned__' ? 'All Assigned' : r;
+    return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">'+
+      label+'<button onclick="_repRemoveChip(\''+r.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button></span>';
+  }).join('');
+}
 function filterMyAccounts() {
   if (!currentProfile) return;
 
@@ -1436,9 +1499,10 @@ function filterMyAccounts() {
   }
 
   clearFilters();
-  filters.rep = matchedRep;
-  var sel = document.getElementById('s-rep');
-  if (sel) sel.value = matchedRep;
+  filters.reps = [matchedRep];
+  filters.rep = 'multi';
+  _repSetPillState('none');
+  _renderRepChips();
   applyFilters();
   updateFilterBadge();
   setTimeout(function(){ navTo('list'); }, 300);
@@ -2821,11 +2885,15 @@ function applyFilters() {
     });
   }
 
-  // Assigned rep filter
-  if (filters.rep && filters.rep !== 'all') {
+  // Assigned rep filter — supports multi-select
+  var repsFilter = filters.reps && filters.reps.length ? filters.reps : (filters.rep && filters.rep !== 'all' ? [filters.rep] : []);
+  if (repsFilter.length) {
     data = data.filter(function(b){
-      if (filters.rep === 'unassigned') return !b.assigned_rep || b.assigned_rep === '';
-      return (b.assigned_rep || '') === filters.rep;
+      return repsFilter.some(function(r){
+        if (r === 'unassigned') return !b.assigned_rep || b.assigned_rep === '';
+        if (r === '__assigned__') return b.assigned_rep && b.assigned_rep !== '';
+        return (b.assigned_rep || '') === r;
+      });
     });
   }
 
@@ -5875,12 +5943,14 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_stage:'all', opp_min_volume:0 };
+  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', reps:[], opp_product:'all', opp_stage:'all', opp_min_volume:0 };
   filtersApplied = false;
   filteredData = [];
   setPipelineStage('all', null);
   var repEl = document.getElementById('s-rep');
-  if (repEl) repEl.value = 'all';
+  if (repEl) repEl.value = '';
+  _repSetPillState('all');
+  _renderRepChips();
   // Reset opp filter sliders
   if (typeof OPP_FILTER_PRODUCTS !== 'undefined') setOppPipelineAll();
   selectedIndustries = [];
