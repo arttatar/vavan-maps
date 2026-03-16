@@ -1006,11 +1006,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <div class="sb-sec">
         <div class="sb-title">Status</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          <span class="pill on" id="status-pill-all"        onclick="_setStatusFilter('all')"          style="font-size:11px;">All</span>
-          <span class="pill"    id="status-pill-Lead"       onclick="_setStatusFilter('Lead')"         style="font-size:11px;">Lead</span>
-          <span class="pill"    id="status-pill-Customer"   onclick="_setStatusFilter('Customer')"     style="font-size:11px;color:#059669;border-color:#059669;">Customer</span>
+          <span class="pill on" id="status-pill-all"          onclick="_setStatusFilter('all')"          style="font-size:11px;">All</span>
+          <span class="pill"    id="status-pill-Lead"         onclick="_setStatusFilter('Lead')"         style="font-size:11px;">Lead</span>
+          <span class="pill"    id="status-pill-Customer"     onclick="_setStatusFilter('Customer')"     style="font-size:11px;color:#059669;border-color:#059669;">Customer</span>
           <span class="pill"    id="status-pill-Lost Customer" onclick="_setStatusFilter('Lost Customer')" style="font-size:11px;color:#dc2626;border-color:#dc2626;">Lost</span>
-          <span class="pill"    id="status-pill-Competitor" onclick="_setStatusFilter('Competitor')"   style="font-size:11px;color:#EF4444;border-color:#EF4444;">Competitor</span>
+          <span class="pill"    id="status-pill-Competitor"   onclick="_setStatusFilter('Competitor')"   style="font-size:11px;color:#EF4444;border-color:#EF4444;">Competitor</span>
+          <span class="pill"    id="status-pill-Abandoned"    onclick="_setStatusFilter('Abandoned')"    style="font-size:11px;color:#6B7280;border-color:#6B7280;">Abandoned</span>
         </div>
       </div>
 
@@ -1166,7 +1167,7 @@ var filters = {
   opp:'all', contact:'all', industry:'all', pipeline:'all',
   subIndustry:'all', status:'all', rep:'all', reps:[],
   opp_product:'all', opp_stage:'all', opp_min_volume:0,
-  supplierFilter:[],
+  supplierFilter:[], statuses:[],
   // Per-product pipeline stage filters
   opp_lube_stage:'all', opp_fuel_stage:'all', opp_cardlock_stage:'all',
   opp_propane_stage:'all', opp_uco_stage:'all'
@@ -1358,10 +1359,27 @@ function populateRepFilter() {
 
 // ── STATUS FILTER ──
 function _setStatusFilter(val) {
-  filters.status = val;
-  ['all','Lead','Customer','Lost Customer','Competitor'].forEach(function(s){
+  if (val === 'all') {
+    filters.statuses = [];
+    filters.status = 'all';
+  } else {
+    if (!filters.statuses) filters.statuses = [];
+    var idx = filters.statuses.indexOf(val);
+    if (idx >= 0) filters.statuses.splice(idx, 1);
+    else filters.statuses.push(val);
+    filters.status = filters.statuses.length ? 'multi' : 'all';
+  }
+  _renderStatusPills();
+}
+
+function _renderStatusPills() {
+  var statuses = filters.statuses || [];
+  var allActive = statuses.length === 0;
+  var allEl = document.getElementById('status-pill-all');
+  if (allEl) allEl.classList.toggle('on', allActive);
+  ['Lead','Customer','Lost Customer','Competitor','Abandoned'].forEach(function(s){
     var el = document.getElementById('status-pill-'+s);
-    if (el) el.classList.toggle('on', s === val);
+    if (el) el.classList.toggle('on', statuses.indexOf(s) >= 0);
   });
 }
 
@@ -2840,9 +2858,11 @@ function applyFilters() {
   else if (filters.opp==='low') data = data.filter(function(b){ return (b.score||0)<65; });
 
   // Status filter
-  if (filters.status && filters.status !== 'all') {
+  // Status filter — multi-select
+  var activeStatuses = filters.statuses && filters.statuses.length ? filters.statuses : (filters.status && filters.status !== 'all' && filters.status !== 'multi' ? [filters.status] : []);
+  if (activeStatuses.length) {
     data = data.filter(function(b){
-      return (b.status || 'Lead') === filters.status;
+      return activeStatuses.indexOf(b.status || 'Lead') >= 0;
     });
   }
 
@@ -4097,6 +4117,7 @@ function renderDetailPanel(b) {
             '<option value="Customer"'+(status==='Customer'?' selected':'')+'>Customer</option>'+
             '<option value="Lost Customer"'+(status==='Lost Customer'?' selected':'')+'>Lost Customer</option>'+
             '<option value="Competitor"'+(status==='Competitor'?' selected':'')+'>Competitor</option>'+
+            '<option value="Abandoned"'+(status==='Abandoned'?' selected':'')+'>Abandoned</option>'+
           '</select></div>'+
         // Social links in edit mode
         '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem;">Social Links</div>'+
@@ -6282,7 +6303,7 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', reps:[], opp_product:'all', opp_stage:'all', opp_min_volume:0, supplierFilter:[] };
+  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', statuses:[], rep:'all', reps:[], opp_product:'all', opp_stage:'all', opp_min_volume:0, supplierFilter:[] };
   OPP_FILTER_PRODUCTS.forEach(function(p){ _oppFilterState[p.key] = {enabled:false,stage:'all',suppliers:[],brands:[]}; });
   _renderOppFilterProducts();
   _renderSupplierFilterChips();
@@ -6294,6 +6315,7 @@ function clearFilters() {
   _repSetPillState('all');
   _renderRepChips();
   _setStatusFilter('all');
+  _renderStatusPills();
   // Reset opp filter sliders
   if (typeof OPP_FILTER_PRODUCTS !== 'undefined') setOppPipelineAll();
   selectedIndustries = [];
@@ -6475,6 +6497,7 @@ function onMapClick(e) {
             <option value="Customer">Customer</option>
             <option value="Lost Customer">Lost Customer</option>
             <option value="Competitor">Competitor</option>
+            <option value="Abandoned">Abandoned</option>
           </select>
         </div>
         <div class="abiz-field">
