@@ -3739,22 +3739,37 @@ function renderDetailPanel(b) {
         '<div class="det-field-row"><span class="det-field-label">Address</span>'+
           '<span class="det-field-value" style="cursor:pointer" onclick="openNav('+JSON.stringify(addr)+','+( b.lat||null)+','+( b.lon||null)+')">'+
             (b.street||'—')+'<br>'+(b.locality||'')+'</span></div>'+
+        '<a href="https://www.google.com/maps/search/'+encodeURIComponent(b.name||'')+'/@'+b.lat+','+b.lon+',17z" '+
+          'target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#4285F4;text-decoration:none;padding:2px 0 10px;border-bottom:1px solid var(--border);margin-bottom:0;">'+
+          'View on Google Maps &rarr;</a>'+
         '<div class="det-field-row"><span class="det-field-label">Location Type</span>'+
           '<span class="det-field-value">'+
-            (function(){
-              var lt = b.location_type || '';
-              var icons = {};
-              return lt ? lt : '<span style="color:var(--muted);">Not set</span>';
-            })()+
+            (b.location_type || '<span style="color:var(--muted);">Not set</span>')+
           '</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Phone</span>'+
           '<span class="det-field-value">'+(b.phone?'<a href="tel:'+b.phone.replace(/\D/g,'')+'">'+b.phone+'</a>':'—')+'</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Website</span>'+
           '<span class="det-field-value">'+(b.website?'<a href="'+b.website+'" target="_blank">Visit &rarr;</a>':'—')+'</span></div>'+
+        // Industry — editable inline by all users
         '<div class="det-field-row"><span class="det-field-label">Industry</span>'+
-          '<span class="det-field-value">'+( b.industry||'—')+'</span></div>'+
+          '<span class="det-field-value">'+
+            '<select id="inline-industry" onchange="saveInlineIndustry()" style="border:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;text-align:right;max-width:180px;">'+
+              '<option value="">— Select —</option>'+
+              ['Automotive','Transport','Construction','Industrial','Agribusiness','Energy','Services','Hospitality','Government','RealEstate'].map(function(ind){
+                return '<option value="'+ind+'"'+(( b.industry||'')=== ind?' selected':'')+'>'+ind+'</option>';
+              }).join('')+
+            '</select>'+
+          '</span></div>'+
+        // Sub-Industry — editable inline
         '<div class="det-field-row"><span class="det-field-label">Sub-Industry</span>'+
-          '<span class="det-field-value">'+subInd+'</span></div>'+
+          '<span class="det-field-value">'+
+            '<select id="inline-sub-industry" onchange="saveInlineSubIndustry()" style="border:none;background:transparent;font-size:13px;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;text-align:right;max-width:180px;">'+
+              '<option value="">— Select —</option>'+
+              (SUB_MAP[b.industry] || []).map(function(s){
+                return '<option value="'+s.val+'"'+((subInd||'')=== s.label||subInd===s.val?' selected':'')+'>'+s.label+'</option>';
+              }).join('')+
+            '</select>'+
+          '</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Assigned Rep</span>'+
           '<span class="det-field-value" style="display:flex;align-items:center;gap:8px;">'+
             (b.assigned_rep||'Unassigned')+
@@ -3766,13 +3781,6 @@ function renderDetailPanel(b) {
           '<span class="det-field-value">'+
             '<button onclick="toggleVisited()" style="background:'+(b.visited?'#f0fdf4':'var(--paper2)')+';color:'+(b.visited?'#059669':'var(--muted)')+';border:1px solid '+(b.visited?'#059669':'var(--border)')+';border-radius:100px;padding:3px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">'+
             (b.visited?'✓ Visited':'Mark Visited')+'</button></span></div>'+
-        '<div class="det-field-row"><span class="det-field-label">Status</span>'+
-          '<span class="det-field-value"><span class="status-badge '+statusClass(status)+'">'+status+'</span></span></div>'+
-        '<div class="det-field-row"><span class="det-field-label">Pipeline</span>'+
-          '<span class="det-field-value"><span class="pipeline-badge '+pipeClass(stage)+'">'+stage+'</span></span></div>'+
-        '<a href="https://www.google.com/maps/search/'+encodeURIComponent(b.name||'')+'/@'+b.lat+','+b.lon+',17z" '+
-          'target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#4285F4;text-decoration:none;margin-top:.75rem;">'+
-          'View on Google Maps &rarr;</a>'+
       '</div>'+
       // Edit mode
       '<div id="det-edit" class="det-edit-form">'+
@@ -3997,6 +4005,39 @@ async function toggleVisited() {
     renderDetailPanel(b);
     switchTab('profile');
   } catch(e) { alert('Could not update: ' + e.message); }
+}
+
+async function saveInlineIndustry() {
+  var sel = document.getElementById('inline-industry');
+  if (!sel || !b) return;
+  var newInd = sel.value;
+  try {
+    var r = await sb.from('businesses').update({industry: newInd||null, updated_at:new Date().toISOString()}).eq('id',b.id||b._id);
+    if (r.error) throw r.error;
+    b.industry = newInd;
+    // Update sub-industry dropdown options
+    var subSel = document.getElementById('inline-sub-industry');
+    if (subSel) {
+      subSel.innerHTML = '<option value="">— Select —</option>' +
+        (SUB_MAP[newInd]||[]).map(function(s){return '<option value="'+s.val+'">'+s.label+'</option>';}).join('');
+    }
+    // Update lookup
+    if (_bizById[b._id]) _bizById[b._id].industry = newInd;
+    _showToast('Industry updated');
+  } catch(e) { _showToast('Save failed'); }
+}
+
+async function saveInlineSubIndustry() {
+  var sel = document.getElementById('inline-sub-industry');
+  if (!sel || !b) return;
+  var newSub = sel.value;
+  try {
+    var r = await sb.from('businesses').update({sub_industry: newSub||null, updated_at:new Date().toISOString()}).eq('id',b.id||b._id);
+    if (r.error) throw r.error;
+    b.sub_industry = newSub;
+    if (_bizById[b._id]) _bizById[b._id].sub_industry = newSub;
+    _showToast('Sub-industry updated');
+  } catch(e) { _showToast('Save failed'); }
 }
 
 async function saveBusinessEdits() {
