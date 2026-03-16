@@ -891,6 +891,39 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         </div>
       </div>
 
+      <!-- AREA TOOLS -->
+      <div class="sb-sec">
+        <div class="sb-title">Area Selection</div>
+        <div class="tool-row">
+          <button class="tbtn" id="tbtn-poly" onclick="activateTool('poly')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>Draw Area</button>
+          <button class="tbtn" id="tbtn-radius" onclick="activateTool('radius')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="19" y2="12"/></svg>Radius</button>
+          <button class="tbtn" id="tbtn-clear" onclick="clearArea()" style="display:none">Clear Area</button>
+        </div>
+        <div id="radius-wrap" style="display:none;margin-top:.75rem;">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;">Click map to place circle · drag slider to resize</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:10px;color:var(--muted);white-space:nowrap;">0.5 mi</span>
+            <input type="range" min="1" max="40" step="1" value="10" id="rad-slider"
+              style="flex:1;accent-color:var(--accent);cursor:pointer;"
+              oninput="_onRadSlider(this.value)">
+            <span style="font-size:10px;color:var(--muted);white-space:nowrap;">20 mi</span>
+          </div>
+          <div style="text-align:center;margin-top:6px;">
+            <span id="rad-lbl" style="font-size:13px;font-weight:700;color:var(--accent);">5 mi</span>
+            <span style="font-size:11px;color:var(--muted);"> radius</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:0 2px;margin-top:2px;">
+            <span style="font-size:9px;color:var(--muted);">1</span>
+            <span style="font-size:9px;color:var(--muted);">5</span>
+            <span style="font-size:9px;color:var(--muted);">10</span>
+            <span style="font-size:9px;color:var(--muted);">15</span>
+            <span style="font-size:9px;color:var(--muted);">20</span>
+          </div>
+        </div>
+      </div>
+
       <!-- INDUSTRY -->
       <div class="sb-sec">
         <div class="sb-title">Industry</div>
@@ -1058,40 +1091,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
               <div id="f-uco-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-uco-dots"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- AREA TOOLS -->
-      <div class="sb-sec">
-        <div class="sb-title">Area Selection</div>
-        <div class="tool-row">
-          <button class="tbtn" id="tbtn-poly" onclick="activateTool('poly')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>Draw Area</button>
-          <button class="tbtn" id="tbtn-radius" onclick="activateTool('radius')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="19" y2="12"/></svg>Radius</button>
-          <button class="tbtn" id="tbtn-clear" onclick="clearArea()" style="display:none">Clear Area</button>
-        </div>
-        <div id="radius-wrap" style="display:none;margin-top:.75rem;">
-          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;">Click map to place circle · drag slider to resize</div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:10px;color:var(--muted);white-space:nowrap;">0.5 mi</span>
-            <input type="range" min="1" max="40" step="1" value="10" id="rad-slider"
-              style="flex:1;accent-color:var(--accent);cursor:pointer;"
-              oninput="_onRadSlider(this.value)">
-            <span style="font-size:10px;color:var(--muted);white-space:nowrap;">20 mi</span>
-          </div>
-          <div style="text-align:center;margin-top:6px;">
-            <span id="rad-lbl" style="font-size:13px;font-weight:700;color:var(--accent);">5 mi</span>
-            <span style="font-size:11px;color:var(--muted);"> radius</span>
-          </div>
-          <!-- Tick marks -->
-          <div style="display:flex;justify-content:space-between;padding:0 2px;margin-top:2px;">
-            <span style="font-size:9px;color:var(--muted);">1</span>
-            <span style="font-size:9px;color:var(--muted);">5</span>
-            <span style="font-size:9px;color:var(--muted);">10</span>
-            <span style="font-size:9px;color:var(--muted);">15</span>
-            <span style="font-size:9px;color:var(--muted);">20</span>
           </div>
         </div>
       </div>
