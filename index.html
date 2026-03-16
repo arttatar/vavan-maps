@@ -2089,6 +2089,32 @@ function renderPins() {
     });
   }
 
+  // Hover highlight — glows when mousing over list item
+  if (!map.getSource('biz-hover')) {
+    map.addSource('biz-hover', { type:'geojson', data:{type:'FeatureCollection',features:[]} });
+  }
+  if (!map.getLayer('biz-hover-glow')) {
+    map.addLayer({ id:'biz-hover-glow', type:'circle', source:'biz-hover',
+      paint:{
+        'circle-radius':16,
+        'circle-color':'#fff',
+        'circle-opacity':0.22,
+        'circle-stroke-width':0
+      }
+    });
+  }
+  if (!map.getLayer('biz-hover-dot')) {
+    map.addLayer({ id:'biz-hover-dot', type:'circle', source:'biz-hover',
+      paint:{
+        'circle-radius':9,
+        'circle-color':'#fff',
+        'circle-opacity':1,
+        'circle-stroke-width':2.5,
+        'circle-stroke-color':'#4a36c8'
+      }
+    });
+  }
+
   // Attach handlers once — guarded by _mapHandlersAttached flag
   initMapHandlers();
 
@@ -2932,7 +2958,7 @@ function renderList() {
         '</div>'+
       '</div>';
     }
-    return '<div class="bitem" onclick="selectBiz('+idx+')">'+
+    return '<div class="bitem" onmouseenter="hoverBiz('+idx+')" onmouseleave="unhoverBiz()" onclick="selectBiz('+idx+')">'+
       '<div class="bname"><span class="sdot" style="background:'+color+'"></span>'+b.name+pipeLabel+'</div>'+
       '<div class="baddr">'+b.street+(b.industry?' · <em style="color:var(--muted)">'+b.industry+'</em>':'')+'</div>'+
       (b.phone?'<div class="bphone"><a href="tel:'+b.phone.replace(/\D/g,'')+'" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">'+b.phone+'</a></div>':'')+
@@ -3583,6 +3609,25 @@ var IND_COLORS = {
   Competitors:  '#EF4444',
 };
 var IND_DEFAULT = '#9b93d4';
+
+function hoverBiz(id) {
+  var biz = _bizById[id] || _bizById[String(id)];
+  if (!biz || !biz.lat || !biz.lon) return;
+  if (!map || !map.getSource('biz-hover')) return;
+  map.getSource('biz-hover').setData({
+    type:'FeatureCollection',
+    features:[{
+      type:'Feature',
+      geometry:{type:'Point',coordinates:[biz.lon,biz.lat]},
+      properties:{_id:biz._id,industry:biz.industry||''}
+    }]
+  });
+}
+
+function unhoverBiz() {
+  if (!map || !map.getSource('biz-hover')) return;
+  map.getSource('biz-hover').setData({type:'FeatureCollection',features:[]});
+}
 
 function bizColor(b) {
   if (b.is_competitor) return IND_COLORS.Competitors;
@@ -5358,11 +5403,59 @@ function activateTool(t) {
   deactivate(); activeTool = t;
   document.getElementById('tbtn-'+t).classList.add('on');
   document.getElementById('tbtn-clear').style.display = 'inline-flex';
-  if (t==='poly') { draw.changeMode('draw_polygon'); document.getElementById('radius-wrap').style.display='none'; }
-  else if (t==='radius') { document.getElementById('radius-wrap').style.display='block'; map.getCanvas().style.cursor='crosshair'; closeSidebar(); }
+  if (t==='poly') {
+    draw.changeMode('draw_polygon');
+    document.getElementById('radius-wrap').style.display='none';
+    // Close filter panel so map is visible
+    closeSidebar();
+    if (window.innerWidth <= 768) navTo('map');
+  } else if (t==='radius') {
+    document.getElementById('radius-wrap').style.display='block';
+    map.getCanvas().style.cursor='crosshair';
+    // Close filter panel and show map so user can tap to place circle
+    closeSidebar();
+    if (window.innerWidth <= 768) {
+      navTo('map');
+      // Show floating radius hint + slider on mobile
+      _showRadiusFloat();
+    }
+  }
+}
+
+function _showRadiusFloat() {
+  _removeRadiusFloat();
+  var el = document.createElement('div');
+  el.id = 'radius-float';
+  el.style.cssText = [
+    'position:fixed','bottom:72px','left:50%','transform:translateX(-50%)',
+    'background:var(--ink)','border-radius:14px','padding:10px 16px',
+    'z-index:8500','min-width:280px','max-width:90vw',
+    'box-shadow:0 4px 20px rgba(0,0,0,.4)','font-family:Inter,sans-serif'
+  ].join(';');
+  el.innerHTML =
+    '<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-align:center;margin-bottom:8px;">Tap map to place · drag to resize</div>'+
+    '<div style="display:flex;align-items:center;gap:10px;">'+
+      '<span style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;">0.5 mi</span>'+
+      '<input type="range" min="1" max="40" step="1" value="'+((radMiles||5)*2)+'" '+
+        'style="flex:1;accent-color:var(--accent);" '+
+        'oninput="_onRadSlider(this.value);document.getElementById(\'rad-float-lbl\').textContent=radMiles+(radMiles===Math.floor(radMiles)?\'':radMiles.toFixed(1)+'\') + \' mi\'">'+
+      '<span style="font-size:10px;color:rgba(255,255,255,.4);white-space:nowrap;">20 mi</span>'+
+    '</div>'+
+    '<div style="text-align:center;margin-top:4px;">'+
+      '<span id="rad-float-lbl" style="font-size:14px;font-weight:700;color:var(--accent);">'+(radMiles||5)+' mi</span>'+
+      '<span style="font-size:11px;color:rgba(255,255,255,.4);"> radius</span>'+
+    '</div>'+
+    '<button onclick="deactivate();_removeRadiusFloat();" style="display:block;width:100%;margin-top:8px;padding:6px;background:rgba(255,255,255,.08);border:none;border-radius:8px;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Cancel</button>';
+  document.body.appendChild(el);
+}
+
+function _removeRadiusFloat() {
+  var el = document.getElementById('radius-float');
+  if (el) el.remove();
 }
 function deactivate() {
   activeTool = null;
+  _removeRadiusFloat();
   ['poly','radius'].forEach(function(t){ var el=document.getElementById('tbtn-'+t); if(el) el.classList.remove('on'); });
   document.getElementById('radius-wrap').style.display='none';
   map.getCanvas().style.cursor='';
@@ -5370,6 +5463,7 @@ function deactivate() {
 }
 function clearArea() {
   selPoly=null; _radCenter=null; draw.deleteAll();
+  _removeRadiusFloat();
   ['rad','rad-line'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
   if(map.getSource('rad')) map.removeSource('rad');
   document.getElementById('tbtn-clear').style.display='none';
@@ -5419,7 +5513,10 @@ function _onRadSlider(val) {
   // Map slider 1-40 → 0.5-20 miles
   radMiles = val / 2;
   var display = radMiles === Math.floor(radMiles) ? radMiles + ' mi' : radMiles.toFixed(1) + ' mi';
-  document.getElementById('rad-lbl').textContent = display;
+  var lbl = document.getElementById('rad-lbl');
+  if (lbl) lbl.textContent = display;
+  var floatLbl = document.getElementById('rad-float-lbl');
+  if (floatLbl) floatLbl.textContent = display;
   // Live-redraw if circle already placed
   if (_radCenter && map) {
     var c = turf.circle([_radCenter.lng, _radCenter.lat], radMiles, {units:'miles', steps:64});
@@ -5448,6 +5545,7 @@ function onMapClick(e) {
   map.addLayer({id:'rad-line',type:'line',source:'rad',paint:{'line-color':'#4a36c8','line-width':2,'line-dasharray':[2,2]}});
   document.getElementById('tbtn-clear').style.display='inline-flex';
   deactivate();
+  _removeRadiusFloat();
   // Keep radius-wrap visible so user can adjust size after placing
   document.getElementById('radius-wrap').style.display='block';
   applyFilters();
