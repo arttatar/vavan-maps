@@ -1982,6 +1982,11 @@ function initMapHandlers() {
   });
   map.on('touchend', function(e) {
     if (mapIsMoving) return;
+    // If radius tool is active, place circle on tap
+    if (activeTool === 'radius') {
+      onMapClick(e);
+      return;
+    }
     var point = e.point;
     var bbox = [[point.x-22,point.y-22],[point.x+22,point.y+22]];
     var features = map.queryRenderedFeatures(bbox, {layers:['biz']});
@@ -5544,11 +5549,28 @@ function onMapClick(e) {
   map.addLayer({id:'rad',type:'fill',source:'rad',paint:{'fill-color':'#4a36c8','fill-opacity':.1}});
   map.addLayer({id:'rad-line',type:'line',source:'rad',paint:{'line-color':'#4a36c8','line-width':2,'line-dasharray':[2,2]}});
   document.getElementById('tbtn-clear').style.display='inline-flex';
-  deactivate();
-  _removeRadiusFloat();
-  // Keep radius-wrap visible so user can adjust size after placing
-  document.getElementById('radius-wrap').style.display='block';
   applyFilters();
+
+  var isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    // On mobile: keep float open but upgrade it with Apply & Done button
+    var floatEl = document.getElementById('radius-float');
+    if (floatEl && !floatEl.querySelector('.rad-float-done')) {
+      var doneBtn = document.createElement('button');
+      doneBtn.className = 'rad-float-done';
+      doneBtn.textContent = 'Apply & View Results';
+      doneBtn.style.cssText = 'display:block;width:100%;margin-top:8px;padding:9px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;';
+      doneBtn.onclick = function(){ deactivate(); _removeRadiusFloat(); navTo('list'); };
+      floatEl.appendChild(doneBtn);
+      // Also update hint text
+      var hint = floatEl.querySelector('div');
+      if (hint) hint.textContent = 'Tap map to move circle · drag slider to resize';
+    }
+  } else {
+    // Desktop: deactivate and keep radius-wrap visible
+    deactivate();
+    document.getElementById('radius-wrap').style.display='block';
+  }
 }
 </script>
 <!-- SETTINGS MODAL -->
