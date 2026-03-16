@@ -368,6 +368,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .pipe-proposal{background:#f0fdf4;color:#16a34a;}
 .pipe-credit{background:#fdf4ff;color:#9333ea;}
 .pipe-won{background:#ecfdf5;color:#059669;}
+.pipe-lost{background:#fef2f2;color:#dc2626;}
 
 /* Section tabs */
 .det-tabs{display:flex;border-bottom:2px solid var(--border);background:#fff;position:sticky;top:48px;z-index:9;}
@@ -584,6 +585,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .pipe-dot-circle.active{background:var(--accent);border-color:var(--accent);}
 .pipe-dot-circle.past{background:var(--accent);border-color:var(--accent);opacity:.55;}
 .pipe-dot-circle.won-active{background:#059669 !important;border-color:#059669 !important;opacity:1 !important;}
+.pipe-dot-circle.lost-active{background:#dc2626 !important;border-color:#dc2626 !important;opacity:1 !important;}
+.pipe-dot-circle.won{border-color:#059669;}
+.pipe-dot-circle.lost{border-color:#dc2626;}
 .pipe-dot:hover .pipe-dot-circle:not(.active):not(.past){border-color:var(--accent);}
 .pipe-dot-label{
   font-size:9px;font-weight:600;color:var(--muted);
@@ -818,19 +822,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
                 <div class="pipe-dot-circle won"></div>
                 <div class="pipe-dot-label">Won ✓</div>
               </div>
+              <div class="pipe-dot" data-stage="Lost" onclick="setPipelineStage('Lost',this)" title="Lost">
+                <div class="pipe-dot-circle lost"></div>
+                <div class="pipe-dot-label">Lost ✗</div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- STATUS -->
-      <div class="sb-sec">
-        <div class="sb-title">Status</div>
-        <div class="pills">
-          <span class="pill on" data-f="status" data-v="all">All</span>
-          <span class="pill" data-f="status" data-v="Lead" style="--pill-color:#4a36c8">Lead</span>
-          <span class="pill green" data-f="status" data-v="Customer">Customer</span>
-          <span class="pill" data-f="status" data-v="Lost Customer" style="color:#dc2626;border-color:#dc2626">Lost Customer</span>
         </div>
       </div>
 
@@ -844,25 +841,45 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         </select>
       </div>
 
-      <!-- OPPORTUNITIES -->
+      <!-- OPPORTUNITY PIPELINE -->
       <div class="sb-sec">
-        <div class="sb-title">Opportunities</div>
-        <div class="pills" id="opp-filter-pills">
+        <div class="sb-title">Opportunity Pipeline</div>
+        <!-- Step 1: pick product line -->
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Product Line</div>
+        <div class="pills" id="opp-filter-pills" style="margin-bottom:.75rem;">
           <span class="pill on" data-f="opp_product" data-v="all">All</span>
+          <span class="pill" data-f="opp_product" data-v="none" style="color:#dc2626;border-color:#dc2626;">No Pipeline</span>
           <span class="pill" data-f="opp_product" data-v="lubricants">🛢 Lubricants</span>
           <span class="pill" data-f="opp_product" data-v="fuel_delivery">⛽ Fuel Delivery</span>
           <span class="pill" data-f="opp_product" data-v="cardlock">💳 Cardlock</span>
           <span class="pill" data-f="opp_product" data-v="propane">🔥 Propane</span>
           <span class="pill" data-f="opp_product" data-v="uco">🍳 Used Cooking Oil</span>
         </div>
-        <div id="opp-volume-filter" style="display:none;margin-top:.75rem;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Min Volume</span>
-            <span style="font-size:12px;font-weight:700;color:var(--accent);" id="opp-vol-filter-lbl">0 gal/mo</span>
+
+        <!-- Step 2: pick pipeline stage for that product (shows when product selected) -->
+        <div id="opp-stage-filter-wrap" style="display:none;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Pipeline Stage</div>
+          <div class="pills" id="opp-stage-pills">
+            <span class="pill on" data-f="opp_stage" data-v="all">All Stages</span>
+            <span class="pill" data-f="opp_stage" data-v="Lead Captured">Lead</span>
+            <span class="pill" data-f="opp_stage" data-v="Qualified">Qualified</span>
+            <span class="pill" data-f="opp_stage" data-v="Fact-Finding">Fact-Find</span>
+            <span class="pill" data-f="opp_stage" data-v="Proposal Sent">Proposal</span>
+            <span class="pill" data-f="opp_stage" data-v="Credit Application">Credit</span>
+            <span class="pill" data-f="opp_stage" data-v="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
+            <span class="pill" data-f="opp_stage" data-v="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
           </div>
-          <input type="range" id="opp-vol-filter-slider" min="0" max="10000" step="100" value="0"
-            style="width:100%;accent-color:var(--accent);"
-            oninput="updateOppVolumeFilter()">
+
+          <!-- Step 3: optional min volume -->
+          <div style="margin-top:.75rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Min Volume</span>
+              <span style="font-size:12px;font-weight:700;color:var(--accent);" id="opp-vol-filter-lbl">0 gal/mo</span>
+            </div>
+            <input type="range" id="opp-vol-filter-slider" min="0" max="10000" step="100" value="0"
+              style="width:100%;accent-color:var(--accent);"
+              oninput="updateOppVolumeFilter()">
+          </div>
         </div>
       </div>
 
@@ -980,7 +997,7 @@ function _buildLookup() {
   _bizById = {};
   allData.forEach(function(b){ _bizById[b._id] = b; });
 }
-var filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_min_volume:0 };
+var filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_stage:'all', opp_min_volume:0 };
 var activeTool = null, selPoly = null, radMiles = 5;
 
 // ── LOGIN ──
@@ -1182,8 +1199,10 @@ function calcScore(b) {
   else if (stage === 'Proposal Sent')       base = 70;
   else if (stage === 'Credit Application')  base = 85;
   else if (stage === 'Won Opportunity')     base = 100;
+  else if (stage === 'Lost')                 base = 0;
 
   if (stage === 'Won Opportunity') return 100; // cap at 100 for won
+  if (stage === 'Lost') return 0; // lost opportunity
 
   var s = base;
   if (b.phone)   s += 5;   // reachable
@@ -1444,7 +1463,9 @@ async function loadData() {
     }
 
     if (allRows.length > 0) {
-      allData = applySubIndustries(normalizeAll(allRows));
+      // Filter out abandoned businesses — they are excluded from everything
+      var nonAbandoned = allRows.filter(function(b){ return !b.is_abandoned; });
+      allData = applySubIndustries(normalizeAll(nonAbandoned));
       _buildLookup();
       prog(60, 'Loaded ' + allData.length + ' businesses');
       var pcount = document.getElementById('pcount');
@@ -1896,7 +1917,7 @@ function openContactBusiness(bizId) {
 }
 
 // ── PIPELINE SLIDER ──
-var PIPE_STAGES = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
+var PIPE_STAGES = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity','Lost'];
 var PIPE_LABELS = {
   'all':'All Stages',
   'Lead Captured':'Lead Captured',
@@ -1904,13 +1925,14 @@ var PIPE_LABELS = {
   'Fact-Finding':'Fact-Finding',
   'Proposal Sent':'Proposal Sent',
   'Credit Application':'Credit Application',
-  'Won Opportunity':'Won Opportunity ✓'
+  'Won Opportunity':'Won Opportunity ✓',
+  'Lost':'Lost ✗'
 };
 
 function setPipelineStage(stage, el) {
   filters.pipeline = stage;
 
-  var allStages = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
+  var allStages = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity','Lost'];
   var selectedIdx = allStages.indexOf(stage);
 
   // Update all dot states — fill dots up to and including selected
@@ -1921,13 +1943,15 @@ function setPipelineStage(stage, el) {
     var isActive = (s === stage);
     var isPast = selectedIdx > 0 && dotIdx >= 0 && dotIdx < selectedIdx;
     var isWon = (s === 'Won Opportunity') && isActive;
+    var isLost = (s === 'Lost') && isActive;
 
     dot.classList.toggle('active', isActive);
     dot.classList.toggle('past', isPast);
     dot.classList.toggle('won-stage', isWon);
 
-    circle.classList.remove('active','past','won-active');
+    circle.classList.remove('active','past','won-active','lost-active');
     if (isActive && isWon) circle.classList.add('won-active');
+    else if (isActive && isLost) circle.classList.add('lost-active');
     else if (isActive)     circle.classList.add('active');
     else if (isPast)       circle.classList.add('past');
   });
@@ -1968,8 +1992,16 @@ function updateFilterBadge() {
   if (filters.industry !== 'all') parts.push(filters.industry);
   if (filters.contact !== 'all') parts.push(filters.contact);
   if (filters.pipeline !== 'all') parts.push(filters.pipeline);
-  if (filters.status !== 'all') parts.push(filters.status);
   if (filters.rep && filters.rep !== 'all') parts.push(filters.rep === 'unassigned' ? 'Unassigned' : filters.rep);
+  if (filters.opp_product && filters.opp_product !== 'all') {
+    if (filters.opp_product === 'none') {
+      parts.push('No Pipeline Assigned');
+    } else {
+      var oppLabel = {lubricants:'Lubricants',fuel_delivery:'Fuel Delivery',cardlock:'Cardlock',propane:'Propane',uco:'Used Cooking Oil'}[filters.opp_product] || filters.opp_product;
+      var stagePart = filters.opp_stage && filters.opp_stage !== 'all' ? ' · '+filters.opp_stage : '';
+      parts.push(oppLabel+stagePart);
+    }
+  }
   var q = document.getElementById('s-city').value.trim() || document.getElementById('s-name').value.trim();
   if (q) parts.push('"'+q+'"');
   var badge = document.getElementById('filter-badge');
@@ -1983,11 +2015,18 @@ document.querySelectorAll('.pill[data-f]').forEach(function(p){
     document.querySelectorAll('[data-f="'+p.dataset.f+'"]').forEach(function(x){ x.classList.remove('on'); });
     p.classList.add('on');
     filters[p.dataset.f] = p.dataset.v;
-    // Show volume slider when an opp product is selected
+    // Show stage + volume filters when opp product selected (not for 'none')
     if (p.dataset.f === 'opp_product') {
-      var volWrap = document.getElementById('opp-volume-filter');
-      if (volWrap) volWrap.style.display = p.dataset.v === 'all' ? 'none' : 'block';
-      if (p.dataset.v === 'all') { filters.opp_min_volume = 0; }
+      var stageWrap = document.getElementById('opp-stage-filter-wrap');
+      var showStage = p.dataset.v !== 'all' && p.dataset.v !== 'none';
+      if (stageWrap) stageWrap.style.display = showStage ? 'block' : 'none';
+      if (!showStage) {
+        filters.opp_stage = 'all';
+        filters.opp_min_volume = 0;
+        document.querySelectorAll('[data-f="opp_stage"]').forEach(function(x){ x.classList.remove('on'); });
+        var allStagePill = document.querySelector('[data-f="opp_stage"][data-v="all"]');
+        if (allStagePill) allStagePill.classList.add('on');
+      }
     }
   });
 });
@@ -2429,21 +2468,35 @@ function applyFilters() {
     });
   }
 
-  // Opportunity product filter — filter by businesses that have that product tracked
+  // Opportunity pipeline filter — product line + stage + min volume
   if (filters.opp_product && filters.opp_product !== 'all') {
-    var minVol = filters.opp_min_volume || 0;
-    data = data.filter(function(b){
-      var opp = _oppCache[String(b.id||b._id)];
-      if (!opp) return false;
-      var productKey = 'uses_' + filters.opp_product;
-      if (!opp[productKey]) return false;
-      if (minVol > 0) {
+    if (filters.opp_product === 'none') {
+      // Show only businesses with NO active opportunity pipelines
+      data = data.filter(function(b){
+        var opp = _oppCache[String(b.id||b._id)];
+        if (!opp) return true; // no opp record at all = no pipeline
+        return !OPP_PRODUCTS.some(function(p){ return opp['uses_'+p.key]; });
+      });
+    } else {
+      var minVol = filters.opp_min_volume || 0;
+      var oppStage = filters.opp_stage || 'all';
+      data = data.filter(function(b){
+        var opp = _oppCache[String(b.id||b._id)];
+        if (!opp) return false;
+        if (!opp['uses_'+filters.opp_product]) return false;
         var prod = OPP_PRODUCTS.find(function(p){ return p.key === filters.opp_product; });
-        var vol = prod ? (opp[prod.field+'_gallons'] || 0) : 0;
-        return vol >= minVol;
-      }
-      return true;
-    });
+        if (!prod) return false;
+        if (oppStage !== 'all') {
+          var productStage = opp[prod.field+'_stage'] || 'Lead Captured';
+          if (productStage !== oppStage) return false;
+        }
+        if (minVol > 0) {
+          var vol = opp[prod.field+'_gallons'] || 0;
+          if (vol < minVol) return false;
+        }
+        return true;
+      });
+    }
   }
 
   if (filters.contact==='phone') data = data.filter(function(b){ return b.phone; });
@@ -2807,6 +2860,7 @@ async function saveNewBusiness() {
   var industry= document.getElementById('ab-industry').value;
   var status  = document.getElementById('ab-status').value;
   var pipeline= document.getElementById('ab-pipeline').value;
+  var locType = document.getElementById('ab-location-type') ? document.getElementById('ab-location-type').value : '';
   var statusEl= document.getElementById('ab-status-msg');
   var btn     = document.getElementById('ab-save-btn');
 
@@ -2840,6 +2894,7 @@ async function saveNewBusiness() {
       industry: industry || null,
       status: status,
       pipeline_stage: pipeline,
+      location_type: locType || null,
       market: 'Las Vegas',
       territory_code: currentProfile ? (currentProfile.territory_code || 'LAS-ALL') : 'LAS-ALL',
       visited: false,
@@ -2983,7 +3038,7 @@ function statusClass(s){ return s==='Customer'?'status-customer':s==='Lost Custo
 function pipeClass(s){
   return s==='Qualified'?'pipe-qualified':s==='Fact-Finding'?'pipe-factfinding':
     s==='Proposal Sent'?'pipe-proposal':s==='Credit Application'?'pipe-credit':
-    s==='Won Opportunity'?'pipe-won':'pipe-lead';
+    s==='Won Opportunity'?'pipe-won':s==='Lost'?'pipe-lost':'pipe-lead';
 }
 function fmtTime(ts){
   var d = new Date(ts);
@@ -3001,15 +3056,16 @@ function renderDetailPanel(b) {
   var STAGES = ['Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
   var stageIdx = STAGES.indexOf(stage);
   var stagePct = stageIdx < 0 ? 0 : Math.round((stageIdx / (STAGES.length-1)) * 100);
-  var trackColor = stage === 'Won Opportunity' ? '#059669' : 'var(--accent)';
-  var labelColor = stage === 'Won Opportunity' ? '#059669' : 'var(--accent)';
+  var trackColor = stage === 'Won Opportunity' ? '#059669' : stage === 'Lost' ? '#dc2626' : 'var(--accent)';
+  var labelColor = stage === 'Won Opportunity' ? '#059669' : stage === 'Lost' ? '#dc2626' : 'var(--accent)';
 
   // Build pipeline dots — same CSS classes as filter slider, fills all past dots
   var pipeDotsHtml = STAGES.map(function(s, i){
     var isActive = s === stage;
     var isPast   = stageIdx > 0 && i < stageIdx;
     var isWon    = s === 'Won Opportunity' && isActive;
-    var circleClass = isWon ? 'pipe-dot-circle won-active' : isActive ? 'pipe-dot-circle active' : isPast ? 'pipe-dot-circle past' : 'pipe-dot-circle';
+    var isLost   = s === 'Lost' && isActive;
+    var circleClass = isLost ? 'pipe-dot-circle lost-active' : isWon ? 'pipe-dot-circle won-active' : isActive ? 'pipe-dot-circle active' : isPast ? 'pipe-dot-circle past' : 'pipe-dot-circle';
     var dotClass = 'pipe-dot' + (isActive ? ' active' : '') + (isPast ? ' past' : '') + (isWon ? ' won-stage' : '');
     var label = s==='Lead Captured'?'Lead':s==='Qualified'?'Qualified':s==='Fact-Finding'?'Fact-Find':s==='Proposal Sent'?'Proposal':s==='Credit Application'?'Credit':'Won ✓';
     return '<div class="'+dotClass+'" onclick="setDetailStage(\''+s+'\')" title="'+s+'">'+
@@ -3062,6 +3118,48 @@ function renderDetailPanel(b) {
             'No Phone</button>'
         )+
       '</div>'+
+      // ── OPPORTUNITY PIPELINE SUMMARY ──
+      (function(){
+        var opp = _oppCache[String(b.id||b._id)];
+        if (!opp) return '';
+        var OPP_SC = {'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669','Lost':'#dc2626'};
+        var STAGES = ['Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity','Lost'];
+        var SHORT  = {'Lead Captured':'Lead','Qualified':'Qualified','Fact-Finding':'Fact-Find','Proposal Sent':'Proposal','Credit Application':'Credit','Won Opportunity':'Won ✓','Lost':'Lost ✗'};
+        var active = OPP_PRODUCTS.filter(function(p){ return opp['uses_'+p.key]; });
+        if (!active.length) return '';
+        var rows = active.map(function(p){
+          var stg = opp[p.field+'_stage'] || 'Lead Captured';
+          var sc  = OPP_SC[stg] || '#9b93d4';
+          var idx = STAGES.indexOf(stg);
+          var pct = idx < 0 ? 0 : Math.round((idx/(STAGES.length-1))*100);
+          var dots = STAGES.map(function(s,i){
+            var isA = i===idx, isP = i<idx, isW = s==='Won Opportunity'&&isA, isL = s==='Lost'&&isA;
+            var bg  = isA?(isL?'#dc2626':isW?'#059669':sc):isP?sc:'#fff';
+            var bdr = (isA||isP)?(isL?'#dc2626':isW?'#059669':sc):'#ddd';
+            var op  = isP?'.5':'1';
+            return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;" onclick="switchTab(\'opportunities\')" title="'+s+'">'+
+              '<div style="width:10px;height:10px;border-radius:50%;border:2px solid '+bdr+';background:'+bg+';box-shadow:0 0 0 2px #fff;opacity:'+op+';flex-shrink:0;"></div>'+
+              '<div style="font-size:7px;font-weight:600;color:'+(isA?sc:'#bbb')+';white-space:nowrap;">'+SHORT[s]+'</div>'+
+            '</div>';
+          }).join('');
+          return '<div style="margin-bottom:6px;">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'+
+              '<span style="font-size:11px;font-weight:600;color:var(--ink);">'+p.label+'</span>'+
+              '<span style="font-size:11px;font-weight:700;color:'+sc+';">'+stg+'</span>'+
+            '</div>'+
+            '<div style="position:relative;padding-bottom:16px;">'+
+              '<div style="position:absolute;left:0;right:0;top:5px;height:3px;background:var(--paper2);border-radius:2px;">'+
+                '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+sc+';border-radius:2px;"></div>'+
+              '</div>'+
+              '<div style="position:relative;display:flex;justify-content:space-between;">'+dots+'</div>'+
+            '</div>'+
+          '</div>';
+        }).join('');
+        return '<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;">'+
+          '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">💡 Active Opportunities</div>'+
+          rows+
+        '</div>';
+      })()+
     '</div>'+
 
     // ── TABS ──
@@ -3079,6 +3177,14 @@ function renderDetailPanel(b) {
         '<div class="det-field-row"><span class="det-field-label">Address</span>'+
           '<span class="det-field-value" style="cursor:pointer" onclick="openNav('+JSON.stringify(addr)+')">'+
             '📍 '+(b.street||'—')+'<br>'+(b.locality||'')+'</span></div>'+
+        '<div class="det-field-row"><span class="det-field-label">Location Type</span>'+
+          '<span class="det-field-value">'+
+            (function(){
+              var lt = b.location_type || '';
+              var icons = {'Business Office':'🏢','Yard':'🏗','Job Site':'⛏','Warehouse':'📦','Shop / Garage':'🔧','Truck Stop':'🚛','Farm':'🌾','Plant / Facility':'🏭','Other':'📍'};
+              return lt ? (icons[lt]||'📍')+' '+lt : '<span style="color:var(--muted);">Not set</span>';
+            })()+
+          '</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Phone</span>'+
           '<span class="det-field-value">'+(b.phone?'<a href="tel:'+b.phone.replace(/\D/g,'')+'">'+b.phone+'</a>':'—')+'</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Website</span>'+
@@ -3112,6 +3218,15 @@ function renderDetailPanel(b) {
           '<input class="edit-input" id="edit-phone" type="tel" value="'+(b.phone||'')+'"></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Website</label>'+
           '<input class="edit-input" id="edit-website" type="url" value="'+(b.website||'')+'"></div>'+
+        '<div class="edit-field-group"><label class="edit-field-label">Location Type</label>'+
+          '<select class="edit-input" id="edit-location-type">'+
+            '<option value="">— Select type —</option>'+
+            ['Business Office','Yard','Job Site','Warehouse','Shop / Garage','Truck Stop','Farm','Plant / Facility','Other'].map(function(t){
+              return '<option value="'+t+'"'+((b.location_type||'')=== t?' selected':'')+'>'+t+'</option>';
+            }).join('')+
+          '</select></div>'+
+        '<div class="edit-field-group"><label class="edit-field-label">Website</label>'+
+          '<input class="edit-input" id="edit-website" type="url" value="'+(b.website||'')+'"></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Assigned Rep</label>'+
           '<select class="edit-input" id="edit-rep">'+
             '<option value="">Unassigned</option>'+
@@ -3128,6 +3243,12 @@ function renderDetailPanel(b) {
         '<div class="edit-actions">'+
           '<button class="edit-save-btn" onclick="saveBusinessEdits()">Save Changes</button>'+
           '<button class="edit-cancel-btn" onclick="toggleEditMode()">Cancel</button>'+
+        '</div>'+
+        '<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);">'+
+          '<button onclick="abandonBusiness()" style="width:100%;padding:9px;background:none;border:1px solid #dc2626;border-radius:8px;color:#dc2626;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">'+
+            '🚫 Mark as Abandoned — Not a Prospect'+
+          '</button>'+
+          '<div style="font-size:10px;color:var(--muted);text-align:center;margin-top:4px;line-height:1.4;">Removes from map and all counts. Use only if this business will never use our products.</div>'+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -3207,6 +3328,75 @@ function toggleEditMode() {
   }
 }
 
+// ── ABANDON BUSINESS ──
+// Completely separate from pipeline/status — marks a business as irrelevant.
+// Removes from map, excluded from all counts and analytics.
+async function abandonBusiness() {
+  var b = lastSelectedBiz; if (!b) return;
+  var confirmed = confirm(
+    'Mark "' + b.name + '" as Abandoned?\n\n' +
+    'This means this business will never use our products or services.\n\n' +
+    '• Removed from map immediately\n' +
+    '• Excluded from all counts and filters\n' +
+    '• Not used in any reporting or analytics\n\n' +
+    'This can be undone by an admin if needed.'
+  );
+  if (!confirmed) return;
+
+  try {
+    var r = await sb.from('businesses').update({
+      is_abandoned: true,
+      updated_at: new Date().toISOString()
+    }).eq('id', b.id||b._id);
+    if (r.error) throw r.error;
+
+    // Log it — separate type so it's never counted
+    await sb.from('activity').insert({
+      business_id: String(b.id||b._id),
+      type: 'abandoned',
+      note: 'Marked as Abandoned — not a prospect for our products/services',
+      client_id: currentProfile ? currentProfile.client_id : null,
+      created_by: currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown'
+    });
+
+    // Remove from local data immediately
+    b.is_abandoned = true;
+    allData = allData.filter(function(x){ return (x.id||x._id) !== (b.id||b._id); });
+    _buildLookup();
+    updateFabCount();
+
+    // Remove pin from map
+    if (map.getSource('biz')) {
+      var valid = (filtersApplied ? filteredData : []).filter(function(x){ return x.lat && x.lon && !x.is_abandoned; });
+      map.getSource('biz').setData({ type:'FeatureCollection', features: valid.map(function(x){
+        return {type:'Feature',geometry:{type:'Point',coordinates:[x.lon,x.lat]},
+          properties:{_id:x._id,industry:x.industry||'',is_competitor:x.is_competitor||false,score:x.score||calcScore(x)}};
+      })});
+    }
+
+    // Close the detail panel
+    closeDetail();
+    alert('"' + b.name + '" has been marked as abandoned and removed from the map.');
+
+  } catch(e) {
+    alert('Could not abandon: ' + e.message);
+  }
+}
+
+async function restoreBusiness(bizId) {
+  // Admin-only function to undo an abandonment
+  try {
+    var r = await sb.from('businesses').update({
+      is_abandoned: false,
+      updated_at: new Date().toISOString()
+    }).eq('id', bizId);
+    if (r.error) throw r.error;
+    alert('Business restored. Refresh to see it on the map.');
+  } catch(e) {
+    alert('Could not restore: ' + e.message);
+  }
+}
+
 async function claimAccount() {
   var b = lastSelectedBiz; if (!b) return;
   if (!currentProfile || !currentProfile.full_name) {
@@ -3253,6 +3443,7 @@ async function saveBusinessEdits() {
   var website  = document.getElementById('edit-website').value.trim();
   var rep      = document.getElementById('edit-rep').value.trim();
   var status   = document.getElementById('edit-status').value;
+  var locType  = document.getElementById('edit-location-type').value;
   var pipeline = b.pipeline_stage || 'Lead Captured'; // set by dot clicks, not dropdown
 
   var btn = document.querySelector('.edit-save-btn');
@@ -3261,7 +3452,8 @@ async function saveBusinessEdits() {
   try {
     var r = await sb.from('businesses').update({
       phone: phone, website: website,
-      assigned_rep: rep, status: status, pipeline_stage: pipeline
+      assigned_rep: rep, status: status, pipeline_stage: pipeline,
+      location_type: locType
     }).eq('id', b.id||b._id);
 
     if (r.error) throw r.error;
@@ -3269,6 +3461,7 @@ async function saveBusinessEdits() {
     // Update local data
     b.phone = phone; b.website = website;
     b.assigned_rep = rep; b.status = status; b.pipeline_stage = pipeline;
+    b.location_type = locType;
 
     toggleEditMode();
     renderDetailPanel(b);
@@ -3284,32 +3477,41 @@ async function saveBusinessEdits() {
 async function setDetailStage(stage) {
   var b = lastSelectedBiz; if (!b) return;
   var prevStage = b.pipeline_stage || 'Lead Captured';
-  if (stage === prevStage) return; // no change, do nothing
+  if (stage === prevStage) return;
+
+  // Auto-update status based on stage
+  var newStatus = b.status || 'Lead';
+  if (stage === 'Won Opportunity') newStatus = 'Customer';
+  else if (stage === 'Lost') newStatus = 'Lost Customer';
+  else if (prevStage === 'Won Opportunity' || prevStage === 'Lost') newStatus = 'Lead';
 
   try {
-    // Update business pipeline stage
     var r = await sb.from('businesses').update({
       pipeline_stage: stage,
+      status: newStatus,
       updated_at: new Date().toISOString()
     }).eq('id', b.id||b._id);
     if (r.error) throw r.error;
 
-    // Log the stage change to activity
+    var noteText = 'Pipeline: "' + prevStage + '" → "' + stage + '"';
+    if (newStatus !== (b.status||'Lead')) noteText += ' · Status auto-updated to "' + newStatus + '"';
+
     await sb.from('activity').insert({
       business_id: String(b.id||b._id),
       type: 'pipeline',
       client_id: currentProfile ? currentProfile.client_id : null,
-      note: 'Pipeline moved from "' + prevStage + '" → "' + stage + '"',
+      note: noteText,
       created_by: currentProfile ? (currentProfile.full_name || 'Unknown') : 'Unknown'
     });
 
     b.pipeline_stage = stage;
+    b.status = newStatus;
     b.score = calcScore(b);
     renderDetailPanel(b);
-    switchTab('activity'); // switch to activity so they see the new log entry
+    switchTab('activity');
   } catch(e) {
-    // Update locally even if save fails
     b.pipeline_stage = stage;
+    b.status = newStatus;
     b.score = calcScore(b);
     renderDetailPanel(b);
     switchTab('profile');
@@ -3404,8 +3606,8 @@ async function loadActivity(b) {
       return;
     }
     el.innerHTML = '<div class="activity-feed">'+r.data.map(function(a){
-      var icon    = a.type==='contacted'?'📞':a.type==='visited'?'📍':a.type==='pipeline'?'🔄':a.type==='contact'?'👤':'💬';
-      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'?'pipeline':a.type==='contact'?'pipeline':'note';
+      var icon    = a.type==='contacted'?'📞':a.type==='visited'?'📍':a.type==='pipeline'?'🔄':a.type==='contact'?'👤':a.type==='opportunities'?'💡':a.type==='claimed'?'🏷':a.type==='abandoned'?'🚫':'💬';
+      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'||a.type==='opportunities'||a.type==='claimed'||a.type==='abandoned'?'pipeline':a.type==='contact'?'pipeline':'note';
       var text    = (a.type==='note'||a.type==='pipeline'||a.type==='contact') ? a.note : (a.type.charAt(0).toUpperCase()+a.type.slice(1));
       var byLine  = a.created_by ? '<span style="color:var(--accent);font-weight:600;">'+a.created_by+'</span> · ' : '';
       return '<div class="activity-item">'+
@@ -3461,15 +3663,16 @@ async function saveNote() {
 
 // ── OPPORTUNITIES ──
 var OPP_PRODUCTS = [
-  { key:'lubricants',     label:'🛢 Lubricants',       field:'lube',       unit:'gal/mo',  max:5000 },
-  { key:'fuel_delivery',  label:'⛽ Fuel Delivery',    field:'fuel',       unit:'gal/mo',  max:50000 },
-  { key:'cardlock',       label:'💳 Cardlock',         field:'cardlock',   unit:'gal/mo',  max:50000 },
-  { key:'propane',        label:'🔥 Propane',          field:'propane',    unit:'gal/mo',  max:5000 },
-  { key:'uco',            label:'🍳 Used Cooking Oil', field:'uco',        unit:'gal/mo',  max:1000 }
+  { key:'lubricants',     label:'🛢 Lubricants',       field:'lube',       unit:'gal/mo',  max:1000,  maxLabel:'1,000+' },
+  { key:'fuel_delivery',  label:'⛽ Fuel Delivery',    field:'fuel',       unit:'gal/mo',  max:50000, maxLabel:'50,000+' },
+  { key:'cardlock',       label:'💳 Cardlock',         field:'cardlock',   unit:'gal/mo',  max:50000, maxLabel:'50,000+' },
+  { key:'propane',        label:'🔥 Propane',          field:'propane',    unit:'gal/mo',  max:5000,  maxLabel:'5,000+' },
+  { key:'uco',            label:'🍳 Used Cooking Oil', field:'uco',        unit:'gal/mo',  max:500,   maxLabel:'500+' }
 ];
 
-function fmtGallons(n) {
+function fmtGallons(n, maxVal) {
   if (!n || n === 0) return '0 gal/mo';
+  if (maxVal && n >= maxVal) return (n >= 1000 ? (n/1000).toFixed(0)+'k' : n)+' gal/mo+';
   if (n >= 1000) return (n/1000).toFixed(1)+'k gal/mo';
   return n+' gal/mo';
 }
@@ -3498,7 +3701,8 @@ function renderOpportunities(b, opp) {
   var STAGE_SHORT = ['Lead','Qualified','Fact-Find','Proposal','Credit','Won ✓'];
   var STAGE_COLORS = {
     'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706',
-    'Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669'
+    'Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669',
+    'Lost':'#dc2626'
   };
 
   function miniPipeline(key, currentStage) {
@@ -3564,8 +3768,8 @@ function renderOpportunities(b, opp) {
           '<input class="opp-supplier-input" id="opp-sup-'+p.key+'" placeholder="e.g. Shell, Chevron, Local co-op..." value="'+supplier+'">'+
           '<label class="opp-field-label">Volume ('+p.unit+')</label>'+
           '<div class="opp-volume-wrap">'+
-            '<input type="range" id="opp-vol-'+p.key+'" min="0" max="'+p.max+'" step="'+(p.max>=10000?500:p.max>=1000?100:25)+'" value="'+gallons+'" oninput="updateVolLabel(\''+p.key+'\')">'+
-            '<span class="opp-volume-val" id="opp-vol-lbl-'+p.key+'">'+fmtGallons(gallons)+'</span>'+
+            '<input type="range" id="opp-vol-'+p.key+'" min="0" max="'+p.max+'" step="'+(p.max>=10000?500:p.max>=1000?100:25)+'" value="'+gallons+'" oninput="updateVolLabel(\''+p.key+'\','+p.max+')">'+
+            '<span class="opp-volume-val" id="opp-vol-lbl-'+p.key+'">'+fmtGallons(gallons,p.max)+'</span>'+
           '</div>'+
         '</div>'+
       '</div>';
@@ -3578,7 +3782,8 @@ function renderOpportunities(b, opp) {
 function setOppStage(key, stage) {
   var STAGE_COLORS = {
     'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706',
-    'Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669'
+    'Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669',
+    'Lost':'#dc2626'
   };
   var STAGES = ['Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
   var stageColor = stage === 'Won Opportunity' ? '#059669' : (STAGE_COLORS[stage] || '#9b93d4');
@@ -3620,10 +3825,10 @@ function toggleOppFields(key) {
   if (fields) fields.classList.toggle('active', cb.checked);
 }
 
-function updateVolLabel(key) {
+function updateVolLabel(key, maxVal) {
   var slider = document.getElementById('opp-vol-'+key);
   var lbl = document.getElementById('opp-vol-lbl-'+key);
-  if (slider && lbl) lbl.textContent = fmtGallons(parseInt(slider.value));
+  if (slider && lbl) lbl.textContent = fmtGallons(parseInt(slider.value), maxVal);
 }
 
 async function saveOpportunities() {
@@ -3650,6 +3855,9 @@ async function saveOpportunities() {
   });
 
   try {
+    // Load previous opp data to compare changes
+    var prevOpp = _oppCache[String(b.id||b._id)] || {};
+
     var r = await sb.from('business_opportunities')
       .upsert(payload, { onConflict: 'business_id,client_id' });
     if (r.error) throw r.error;
@@ -3658,7 +3866,7 @@ async function saveOpportunities() {
     _oppCache[String(b.id||b._id)] = payload;
 
     // Update summary lines
-    var STAGE_COLORS = {'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669'};
+    var STAGE_COLORS = {'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669','Lost':'#dc2626'};
     OPP_PRODUCTS.forEach(function(p){
       var sumEl = document.getElementById('opp-summary-'+p.key);
       if (sumEl) {
@@ -3666,29 +3874,76 @@ async function saveOpportunities() {
         var sup  = payload[p.field+'_supplier'];
         var gal  = payload[p.field+'_gallons'];
         var stg  = payload[p.field+'_stage'] || 'Lead Captured';
-        var sc   = stg === 'Won Opportunity' ? '#059669' : (STAGE_COLORS[stg]||'#9b93d4');
+        var sc   = STAGE_COLORS[stg] || '#9b93d4';
         sumEl.innerHTML = isOn
-          ? (sup ? sup+' · ' : '') + fmtGallons(gal) + ' · <span style="color:'+sc+';font-weight:600;">'+stg+'</span>'
+          ? (sup ? sup+' · ' : '') + fmtGallons(gal, p.max) + ' · <span style="color:'+sc+';font-weight:600;">'+stg+'</span>'
           : 'Not tracked';
       }
     });
 
-    // Log to activity
-    var active = OPP_PRODUCTS.filter(function(p){ return payload['uses_'+p.key]; });
-    if (active.length) {
+    // Build granular activity log entries per product change
+    var byName = currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown';
+    var logEntries = [];
+
+    OPP_PRODUCTS.forEach(function(p){
+      var wasOn  = prevOpp['uses_'+p.key] || false;
+      var isOn   = payload['uses_'+p.key] || false;
+      var prevGal = prevOpp[p.field+'_gallons'] || 0;
+      var newGal  = payload[p.field+'_gallons'] || 0;
+      var prevSup = prevOpp[p.field+'_supplier'] || '';
+      var newSup  = payload[p.field+'_supplier'] || '';
+      var prevStg = prevOpp[p.field+'_stage'] || '';
+      var newStg  = payload[p.field+'_stage'] || 'Lead Captured';
+
+      if (!wasOn && isOn) {
+        // New opportunity created
+        var parts = [];
+        if (newSup) parts.push('Supplier: ' + newSup);
+        if (newGal > 0) parts.push('Volume: ' + fmtGallons(newGal, p.max));
+        parts.push('Stage: ' + newStg);
+        logEntries.push({
+          note: p.label + ' opportunity created' + (parts.length ? ' — ' + parts.join(' · ') : '')
+        });
+      } else if (wasOn && !isOn) {
+        // Opportunity removed
+        logEntries.push({ note: p.label + ' opportunity removed' });
+      } else if (isOn) {
+        // Check for changes on active opportunity
+        var changes = [];
+        if (newGal !== prevGal) {
+          changes.push('Volume: ' + fmtGallons(prevGal, p.max) + ' → ' + fmtGallons(newGal, p.max));
+        }
+        if (newSup !== prevSup) {
+          changes.push('Supplier: ' + (prevSup||'none') + ' → ' + (newSup||'none'));
+        }
+        if (newStg !== prevStg && prevStg) {
+          changes.push('Stage: ' + prevStg + ' → ' + newStg);
+        }
+        if (changes.length) {
+          logEntries.push({ note: p.label + ' updated — ' + changes.join(' · ') });
+        }
+      }
+    });
+
+    // Insert all log entries
+    for (var i = 0; i < logEntries.length; i++) {
       await sb.from('activity').insert({
         business_id: String(b.id||b._id),
         type: 'opportunities',
-        note: 'Opportunities updated: ' + active.map(function(p){
-          return p.label+' — '+fmtGallons(payload[p.field+'_gallons'])+' ('+payload[p.field+'_stage']+')';
-        }).join(', '),
+        note: logEntries[i].note,
         client_id: currentProfile ? currentProfile.client_id : null,
-        created_by: currentProfile ? (currentProfile.full_name||'') : ''
+        created_by: byName
       });
     }
 
     btn.textContent = '✓ Saved';
     setTimeout(function(){ btn.textContent = 'Save Opportunities'; btn.disabled = false; }, 2000);
+
+    // Refresh activity feed if visible
+    if (document.getElementById('det-activity') && document.getElementById('det-activity').classList.contains('active')) {
+      loadActivity(b);
+    }
+
   } catch(e) {
     alert('Save failed: ' + e.message);
     btn.textContent = 'Save Opportunities'; btn.disabled = false;
@@ -3723,7 +3978,7 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_min_volume:0 };
+  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_stage:'all', opp_min_volume:0 };
   filtersApplied = false;
   filteredData = [];
   setPipelineStage('all', null);
@@ -3733,8 +3988,8 @@ function clearFilters() {
   if (oppVolSlider) oppVolSlider.value = 0;
   var oppVolLbl = document.getElementById('opp-vol-filter-lbl');
   if (oppVolLbl) oppVolLbl.textContent = '0 gal/mo';
-  var oppVolWrap = document.getElementById('opp-volume-filter');
-  if (oppVolWrap) oppVolWrap.style.display = 'none'; // reset slider
+  var oppStageWrap = document.getElementById('opp-stage-filter-wrap');
+  if (oppStageWrap) oppStageWrap.style.display = 'none'; // reset slider
   selectedIndustries = [];
   selectedSubIndustries = [];
   document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
@@ -3858,6 +4113,21 @@ function onMapClick(e) {
             <option value="Proposal Sent">Proposal Sent</option>
           </select>
         </div>
+      </div>
+      <div class="abiz-field">
+        <label class="abiz-label">Location Type</label>
+        <select class="abiz-select" id="ab-location-type">
+          <option value="">— Select type —</option>
+          <option value="Business Office">🏢 Business Office</option>
+          <option value="Yard">🏗 Yard</option>
+          <option value="Job Site">⛏ Job Site</option>
+          <option value="Warehouse">📦 Warehouse</option>
+          <option value="Shop / Garage">🔧 Shop / Garage</option>
+          <option value="Truck Stop">🚛 Truck Stop</option>
+          <option value="Farm">🌾 Farm</option>
+          <option value="Plant / Facility">🏭 Plant / Facility</option>
+          <option value="Other">📍 Other</option>
+        </select>
       </div>
       <div class="abiz-status" id="ab-status-msg"></div>
     </div>
