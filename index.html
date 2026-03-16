@@ -3355,6 +3355,11 @@ function closeAddBusiness() {
   document.getElementById('ab-status').value = 'Lead';
   document.getElementById('ab-location-type').value = '';
   document.getElementById('ab-status-msg').textContent = '';
+  // Reset sub-industry
+  var subRow = document.getElementById('ab-sub-industry-row');
+  var subChips = document.getElementById('ab-sub-chips');
+  if (subRow) subRow.style.display = 'none';
+  if (subChips) subChips.innerHTML = '';
   // Reset product checkboxes
   ['lubricants','fuel_delivery','cardlock','propane','uco'].forEach(function(k){
     var cb = document.getElementById('ab-prod-'+k);
@@ -3446,6 +3451,51 @@ async function _quickMarkDead() {
   } catch(e) { _showToast('Save failed'); }
 }
 
+function _abUpdateSubIndustry(ind) {
+  var row = document.getElementById('ab-sub-industry-row');
+  var sel = document.getElementById('ab-sub-industry');
+  if (!ind || !SUB_MAP[ind] || !SUB_MAP[ind].length) {
+    if (row) row.style.display = 'none';
+    return;
+  }
+  // Clear existing options
+  sel.innerHTML = '<option value="">+ Add sub-industry</option>';
+  // Get currently selected chips to exclude
+  var chips = document.getElementById('ab-sub-chips');
+  var selected = chips ? Array.from(chips.querySelectorAll('span')).map(function(s){ return s.dataset.val||''; }) : [];
+  SUB_MAP[ind].forEach(function(s){
+    if (selected.indexOf(s.val) < 0) {
+      var opt = document.createElement('option');
+      opt.value = s.val; opt.textContent = s.label;
+      sel.appendChild(opt);
+    }
+  });
+  if (row) row.style.display = 'block';
+}
+
+function _abAddSubChip(sel) {
+  var val = sel.value; if (!val) return;
+  var label = sel.options[sel.selectedIndex].textContent;
+  sel.value = '';
+  // Remove from dropdown
+  Array.from(sel.options).forEach(function(o){ if(o.value===val) sel.removeChild(o); });
+  // Add chip
+  var chips = document.getElementById('ab-sub-chips');
+  if (!chips) return;
+  var chip = document.createElement('span');
+  chip.dataset.val = val;
+  chip.style.cssText = 'display:inline-flex;align-items:center;gap:3px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:3px 9px;font-size:11px;font-weight:600;white-space:nowrap;';
+  chip.innerHTML = label + '<button type="button" onclick="this.parentElement.remove();var opt=document.createElement(\'option\');opt.value=\''+val+'\';opt.textContent=\''+label.replace(/'/g,"\\'")+'\';document.getElementById(\'ab-sub-industry\').appendChild(opt);" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button>';
+  chips.appendChild(chip);
+}
+
+function _abGetSubIndustries() {
+  var chips = document.getElementById('ab-sub-chips');
+  if (!chips) return null;
+  var vals = Array.from(chips.querySelectorAll('span')).map(function(s){ return s.dataset.val||''; }).filter(Boolean);
+  return vals.length ? JSON.stringify(vals) : null;
+}
+
 async function saveNewBusiness() {
   var name     = document.getElementById('ab-name').value.trim();
   var phone    = document.getElementById('ab-phone').value.trim();
@@ -3524,6 +3574,7 @@ async function saveNewBusiness() {
       lat:            coords.lat,
       lon:            coords.lon,
       industry:       (status === 'Competitor' && !industry) ? 'Energy' : (industry || null),
+      sub_industry:   _abGetSubIndustries(),
       status:         status,
       pipeline_stage: 'Lead Captured',
       location_type:  locType || null,
