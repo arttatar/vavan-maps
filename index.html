@@ -996,29 +996,45 @@ async function loadProfile() {
     var r = await sb.from('sales_profiles').select('*').eq('user_id', userId).single();
     if (r.data) {
       currentProfile = r.data;
-      // Show territory in header
-      var badge = document.getElementById('filter-badge');
-      if (badge && currentProfile.territory_name) {
-        badge.textContent = currentProfile.territory_name;
-        badge.classList.add('visible');
+
+      // Load client's purchased markets
+      if (currentProfile.client_id) {
+        var mr = await sb.from('client_markets')
+          .select('market_id, markets(name, state)')
+          .eq('client_id', currentProfile.client_id)
+          .eq('active', true);
+        if (mr.data) clientMarkets = mr.data;
       }
-      // Show My Accounts button for reps (not just admins)
+
+      // Show market name(s) in header badge
+      var badge = document.getElementById('filter-badge');
+      if (badge) {
+        var marketNames = clientMarkets.map(function(m){ return m.markets ? m.markets.name : ''; }).filter(Boolean);
+        if (marketNames.length) {
+          badge.textContent = marketNames.join(', ');
+          badge.classList.add('visible');
+        } else if (currentProfile.territory_name) {
+          badge.textContent = currentProfile.territory_name;
+          badge.classList.add('visible');
+        }
+      }
+
+      // Show My Accounts button
       var maBtn = document.getElementById('my-accounts-btn');
       if (maBtn && currentProfile.full_name) maBtn.style.display = '';
 
-      // Show settings in desktop nav only — admin only, never on mobile
+      // Show settings in desktop nav for admins only
       if (currentProfile.role === 'admin') {
         var navSettingsBtn = document.getElementById('nd-settings');
         if (navSettingsBtn) navSettingsBtn.style.display = '';
       }
-      // Always keep header settings button hidden (moved to nav)
       var headerSettingsBtn = document.getElementById('settings-btn');
       if (headerSettingsBtn) headerSettingsBtn.style.display = 'none';
-      // Populate rep filter dropdown with territory reps
+
       populateRepFilter();
     }
   } catch(e) {
-    console.warn('No sales profile found — loading all data');
+    console.warn('Profile load error:', e);
   }
 }
 
@@ -1069,7 +1085,10 @@ function filterMyAccounts() {
   setTimeout(function(){ navTo('list'); }, 300);
 }
 
+var _appStarted = false;
 async function startApp() {
+  if (_appStarted) return;
+  _appStarted = true;
   document.getElementById('app').style.display = 'block';
   document.getElementById('loader').classList.remove('hidden');
   prog(10, 'Initializing...');
@@ -1353,45 +1372,43 @@ async function loadData() {
     var from = 0;
     var pageSize = 1000;
 
-    // Build query — RLS handles territory filtering automatically
-    // but we still filter by market for clarity
     while (true) {
-      var query = sb.from('businesses').select('*').eq('market','Las Vegas').range(from, from + pageSize - 1);
+      var query = sb.from('businesses').select('*').range(from, from + pageSize - 1);
       var r = await query;
-      if (r.error) { console.error('Load error:', r.error); break; }
+      if (r.error) { console.error('Load error:', r.error); throw r.error; }
       if (!r.data || r.data.length === 0) break;
       allRows = allRows.concat(r.data);
       prog(30 + Math.min(30, Math.floor(allRows.length / 60)), 'Loading... ' + allRows.length + ' businesses');
       if (r.data.length < pageSize) break;
       from += pageSize;
     }
+
     if (allRows.length > 0) {
       allData = applySubIndustries(normalizeAll(allRows));
       _buildLookup();
       prog(60, 'Loaded ' + allData.length + ' businesses');
-      // Update header count
       var pcount = document.getElementById('pcount');
       if (pcount) pcount.textContent = allData.length.toLocaleString();
       return;
     }
-  } catch(e) { console.error('loadData error:', e); }
 
-  // Fallback sample data
-  allData = [
-    {name:'YRC Freight',street:'5049 W Post Rd',locality:'Las Vegas, NV 89118',phone:'(800) 610-6500',website:'',industry:'Transportation',market:'Las Vegas',lat:36.1025,lon:-115.2144},
-    {name:'Bulk Transportation',street:'4915 N Sloan Ln',locality:'Las Vegas, NV 89115',phone:'(702) 565-5701',website:'http://bulk-dti.com/',industry:'Transportation',market:'Las Vegas',lat:36.2156,lon:-115.0634},
-    {name:'Valley Truck and Equipment',street:'4570 Wynn Rd',locality:'Las Vegas, NV 89103',phone:'(702) 364-8049',website:'http://702trucks.com/',industry:'Transportation',market:'Las Vegas',lat:36.1156,lon:-115.1834},
-    {name:'Las Vegas Paving Corp',street:'4420 S Decatur Blvd',locality:'Las Vegas, NV 89103',phone:'(702) 876-6245',website:'http://lvpaving.com/',industry:'Construction',market:'Las Vegas',lat:36.1089,lon:-115.1967},
-    {name:'Southwest Gas',street:'5241 Spring Mountain Rd',locality:'Las Vegas, NV 89146',phone:'(702) 876-7237',website:'http://swgas.com/',industry:'Energy',market:'Las Vegas',lat:36.1323,lon:-115.2234},
-    {name:'Republic Services',street:'770 E Sahara Ave',locality:'Las Vegas, NV 89104',phone:'(702) 735-5151',website:'http://republicservices.com/',industry:'Industrial',market:'Las Vegas',lat:36.1489,lon:-115.1434},
-    {name:'MGM Grand Hotel',street:'3799 S Las Vegas Blvd',locality:'Las Vegas, NV 89109',phone:'(702) 891-1111',website:'http://mgmgrand.com/',industry:'Hospitality',market:'Las Vegas',lat:36.1024,lon:-115.1701},
-    {name:'Clark County Public Works',street:'500 S Grand Central Pkwy',locality:'Las Vegas, NV 89155',phone:'(702) 455-6000',website:'',industry:'Government',market:'Las Vegas',lat:36.1762,lon:-115.1398}
-  ];
-  allData = normalizeAll(allData);
-  allData.forEach(function(b){ b.score = calcScore(b); });
-  applySubIndustries(allData);
-  _buildLookup();
-  prog(60, 'Using sample data');
+    // No data returned — show clear message instead of hiding the problem
+    prog(100, 'No businesses found for your account');
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('pcount').textContent = '0';
+    console.warn('No businesses returned — check RLS policies and client_markets assignment');
+
+  } catch(e) {
+    console.error('loadData error:', e);
+    prog(100, 'Failed to load data');
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('pcount').textContent = 'Error';
+    // Show error in UI so rep knows something is wrong
+    setTimeout(function(){
+      var msg = 'Could not load businesses.\n\nCheck your connection and try refreshing.\n\nError: ' + e.message;
+      alert(msg);
+    }, 500);
+  }
 }
 
 function initMap() {
@@ -2978,7 +2995,12 @@ function renderDetailPanel(b) {
         '<div class="det-field-row"><span class="det-field-label">Sub-Industry</span>'+
           '<span class="det-field-value">'+subInd+'</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Assigned Rep</span>'+
-          '<span class="det-field-value">'+(b.assigned_rep||'Unassigned')+'</span></div>'+
+          '<span class="det-field-value" style="display:flex;align-items:center;gap:8px;">'+
+            (b.assigned_rep||'Unassigned')+
+            (!b.assigned_rep || b.assigned_rep === '' ?
+              '<button onclick="claimAccount()" style="background:var(--accent);color:#fff;border:none;border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Claim</button>'
+              : '') +
+          '</span></div>'+
         '<div class="det-field-row"><span class="det-field-label">Visited</span>'+
           '<span class="det-field-value">'+
             '<button onclick="toggleVisited()" style="background:'+(b.visited?'#f0fdf4':'var(--paper2)')+';color:'+(b.visited?'#059669':'var(--muted)')+';border:1px solid '+(b.visited?'#059669':'var(--border)')+';border-radius:100px;padding:3px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">'+
@@ -3086,8 +3108,33 @@ function toggleEditMode() {
   }
 }
 
-async function toggleVisited() {
+async function claimAccount() {
   var b = lastSelectedBiz; if (!b) return;
+  if (!currentProfile || !currentProfile.full_name) {
+    alert('Your profile name is not set. Go to Admin Settings to fix this.');
+    return;
+  }
+  var repName = currentProfile.full_name;
+  try {
+    var r = await sb.from('businesses').update({
+      assigned_rep: repName,
+      updated_at: new Date().toISOString()
+    }).eq('id', b.id||b._id);
+    if (r.error) throw r.error;
+    await sb.from('activity').insert({
+      business_id: String(b.id||b._id),
+      type: 'claimed',
+      note: repName + ' claimed this account',
+      client_id: currentProfile ? currentProfile.client_id : null,
+      created_by: repName
+    });
+    b.assigned_rep = repName;
+    renderDetailPanel(b);
+    switchTab('profile');
+  } catch(e) { alert('Could not claim account: ' + e.message); }
+}
+
+async function toggleVisited() {
   var newVal = !b.visited;
   try {
     var r = await sb.from('businesses').update({
@@ -3152,6 +3199,7 @@ async function setDetailStage(stage) {
     await sb.from('activity').insert({
       business_id: String(b.id||b._id),
       type: 'pipeline',
+      client_id: currentProfile ? currentProfile.client_id : null,
       note: 'Pipeline moved from "' + prevStage + '" → "' + stage + '"',
       created_by: currentProfile ? (currentProfile.full_name || 'Unknown') : 'Unknown'
     });
@@ -3222,7 +3270,8 @@ async function saveContact() {
     var r = await sb.from('contacts').insert({
       business_id: String(b.id||b._id),
       first_name: first, last_name: last,
-      phone: phone, email: email, job_title: title
+      phone: phone, email: email, job_title: title,
+      client_id: currentProfile ? currentProfile.client_id : null
     });
     if (r.error) throw r.error;
 
@@ -3230,6 +3279,7 @@ async function saveContact() {
     await sb.from('activity').insert({
       business_id: String(b.id||b._id),
       type: 'contact',
+      client_id: currentProfile ? currentProfile.client_id : null,
       note: 'Contact added: ' + [first, last].filter(Boolean).join(' ') + (title ? ' (' + title + ')' : ''),
       created_by: byName
     });
@@ -3278,6 +3328,7 @@ async function logActivity(type) {
     var r = await sb.from('activity').insert({
       business_id: String(b.id||b._id),
       type: type, note: '',
+      client_id: currentProfile ? currentProfile.client_id : null,
       created_by: byName
     });
     if (r.error) throw r.error;
@@ -3299,6 +3350,7 @@ async function saveNote() {
     var r = await sb.from('activity').insert({
       business_id: String(b.id||b._id),
       type: 'note', note: note,
+      client_id: currentProfile ? currentProfile.client_id : null,
       created_by: byName
     });
     if (r.error) throw r.error;
