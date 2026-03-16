@@ -3803,28 +3803,56 @@ function renderDetailPanel(b) {
     '<div id="det-profile" class="det-section active">'+
       // View mode
       '<div id="det-view" class="det-view-mode">'+
-        // Google Maps link FIRST
-        '<a href="https://www.google.com/maps/search/'+encodeURIComponent(b.name||'')+'/@'+b.lat+','+b.lon+',17z" '+
-          'target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#4285F4;text-decoration:none;padding:10px 0 10px;border-bottom:1px solid var(--border);">'+
-          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
-          'View on Google Maps &rarr;</a>'+
-        // Full address below
+        // 1. Assigned Rep
+        (b.assigned_rep
+          ? '<div class="det-field-row"><span class="det-field-label">Assigned Rep</span><span class="det-field-value">'+b.assigned_rep+'</span></div>'
+          : '<div class="det-field-row"><span class="det-field-label">Assigned Rep</span><span class="det-field-value" style="display:flex;align-items:center;gap:8px;">Unassigned<button onclick="claimAccount()" style="background:var(--accent);color:#fff;border:none;border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Claim</button></span></div>')+
+        // 2. Address (always show)
         '<div class="det-field-row"><span class="det-field-label">Address</span>'+
           '<span class="det-field-value" style="cursor:pointer;text-align:right;" onclick="openNav('+JSON.stringify(addr)+','+( b.lat||null)+','+( b.lon||null)+')">'+
             (b.street||'—')+
             (b.locality ? '<br>'+b.locality : '')+
-            ((b.state && !b.locality) ? '<br>'+b.state : (b.state && b.locality && !b.locality.includes(b.state) ? ', '+b.state : ''))+
+            ((b.state && b.locality && !b.locality.includes(b.state)) ? ', '+b.state : (!b.locality && b.state ? '<br>'+b.state : ''))+
             (b.zip ? ' '+b.zip : '')+
           '</span></div>'+
-        '<div class="det-field-row"><span class="det-field-label">Location Type</span>'+
+        // 3. Phone (only if set)
+        (b.phone ? '<div class="det-field-row"><span class="det-field-label">Phone</span><span class="det-field-value"><a href="tel:'+b.phone.replace(/\D/g,'')+'">'+b.phone+'</a></span></div>' : '')+
+        // 4. Industry (always editable)
+        '<div class="det-field-row"><span class="det-field-label">Industry</span>'+
           '<span class="det-field-value">'+
-            (b.location_type || '<span style="color:var(--muted);">Not set</span>')+
+            '<select id="inline-industry" onchange="saveInlineIndustry()" style="border:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;text-align:right;max-width:180px;">'+
+              '<option value="">— Select —</option>'+
+              ['Automotive','Transport','Construction','Industrial','Agribusiness','Energy','Services','Hospitality','Government','RealEstate'].map(function(ind){
+                return '<option value="'+ind+'"'+((b.industry||'')=== ind?' selected':'')+'>'+ind+'</option>';
+              }).join('')+
+            '</select>'+
           '</span></div>'+
-        '<div class="det-field-row"><span class="det-field-label">Phone</span>'+
-          '<span class="det-field-value">'+(b.phone?'<a href="tel:'+b.phone.replace(/\D/g,'')+'">'+b.phone+'</a>':'—')+'</span></div>'+
-        '<div class="det-field-row"><span class="det-field-label">Website</span>'+
-          '<span class="det-field-value">'+(b.website?'<a href="'+b.website+'" target="_blank">Visit &rarr;</a>':'—')+'</span></div>'+
-        // Social links — show if set, always show edit icon
+        // 5. Sub-Industry chips (always shown if industry set)
+        (b.industry ? (function(){
+          var subs = b.sub_industry_inferred || (b.sub_industry ? (Array.isArray(b.sub_industry) ? b.sub_industry : [b.sub_industry]) : []);
+          subs = subs.filter(Boolean);
+          var chips = subs.map(function(s){
+            return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">'+
+              s+'<button onclick="_removeSubInd(\''+s.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button></span>';
+          }).join('');
+          var opts = SUB_MAP[b.industry] || [];
+          var available = opts.filter(function(s){ return subs.indexOf(s.label) < 0 && subs.indexOf(s.val) < 0; });
+          var addDrop = available.length ? '<select onchange="_addSubInd(this)" style="font-size:11px;font-family:Inter,sans-serif;border:1px dashed var(--border);border-radius:6px;padding:3px 6px;background:transparent;color:var(--muted);cursor:pointer;max-width:180px;"><option value="">+ Add sub-industry</option>'+available.map(function(s){ return '<option value="'+s.val+'|'+s.label+'">'+s.label+'</option>'; }).join('')+'</select>' : '';
+          if (!chips && !addDrop) return '';
+          return '<div class="det-field-row" style="align-items:flex-start;padding:.5rem 0;">'+
+            '<span class="det-field-label" style="padding-top:4px;">Sub-Industry</span>'+
+            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:1;min-width:0;">'+
+              (chips || '')+addDrop+
+            '</div></div>';
+        })() : '')+
+        // 6. Website (only if set)
+        (b.website ? '<div class="det-field-row"><span class="det-field-label">Website</span><span class="det-field-value"><a href="'+b.website+'" target="_blank">Visit &rarr;</a></span></div>' : '')+
+        // 7. Google Maps (always)
+        '<a href="https://www.google.com/maps/search/'+encodeURIComponent(b.name||'')+'/@'+b.lat+','+b.lon+',17z" '+
+          'target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#4285F4;text-decoration:none;padding:8px 0;">'+
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4285F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
+          'View on Google Maps &rarr;</a>'+
+        // 8. Social links — only show if URL is set
         (function(){
           var sl = b.social_links || {};
           var SOCIALS = [
@@ -3834,71 +3862,30 @@ function renderDetailPanel(b) {
             {key:'yelp',      label:'Yelp',      color:'#D32323', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="#D32323"><text y="14" font-size="13" font-weight="700">y</text></svg>'},
             {key:'tiktok',    label:'TikTok',    color:'#000',    icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>'}
           ];
-          var rows = SOCIALS.map(function(s){
-            var url = sl[s.key] || '';
-            return '<div class="det-field-row" style="min-height:36px;">'+
+          return SOCIALS.filter(function(s){ return sl[s.key]; }).map(function(s){
+            return '<div class="det-field-row">'+
               '<span class="det-field-label">'+s.label+'</span>'+
-              '<span class="det-field-value" style="display:flex;align-items:center;gap:6px;">'+
-                (url
-                  ? '<a href="'+url+'" target="_blank" style="display:flex;align-items:center;gap:5px;color:'+s.color+';font-size:12px;font-weight:600;text-decoration:none;">'+s.icon+'View</a>'
-                  : '<span style="color:var(--muted);font-size:12px;">—</span>')+
-                '<button onclick="_editSocial(\''+s.key+'\',\''+s.label+'\')" style="margin-left:4px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;padding:2px 5px;border-radius:4px;font-family:Inter,sans-serif;" title="Edit">'+
-                  (url ? 'Edit' : '+ Add')+
-                '</button>'+
+              '<span class="det-field-value">'+
+                '<a href="'+sl[s.key]+'" target="_blank" style="display:flex;align-items:center;gap:5px;color:'+s.color+';font-size:12px;font-weight:600;text-decoration:none;">'+s.icon+'View</a>'+
               '</span></div>';
-          });
-          return rows.join('');
+          }).join('');
         })()+
-        '<div class="det-field-row"><span class="det-field-label">Industry</span>'+
-          '<span class="det-field-value">'+
-            '<select id="inline-industry" onchange="saveInlineIndustry()" style="border:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;text-align:right;max-width:180px;">'+
-              '<option value="">— Select —</option>'+
-              ['Automotive','Transport','Construction','Industrial','Agribusiness','Energy','Services','Hospitality','Government','RealEstate'].map(function(ind){
-                return '<option value="'+ind+'"'+(( b.industry||'')=== ind?' selected':'')+'>'+ind+'</option>';
-              }).join('')+
-            '</select>'+
-          '</span></div>'+
-        // Sub-Industry — multi-select chips
-        '<div class="det-field-row" style="align-items:flex-start;padding:.6rem 0;">'+
-          '<span class="det-field-label" style="padding-top:4px;">Sub-Industry</span>'+
-          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:1;min-width:0;" id="sub-industry-chips-wrap">'+
-            (function(){
-              var subs = b.sub_industry_inferred || (b.sub_industry ? (Array.isArray(b.sub_industry) ? b.sub_industry : [b.sub_industry]) : []);
-              var chips = subs.filter(Boolean).map(function(s){
-                return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;white-space:nowrap;">'+
-                  s+'<button onclick="_removeSubInd(\''+s.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button>'+
-                '</span>';
-              }).join('');
-              return (chips || '<span style="font-size:12px;color:var(--muted);">None set</span>');
-            })()+
-            // Add chip dropdown
-            (function(){
-              var opts = (SUB_MAP[b.industry] || []);
-              if (!opts.length) return '';
-              var subs = b.sub_industry_inferred || (b.sub_industry ? (Array.isArray(b.sub_industry) ? b.sub_industry : [b.sub_industry]) : []);
-              var available = opts.filter(function(s){ return subs.indexOf(s.label) < 0 && subs.indexOf(s.val) < 0; });
-              if (!available.length) return '';
-              return '<select onchange="_addSubInd(this)" style="font-size:11px;font-family:Inter,sans-serif;border:1px dashed var(--border);border-radius:6px;padding:3px 6px;background:transparent;color:var(--muted);cursor:pointer;max-width:180px;">'+
-                '<option value="">+ Add sub-industry</option>'+
-                available.map(function(s){ return '<option value="'+s.val+'|'+s.label+'">'+s.label+'</option>'; }).join('')+
-              '</select>';
-            })()+
-          '</div>'+
-        '</div>'+
-        '<div class="det-field-row"><span class="det-field-label">Assigned Rep</span>'+
-          '<span class="det-field-value" style="display:flex;align-items:center;gap:8px;">'+
-            (b.assigned_rep||'Unassigned')+
-            (!b.assigned_rep || b.assigned_rep === '' ?
-              '<button onclick="claimAccount()" style="background:var(--accent);color:#fff;border:none;border-radius:100px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Claim</button>'
-              : '') +
-          '</span></div>'+
+        // 9. Location type, Visited — only if set
+        (b.location_type ? '<div class="det-field-row"><span class="det-field-label">Location Type</span><span class="det-field-value">'+b.location_type+'</span></div>' : '')+
         '<div class="det-field-row"><span class="det-field-label">Visited</span>'+
           '<span class="det-field-value">'+
             '<button onclick="toggleVisited()" style="background:'+(b.visited?'#f0fdf4':'var(--paper2)')+';color:'+(b.visited?'#059669':'var(--muted)')+';border:1px solid '+(b.visited?'#059669':'var(--border)')+';border-radius:100px;padding:3px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">'+
             (b.visited?'✓ Visited':'Mark Visited')+'</button></span></div>'+
       '</div>'+
-      // Edit mode
+      // Edit mode — shows ALL fields regardless of whether they're set
       '<div id="det-edit" class="det-edit-form">'+
+        '<div class="edit-field-group"><label class="edit-field-label">Assigned Rep</label>'+
+          '<select class="edit-input" id="edit-rep">'+
+            '<option value="">Unassigned</option>'+
+            getTerritoryReps().map(function(r){
+              return '<option value="'+r+'"'+((b.assigned_rep||'')=== r?' selected':'')+'>'+r+'</option>';
+            }).join('')+
+          '</select></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Phone</label>'+
           '<input class="edit-input" id="edit-phone" type="tel" value="'+(b.phone||'')+'"></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Website</label>'+
@@ -3910,21 +3897,22 @@ function renderDetailPanel(b) {
               return '<option value="'+t+'"'+((b.location_type||'')=== t?' selected':'')+'>'+t+'</option>';
             }).join('')+
           '</select></div>'+
-        '<div class="edit-field-group"><label class="edit-field-label">Website</label>'+
-          '<input class="edit-input" id="edit-website" type="url" value="'+(b.website||'')+'"></div>'+
-        '<div class="edit-field-group"><label class="edit-field-label">Assigned Rep</label>'+
-          '<select class="edit-input" id="edit-rep">'+
-            '<option value="">Unassigned</option>'+
-            getTerritoryReps().map(function(r){
-              return '<option value="'+r+'"'+((b.assigned_rep||'')=== r?' selected':'')+'>'+r+'</option>';
-            }).join('')+
-          '</select></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Status</label>'+
           '<select class="edit-input" id="edit-status">'+
             '<option value="Lead"'+(status==='Lead'?' selected':'')+'>Lead</option>'+
             '<option value="Customer"'+(status==='Customer'?' selected':'')+'>Customer</option>'+
             '<option value="Lost Customer"'+(status==='Lost Customer'?' selected':'')+'>Lost Customer</option>'+
           '</select></div>'+
+        // Social links in edit mode
+        '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem;">Social Links</div>'+
+        (function(){
+          var sl = b.social_links || {};
+          return ['facebook','instagram','linkedin','yelp','tiktok'].map(function(k){
+            var label = k.charAt(0).toUpperCase()+k.slice(1);
+            return '<div class="edit-field-group"><label class="edit-field-label">'+label+'</label>'+
+              '<input class="edit-input" id="edit-social-'+k+'" type="url" placeholder="https://'+k+'.com/..." value="'+(sl[k]||'')+'"></div>';
+          }).join('');
+        })()+
         '<div class="edit-actions">'+
           '<button class="edit-save-btn" onclick="saveBusinessEdits()">Save Changes</button>'+
           '<button class="edit-cancel-btn" onclick="toggleEditMode()">Cancel</button>'+
@@ -4223,7 +4211,20 @@ async function saveBusinessEdits() {
   var rep      = document.getElementById('edit-rep').value.trim();
   var status   = document.getElementById('edit-status').value;
   var locType  = document.getElementById('edit-location-type').value;
-  var pipeline = b.pipeline_stage || 'Lead Captured'; // set by dot clicks, not dropdown
+  var pipeline = b.pipeline_stage || 'Lead Captured';
+
+  // Collect social links from edit form
+  var newSocials = Object.assign({}, b.social_links || {});
+  ['facebook','instagram','linkedin','yelp','tiktok'].forEach(function(k){
+    var el = document.getElementById('edit-social-'+k);
+    if (!el) return;
+    var val = el.value.trim();
+    if (val && !val.match(/^https?:\/\//)) val = 'https://'+val;
+    if (val) newSocials[k] = val;
+    else delete newSocials[k];
+  });
+
+  if (website && !website.match(/^https?:\/\//)) website = 'https://'+website;
 
   var btn = document.querySelector('.edit-save-btn');
   btn.textContent = 'Saving...'; btn.disabled = true;
@@ -4232,30 +4233,33 @@ async function saveBusinessEdits() {
     var r = await sb.from('businesses').update({
       phone: phone, website: website,
       assigned_rep: rep, status: status, pipeline_stage: pipeline,
-      location_type: locType
+      location_type: locType, social_links: newSocials
     }).eq('id', b.id||b._id);
 
     if (r.error) throw r.error;
 
     // Build change log
     var changes = [];
-    if (phone !== (b.phone||''))           changes.push('Phone → ' + (phone||'removed'));
-    if (website !== (b.website||''))       changes.push('Website → ' + (website||'removed'));
-    if (rep !== (b.assigned_rep||''))      changes.push('Assigned Rep → ' + (rep||'Unassigned'));
-    if (status !== (b.status||'Lead'))     changes.push('Status → ' + status);
-    if (locType !== (b.location_type||'')) changes.push('Location Type → ' + (locType||'removed'));
-    if (changes.length) _logChange('Profile updated: ' + changes.join(', '), 'edit');
+    if (phone !== (b.phone||''))           changes.push('Phone → '+(phone||'removed'));
+    if (website !== (b.website||''))       changes.push('Website → '+(website||'removed'));
+    if (rep !== (b.assigned_rep||''))      changes.push('Assigned Rep → '+(rep||'Unassigned'));
+    if (status !== (b.status||'Lead'))     changes.push('Status → '+status);
+    if (locType !== (b.location_type||'')) changes.push('Location Type → '+(locType||'removed'));
+    ['facebook','instagram','linkedin','yelp','tiktok'].forEach(function(k){
+      var old = (b.social_links||{})[k]||''; var nw = newSocials[k]||'';
+      if (old !== nw) changes.push(k.charAt(0).toUpperCase()+k.slice(1)+' → '+(nw||'removed'));
+    });
+    if (changes.length) _logChange('Profile updated: '+changes.join(', '), 'edit');
 
-    // Update local data
     b.phone = phone; b.website = website;
     b.assigned_rep = rep; b.status = status; b.pipeline_stage = pipeline;
-    b.location_type = locType;
+    b.location_type = locType; b.social_links = newSocials;
 
     toggleEditMode();
     renderDetailPanel(b);
     switchTab('profile');
   } catch(e) {
-    alert('Save failed: ' + e.message);
+    alert('Save failed: '+e.message);
   } finally {
     btn.textContent = 'Save Changes'; btn.disabled = false;
   }
