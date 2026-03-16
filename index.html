@@ -4593,10 +4593,10 @@ function getRouteMapStyle() {
 }
 
 function openRoutePanel() {
+  _removeNavBrief();
   map.setStyle(getRouteMapStyle());
   map.once('styledata', function(){ _drawRouteOnMap(); });
   document.getElementById('route-panel').classList.add('open');
-  _removeRouteHUD();
   if (_routeStops.length) {
     var bounds = new mapboxgl.LngLatBounds();
     if (_routeStartPoint) bounds.extend([_routeStartPoint.lon, _routeStartPoint.lat]);
@@ -4612,7 +4612,7 @@ function closeRoutePanel() {
   document.getElementById('route-panel').classList.remove('open');
   map.setStyle('mapbox://styles/mapbox/dark-v11');
   map.once('styledata', function(){ _drawRouteOnMap(); });
-  if (_routeActive) _showRouteHUD();
+  if (_routeActive) _showNavBrief();
 }
 
 function renderRouteStops() {
@@ -4671,7 +4671,7 @@ function renderRouteStops() {
   }
 }
 
-function startRoute() {
+async function startRoute() {
   if (!_routeStops.length) return;
   _routeActive = true;
   _routeCurrentStop = _routeStops.findIndex(function(s){ return s.status==='pending'; });
@@ -4679,79 +4679,221 @@ function startRoute() {
   _saveRouteSession();
   _drawRouteOnMap();
   renderRouteStops();
-  // Close panel → show map + HUD
+  // Close panel → show map in nav mode
   document.getElementById('route-panel').classList.remove('open');
-  _showRouteHUD();
+
   var stop = _routeStops[_routeCurrentStop];
-  if (stop&&stop.biz.lat) map.flyTo({center:[stop.biz.lon,stop.biz.lat],zoom:15,speed:1.5});
+  if (stop && stop.biz.lat) {
+    map.flyTo({ center:[stop.biz.lon, stop.biz.lat], zoom:16, pitch:45, bearing:0, speed:1.4 });
+  }
+
+  // Fetch first-leg turn-by-turn steps for the nav banner
+  var steps = null;
+  if (_routeStartPoint && stop) {
+    steps = await _getNavSteps(_routeStartPoint, { lat:stop.biz.lat, lon:stop.biz.lon });
+  }
+  _navSteps = steps || [];
+  _navStepIdx = 0;
+
+  _showNavBrief();
 }
 
-// ── ACTIVE ROUTE HUD (bottom of screen, over map) ──
-function _showRouteHUD() {
-  _removeRouteHUD();
+// Fetch turn-by-turn steps from current position to next stop
+async function _getNavSteps(from, to) {
+  try {
+    var url = 'https://api.mapbox.com/directions/v5/mapbox/driving-traffic/'+
+      from.lon+','+from.lat+';'+to.lon+','+to.lat+
+      '?access_token='+MBOX+'&steps=true&geometries=geojson&overview=full&voice_instructions=false&banner_instructions=true';
+    var res = await fetch(url);
+    var d = await res.json();
+    if (d.routes && d.routes[0] && d.routes[0].legs[0]) return d.routes[0].legs[0].steps;
+    return [];
+  } catch(e) { return []; }
+}
+
+var _navSteps   = [];
+var _navStepIdx = 0;
+
+// ── NAV BRIEF UI ──
+// Mimics Google Maps: teal top banner with maneuver + street, bottom bar with ETA + Exit
+function _showNavBrief() {
+  _removeNavBrief();
   var stop = _routeStops[_routeCurrentStop];
   if (!stop) return;
-  var total = _routeStops.length;
-  var done  = _routeStops.filter(function(s){ return s.status==='completed'; }).length;
-  var legParts = [];
-  if (stop._legDur)  legParts.push(_fmtDur(stop._legDur));
-  if (stop._legDist) legParts.push(_fmtDist(stop._legDist));
-  var legTxt = legParts.length ? '🚗 '+legParts.join(' · ') : '';
 
-  var hud = document.createElement('div');
-  hud.id = 'route-hud';
-  hud.style.cssText =
-    'position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+68px);'+
-    'left:10px;right:10px;background:#1a1830;'+
-    'border:1px solid rgba(108,92,231,.5);border-radius:16px;'+
-    'padding:12px 14px;z-index:1500;'+
-    'box-shadow:0 8px 32px rgba(0,0,0,.6);'+
-    'display:flex;align-items:center;gap:12px;';
+  var total   = _routeStops.length;
+  var done    = _routeStops.filter(function(s){ return s.status==='completed'; }).length;
+  var durTxt  = stop._legDur  ? _fmtDur(stop._legDur)   : '';
+  var distTxt = stop._legDist ? _fmtDist(stop._legDist)  : '';
 
-  hud.innerHTML =
-    '<div style="width:40px;height:40px;border-radius:50%;background:#4a36c8;color:#fff;'+
-      'font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;'+
-      'flex-shrink:0;box-shadow:0 0 0 4px rgba(74,54,200,.3);">'+
-      (_routeCurrentStop+1)+
+  // Current nav step
+  var step     = _navSteps[_navStepIdx] || null;
+  var maneuver = step ? _maneuverIcon(step) : '↑';
+  var street   = step ? (step.name || step.maneuver.instruction || 'Continue') : ('toward '+stop.biz.name);
+  var stepDist = step ? _fmtDist(step.distance) : distTxt;
+
+  // ETA
+  var now    = new Date();
+  var etaSec = stop._legDur || 0;
+  var etaDate = new Date(now.getTime() + etaSec*1000);
+  var etaStr  = etaSec
+    ? etaDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
+    : '';
+
+  // ── TOP BANNER (like Google Maps teal bar) ──
+  var top = document.createElement('div');
+  top.id = 'nav-top';
+  top.style.cssText = [
+    'position:fixed',
+    'top:calc(env(safe-area-inset-top,0px) + 52px)',   // below app header
+    'left:0','right:0',
+    'background:#1a6b5a',
+    'padding:14px 18px 14px 16px',
+    'z-index:1600',
+    'display:flex','align-items:center','gap:14px',
+    'box-shadow:0 4px 24px rgba(0,0,0,.5)'
+  ].join(';');
+
+  top.innerHTML =
+    // Maneuver arrow
+    '<div style="width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,.15);'+
+      'display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+
+      '<div style="font-size:30px;line-height:1;">'+maneuver+'</div>'+
     '</div>'+
+    // Street + distance
     '<div style="flex:1;min-width:0;">'+
-      '<div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+
-        stop.biz.name+
-      '</div>'+
-      '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+
-        (stop.biz.street||stop.biz.full_address||'')+
-      '</div>'+
-      (legTxt?'<div style="font-size:11px;color:#a89fe8;margin-top:3px;">'+legTxt+'</div>':'')+
+      '<div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;margin-bottom:2px;letter-spacing:.04em;text-transform:uppercase;">'+stepDist+'</div>'+
+      '<div id="nav-street" style="font-size:22px;font-weight:800;color:#fff;line-height:1.15;'+
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+street+'</div>'+
     '</div>'+
-    '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">'+
-      '<div style="font-size:10px;color:rgba(255,255,255,.35);font-weight:600;">'+done+'/'+total+' done</div>'+
-      '<div style="display:flex;gap:5px;">'+
-        '<button onclick="navigateToStop('+_routeCurrentStop+')" '+
-          'style="background:#0ea5e9;border:none;border-radius:8px;padding:7px 10px;'+
-          'font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">'+
-          '↗ Nav</button>'+
-        '<button onclick="_hudDone('+_routeCurrentStop+')" '+
-          'style="background:#059669;border:none;border-radius:8px;padding:7px 10px;'+
-          'font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">'+
-          '✓ Done</button>'+
-        '<button onclick="openRoutePanel()" '+
-          'style="background:rgba(255,255,255,.1);border:none;border-radius:8px;padding:7px 10px;'+
-          'font-size:11px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;font-family:Inter,sans-serif;">'+
-          '☰</button>'+
+    // Stop indicator + next steps button
+    '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">'+
+      '<div style="width:36px;height:36px;border-radius:50%;background:#fff;'+
+        'display:flex;align-items:center;justify-content:center;">'+
+        '<div style="font-size:15px;font-weight:900;color:#1a6b5a;">'+(_routeCurrentStop+1)+'</div>'+
       '</div>'+
+      '<div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:700;white-space:nowrap;">'+done+'/'+total+' done</div>'+
     '</div>';
-  document.body.appendChild(hud);
+
+  // ── BOTTOM BAR (ETA + distance + action buttons) ──
+  var bot = document.createElement('div');
+  bot.id = 'nav-bottom';
+  bot.style.cssText = [
+    'position:fixed',
+    'bottom:calc(env(safe-area-inset-bottom,0px) + 60px)',
+    'left:0','right:0',
+    'background:#1c1c1e',
+    'padding:12px 16px',
+    'z-index:1600',
+    'display:flex','align-items:center','gap:10px',
+    'box-shadow:0 -2px 20px rgba(0,0,0,.6)'
+  ].join(';');
+
+  bot.innerHTML =
+    // ETA + dist block
+    '<div style="flex:1;">'+
+      '<div style="display:flex;align-items:baseline;gap:8px;">'+
+        (durTxt ? '<span style="font-size:28px;font-weight:800;color:#4ade80;line-height:1;">'+durTxt+'</span>' : '')+
+        (distTxt ? '<span style="font-size:14px;color:rgba(255,255,255,.5);font-weight:500;">'+distTxt+'</span>' : '')+
+      '</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">'+
+        stop.biz.name+
+        (etaStr ? ' · '+etaStr : '')+
+      '</div>'+
+    '</div>'+
+    // Action buttons
+    '<div style="display:flex;gap:8px;flex-shrink:0;">'+
+      '<button onclick="_hudSkip()" '+
+        'style="background:#3a3a3c;border:none;border-radius:10px;padding:10px 14px;'+
+        'font-size:12px;font-weight:700;color:rgba(255,255,255,.6);cursor:pointer;font-family:Inter,sans-serif;">'+
+        'Skip</button>'+
+      '<button onclick="_hudDone('+_routeCurrentStop+')" '+
+        'style="background:#059669;border:none;border-radius:10px;padding:10px 16px;'+
+        'font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">'+
+        '✓ Arrived</button>'+
+      '<button onclick="openRoutePanel()" '+
+        'style="background:#ef4444;border:none;border-radius:10px;padding:10px 14px;'+
+        'font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">'+
+        'Exit</button>'+
+    '</div>';
+
+  document.body.appendChild(top);
+  document.body.appendChild(bot);
 }
 
-function _removeRouteHUD() {
-  var h = document.getElementById('route-hud');
-  if (h) h.remove();
+function _removeNavBrief() {
+  ['nav-top','nav-bottom'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
 }
 
+// Returns an emoji arrow for a maneuver type
+function _maneuverIcon(step) {
+  if (!step || !step.maneuver) return '↑';
+  var t = step.maneuver.type || '';
+  var m = step.maneuver.modifier || '';
+  if (t === 'arrive') return '📍';
+  if (t === 'depart') return '↑';
+  if (t === 'turn') {
+    if (m === 'left')        return '←';
+    if (m === 'right')       return '→';
+    if (m === 'slight left') return '↖';
+    if (m === 'slight right')return '↗';
+    if (m === 'sharp left')  return '↩';
+    if (m === 'sharp right') return '↪';
+    if (m === 'uturn')       return '↩';
+  }
+  if (t === 'merge')         return '↑';
+  if (t === 'on ramp')       return m.includes('left') ? '↖' : '↗';
+  if (t === 'off ramp')      return m.includes('left') ? '↙' : '↘';
+  if (t === 'fork')          return m.includes('left') ? '↖' : '↗';
+  if (t === 'roundabout' || t === 'rotary') return '🔄';
+  if (t === 'continue')      return '↑';
+  return '↑';
+}
+
+// Called from bottom bar Skip button
+function _hudSkip() {
+  skipStop(_routeCurrentStop);
+  if (_routeActive) {
+    _fetchAndShowNavBrief();
+  } else {
+    _removeNavBrief();
+  }
+}
+
+// Called from bottom bar Done/Arrived button
 function _hudDone(idx) {
   completeStop(idx);
-  if (_routeActive) _showRouteHUD();
-  else _removeRouteHUD();
+  if (_routeActive) {
+    _fetchAndShowNavBrief();
+  } else {
+    _removeNavBrief();
+  }
+}
+
+async function _fetchAndShowNavBrief() {
+  var stop = _routeStops[_routeCurrentStop];
+  if (!stop) { _removeNavBrief(); return; }
+  // Try GPS first, fall back to previous stop
+  var fromPt = _routeStartPoint;
+  if (navigator.geolocation) {
+    try {
+      fromPt = await new Promise(function(res,rej){
+        navigator.geolocation.getCurrentPosition(
+          function(p){ res({lat:p.coords.latitude,lon:p.coords.longitude,label:'My Location'}); },
+          function(){ res(_routeStartPoint); },
+          {enableHighAccuracy:true,timeout:3000}
+        );
+      });
+    } catch(e) {}
+  }
+  var steps = await _getNavSteps(fromPt, {lat:stop.biz.lat,lon:stop.biz.lon});
+  _navSteps   = steps || [];
+  _navStepIdx = 0;
+  _showNavBrief();
+  map.flyTo({center:[stop.biz.lon,stop.biz.lat],zoom:16,pitch:45,speed:1.4});
 }
 
 function navigateToStop(idx) {
@@ -4778,11 +4920,14 @@ function completeStop(idx) {
     var next = _routeStops.findIndex(function(s,i){ return i>idx&&s.status==='pending'; });
     if (next >= 0) {
       _routeCurrentStop = next;
-      map.flyTo({center:[_routeStops[next].biz.lon,_routeStops[next].biz.lat],zoom:15,speed:1.5});
     } else {
       _routeActive = false;
-      _removeRouteHUD();
+      _removeNavBrief();
+      _saveRouteSession();
+      _drawRouteOnMap();
+      renderRouteStops();
       setTimeout(function(){ alert('🎉 Route complete! All stops visited.'); }, 300);
+      return;
     }
   }
   _saveRouteSession();
@@ -4794,11 +4939,7 @@ function skipStop(idx) {
   _routeStops[idx].status = 'skipped';
   if (_routeActive) {
     var next = _routeStops.findIndex(function(s,i){ return i>idx&&s.status==='pending'; });
-    if (next >= 0) {
-      _routeCurrentStop = next;
-      map.flyTo({center:[_routeStops[next].biz.lon,_routeStops[next].biz.lat],zoom:15,speed:1.5});
-      _showRouteHUD();
-    }
+    if (next >= 0) _routeCurrentStop = next;
   }
   _saveRouteSession();
   _drawRouteOnMap();
@@ -4854,7 +4995,8 @@ function clearRoute() {
   if (_routeStops.length && !confirm('Clear the current route?')) return;
   _routeStops=[];_routeActive=false;_routeCurrentStop=0;
   _routeTotalDur=0;_routeTotalDist=0;_routeGeomCache=null;
-  _removeRouteHUD();
+  _navSteps=[];_navStepIdx=0;
+  _removeNavBrief();
   _routeMarkers.forEach(function(m){ m.remove(); });
   _routeMarkers=[];
   ['route-line-casing','route-line'].forEach(function(id){
