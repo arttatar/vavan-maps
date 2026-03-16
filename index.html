@@ -792,7 +792,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- OPPORTUNITY PIPELINE FILTERS -->
       <div class="sb-sec">
         <div class="sb-title">Opportunity Pipeline</div>
-        <div class="pills" style="margin-bottom:.5rem;">
+        <div class="pills" style="margin-bottom:.25rem;">
           <span class="pill on" data-f="opp_product" data-v="all">All</span>
           <span class="pill" data-f="opp_product" data-v="none" style="color:#dc2626;border-color:#dc2626;">No Pipeline</span>
         </div>
@@ -800,79 +800,71 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
       <!-- LUBE PIPELINE -->
       <div class="sb-sec" style="padding-top:0;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <div style="font-size:12px;font-weight:700;color:var(--ink);">🛢 Lubricants</div>
-          <span id="lube-stage-lbl" style="font-size:11px;font-weight:600;color:var(--accent);display:none;"></span>
+          <span id="f-lube-lbl" style="font-size:11px;font-weight:700;color:var(--accent);">All Stages</span>
         </div>
-        <div class="pills" id="lube-stage-pills">
-          <span class="pill on" data-f="opp_product" data-pf="lubricants" data-v="all_lube">All</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Lead Captured">Lead</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Qualified">Qualified</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Fact-Finding">Fact-Find</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Proposal Sent">Proposal</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Credit Application">Credit</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
-          <span class="pill" data-f="opp_product" data-pf="lubricants" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        <div style="position:relative;padding:0 0 22px;" id="f-lube-track">
+          <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
+            <div id="f-lube-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-lube-dots"></div>
         </div>
       </div>
 
       <!-- FUEL PIPELINE -->
       <div class="sb-sec" style="padding-top:0;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">⛽ Fuel Delivery</div>
-        <div class="pills">
-          <span class="pill on" data-f="opp_product" data-pf="fuel_delivery" data-v="all_fuel">All</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Lead Captured">Lead</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Qualified">Qualified</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Fact-Finding">Fact-Find</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Proposal Sent">Proposal</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Credit Application">Credit</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
-          <span class="pill" data-f="opp_product" data-pf="fuel_delivery" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);">⛽ Fuel Delivery</div>
+          <span id="f-fuel-lbl" style="font-size:11px;font-weight:700;color:var(--accent);">All Stages</span>
+        </div>
+        <div style="position:relative;padding:0 0 22px;">
+          <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
+            <div id="f-fuel-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-fuel-dots"></div>
         </div>
       </div>
 
       <!-- CARDLOCK PIPELINE -->
       <div class="sb-sec" style="padding-top:0;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">💳 Cardlock</div>
-        <div class="pills">
-          <span class="pill on" data-f="opp_product" data-pf="cardlock" data-v="all_cardlock">All</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Lead Captured">Lead</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Qualified">Qualified</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Fact-Finding">Fact-Find</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Proposal Sent">Proposal</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Credit Application">Credit</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
-          <span class="pill" data-f="opp_product" data-pf="cardlock" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);">💳 Cardlock</div>
+          <span id="f-cardlock-lbl" style="font-size:11px;font-weight:700;color:var(--accent);">All Stages</span>
+        </div>
+        <div style="position:relative;padding:0 0 22px;">
+          <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
+            <div id="f-cardlock-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-cardlock-dots"></div>
         </div>
       </div>
 
       <!-- PROPANE PIPELINE -->
       <div class="sb-sec" style="padding-top:0;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">🔥 Propane</div>
-        <div class="pills">
-          <span class="pill on" data-f="opp_product" data-pf="propane" data-v="all_propane">All</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Lead Captured">Lead</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Qualified">Qualified</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Fact-Finding">Fact-Find</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Proposal Sent">Proposal</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Credit Application">Credit</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
-          <span class="pill" data-f="opp_product" data-pf="propane" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);">🔥 Propane</div>
+          <span id="f-propane-lbl" style="font-size:11px;font-weight:700;color:var(--accent);">All Stages</span>
+        </div>
+        <div style="position:relative;padding:0 0 22px;">
+          <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
+            <div id="f-propane-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-propane-dots"></div>
         </div>
       </div>
 
       <!-- UCO PIPELINE -->
       <div class="sb-sec" style="padding-top:0;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px;">🍳 Used Cooking Oil</div>
-        <div class="pills">
-          <span class="pill on" data-f="opp_product" data-pf="uco" data-v="all_uco">All</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Lead Captured">Lead</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Qualified">Qualified</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Fact-Finding">Fact-Find</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Proposal Sent">Proposal</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Credit Application">Credit</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Won Opportunity" style="color:#059669;border-color:#059669;">Won ✓</span>
-          <span class="pill" data-f="opp_product" data-pf="uco" data-sv="Lost" style="color:#dc2626;border-color:#dc2626;">Lost ✗</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);">🍳 Used Cooking Oil</div>
+          <span id="f-uco-lbl" style="font-size:11px;font-weight:700;color:var(--accent);">All Stages</span>
+        </div>
+        <div style="position:relative;padding:0 0 22px;">
+          <div style="height:4px;background:var(--paper2);border-radius:2px;position:relative;margin:8px 0 0;">
+            <div id="f-uco-fill" style="position:absolute;left:0;top:0;height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .2s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;position:relative;margin-top:-6px;" id="f-uco-dots"></div>
         </div>
       </div>
 
@@ -1175,6 +1167,7 @@ async function startApp() {
   await loadData();
   prog(70, 'Loading opportunities...');
   await loadOppCache();
+  initOppFilterSliders();
   prog(80, 'Placing pins...');
   if (map.isStyleLoaded()) {
     renderPins();
@@ -3957,6 +3950,112 @@ async function saveOpportunities() {
     btn.textContent = 'Save Opportunities'; btn.disabled = false;
   }
 }
+// ── OPP FILTER SLIDERS ──
+var OPP_FILTER_STAGES = ['all','Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity','Lost'];
+var OPP_FILTER_LABELS = ['All','Lead','Qualified','Fact-Find','Proposal','Credit','Won ✓','Lost ✗'];
+var OPP_FILTER_PRODUCTS = [
+  {key:'lubricants',   id:'lube'},
+  {key:'fuel_delivery',id:'fuel'},
+  {key:'cardlock',     id:'cardlock'},
+  {key:'propane',      id:'propane'},
+  {key:'uco',          id:'uco'}
+];
+var _oppFilterState = {};
+
+function initOppFilterSliders() {
+  OPP_FILTER_PRODUCTS.forEach(function(p){
+    _oppFilterState[p.key] = 'all';
+    var dotsEl = document.getElementById('f-'+p.id+'-dots');
+    if (!dotsEl) return;
+    dotsEl.innerHTML = OPP_FILTER_STAGES.map(function(s,i){
+      var label = OPP_FILTER_LABELS[i];
+      var isAll = s==='all';
+      var oc = 'setOppFilterStage(&quot;'+p.key+'&quot;,&quot;'+p.id+'&quot;,&quot;'+s+'&quot;)';
+      return '<div class="pipe-dot'+(isAll?' active':'')+'" onclick="'+oc+'" title="'+(isAll?'All Stages':s)+'">'+
+        '<div class="pipe-dot-circle'+(isAll?' active':'')+(s==='Won Opportunity'?' won':s==='Lost'?' lost':'')+'"></div>'+
+        '<div class="pipe-dot-label">'+label+'</div>'+
+      '</div>';
+    }).join('');
+  });
+}
+
+function setOppFilterStage(productKey, productId, stage) {
+  // Reset all other product sliders to All when selecting a specific product+stage
+  if (stage !== 'all') {
+    OPP_FILTER_PRODUCTS.forEach(function(p){
+      if (p.key !== productKey) {
+        _oppFilterState[p.key] = 'all';
+        _resetOppSlider(p.id);
+      }
+    });
+  }
+  _oppFilterState[productKey] = stage;
+  var STAGES = OPP_FILTER_STAGES;
+  var idx = STAGES.indexOf(stage);
+  var isAll = stage === 'all';
+  var isWon = stage === 'Won Opportunity';
+  var isLost = stage === 'Lost';
+  var color = isWon ? '#059669' : isLost ? '#dc2626' : 'var(--accent)';
+  var pct = isAll ? 0 : Math.round((idx/(STAGES.length-1))*100);
+
+  var fill = document.getElementById('f-'+productId+'-fill');
+  if (fill){ fill.style.width=pct+'%'; fill.style.background=color; }
+
+  var lbl = document.getElementById('f-'+productId+'-lbl');
+  if (lbl){ lbl.textContent=isAll?'All Stages':OPP_FILTER_LABELS[idx]; lbl.style.color=color; }
+
+  var dotsEl = document.getElementById('f-'+productId+'-dots');
+  if (dotsEl) {
+    dotsEl.querySelectorAll('.pipe-dot').forEach(function(dot,i){
+      var s = STAGES[i];
+      var isActive = s===stage;
+      var isPast = !isAll && i>0 && i<idx;
+      var circle = dot.querySelector('.pipe-dot-circle');
+      circle.className = 'pipe-dot-circle';
+      if (isActive && s==='Won Opportunity') circle.classList.add('won-active');
+      else if (isActive && s==='Lost') circle.classList.add('lost-active');
+      else if (isActive) circle.classList.add('active');
+      else if (isPast) circle.classList.add('past');
+      else if (s==='Won Opportunity') circle.classList.add('won');
+      else if (s==='Lost') circle.classList.add('lost');
+      dot.classList.toggle('active', isActive||(isAll&&i===0));
+      dot.classList.toggle('past', isPast);
+    });
+  }
+
+  document.querySelectorAll('[data-f="opp_product"][data-v="all"],[data-f="opp_product"][data-v="none"]').forEach(function(x){ x.classList.remove('on'); });
+
+  if (!isAll) {
+    filters.opp_product = productKey;
+    filters.opp_stage   = stage;
+  } else {
+    filters.opp_product = 'all';
+    filters.opp_stage   = 'all';
+    var allPill = document.querySelector('[data-f="opp_product"][data-v="all"]');
+    if (allPill) allPill.classList.add('on');
+  }
+}
+
+function _resetOppSlider(productId) {
+  var fill = document.getElementById('f-'+productId+'-fill');
+  if (fill){ fill.style.width='0%'; fill.style.background='var(--accent)'; }
+  var lbl = document.getElementById('f-'+productId+'-lbl');
+  if (lbl){ lbl.textContent='All Stages'; lbl.style.color='var(--accent)'; }
+  var dotsEl = document.getElementById('f-'+productId+'-dots');
+  if (dotsEl) {
+    dotsEl.querySelectorAll('.pipe-dot').forEach(function(dot,i){
+      var s = OPP_FILTER_STAGES[i];
+      var circle = dot.querySelector('.pipe-dot-circle');
+      circle.className = 'pipe-dot-circle';
+      if (s==='Won Opportunity') circle.classList.add('won');
+      else if (s==='Lost') circle.classList.add('lost');
+      else if (i===0) circle.classList.add('active');
+      dot.classList.toggle('active', i===0);
+      dot.classList.remove('past');
+    });
+  }
+}
+
 function activateTool(t) {
   if (activeTool===t) { deactivate(); return; }
   deactivate(); activeTool = t;
@@ -3986,23 +4085,18 @@ function onDraw(e) {
   applyFilters();
 }
 function clearFilters() {
-  filters = {
-    opp:'all', contact:'all', industry:'all', pipeline:'all',
-    subIndustry:'all', status:'all', rep:'all',
-    opp_product:'all', opp_stage:'all', opp_min_volume:0,
-    opp_lube_stage:'all', opp_fuel_stage:'all', opp_cardlock_stage:'all',
-    opp_propane_stage:'all', opp_uco_stage:'all'
-  };
+  filters = { opp:'all', contact:'all', industry:'all', pipeline:'all', subIndustry:'all', status:'all', rep:'all', opp_product:'all', opp_stage:'all', opp_min_volume:0 };
   filtersApplied = false;
   filteredData = [];
   setPipelineStage('all', null);
   var repEl = document.getElementById('s-rep');
   if (repEl) repEl.value = 'all';
-  // Reset all per-product pipeline pills
-  document.querySelectorAll('[data-pf]').forEach(function(x){ x.classList.remove('on'); });
-  document.querySelectorAll('[data-v^="all_"]').forEach(function(x){ x.classList.add('on'); });
-  document.querySelectorAll('[data-v="all"]').forEach(function(x){ x.classList.add('on'); });
-  document.querySelectorAll('[data-v="none"]').forEach(function(x){ x.classList.remove('on'); }); // reset slider
+  // Reset opp filter sliders
+  if (typeof OPP_FILTER_PRODUCTS !== 'undefined') {
+    OPP_FILTER_PRODUCTS.forEach(function(p){ _oppFilterState[p.key]='all'; _resetOppSlider(p.id); });
+  }
+  document.querySelectorAll('[data-f="opp_product"][data-v="all"]').forEach(function(x){ x.classList.add('on'); });
+  document.querySelectorAll('[data-f="opp_product"][data-v="none"]').forEach(function(x){ x.classList.remove('on'); });
   selectedIndustries = [];
   selectedSubIndustries = [];
   document.querySelectorAll('.ind-opt').forEach(function(o){ o.classList.remove('on'); });
