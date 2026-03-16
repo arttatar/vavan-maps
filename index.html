@@ -3870,12 +3870,27 @@ function renderDetailPanel(b) {
               '</span></div>';
           }).join('');
         })()+
-        // 9. Location type, Visited — only if set
+        // 9. Location type — only if set
         (b.location_type ? '<div class="det-field-row"><span class="det-field-label">Location Type</span><span class="det-field-value">'+b.location_type+'</span></div>' : '')+
-        '<div class="det-field-row"><span class="det-field-label">Visited</span>'+
-          '<span class="det-field-value">'+
-            '<button onclick="toggleVisited()" style="background:'+(b.visited?'#f0fdf4':'var(--paper2)')+';color:'+(b.visited?'#059669':'var(--muted)')+';border:1px solid '+(b.visited?'#059669':'var(--border)')+';border-radius:100px;padding:3px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">'+
-            (b.visited?'✓ Visited':'Mark Visited')+'</button></span></div>'+
+        // ── QUICK LOG — always at bottom of profile ──
+        '<div style="border-top:1px solid var(--border);margin-top:.5rem;padding-top:.875rem;">'+
+          '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">Log Activity</div>'+
+          '<div style="display:flex;gap:8px;margin-bottom:.75rem;">'+
+            '<button onclick="_openActivitySheet(\'contacted\')" style="flex:1;padding:9px;border:1.5px solid #059669;border-radius:9px;background:'+(b.visited?'#f0fdf4':'#fff')+';color:#059669;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'+
+              'Contacted'+
+            '</button>'+
+            '<button onclick="_openActivitySheet(\'visited\')" style="flex:1;padding:9px;border:1.5px solid #d97706;border-radius:9px;background:'+(b.visited?'#fff7e6':'#fff')+';color:#d97706;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
+              (b.visited ? '✓ Visited' : 'Visited')+
+            '</button>'+
+          '</div>'+
+          // Quick note inline
+          '<div style="display:flex;gap:6px;">'+
+            '<textarea id="quick-note-input" placeholder="Add a note..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:Inter,sans-serif;color:var(--ink);background:var(--paper);outline:none;resize:none;min-height:56px;"></textarea>'+
+            '<button onclick="_saveQuickNote()" style="align-self:flex-end;padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Add</button>'+
+          '</div>'+
+        '</div>'+
       '</div>'+
       // Edit mode — shows ALL fields regardless of whether they're set
       '<div id="det-edit" class="det-edit-form">'+
@@ -3954,14 +3969,6 @@ function renderDetailPanel(b) {
 
     // ── SECTION 3: ACTIVITY ──
     '<div id="det-activity" class="det-section">'+
-      '<div class="activity-actions">'+
-        '<button class="act-btn contacted" onclick="logActivity(\'contacted\')">Contacted</button>'+
-        '<button class="act-btn visited" onclick="logActivity(\'visited\')">Visited</button>'+
-      '</div>'+
-      '<div class="note-input-wrap">'+
-        '<textarea class="note-input" id="note-input" placeholder="Add a note..."></textarea>'+
-        '<button class="note-submit-btn" onclick="saveNote()">Add</button>'+
-      '</div>'+
       '<div id="activity-feed"><div class="det-empty">Loading activity...</div></div>'+
     '</div>'+
 
@@ -4442,6 +4449,162 @@ async function loadActivity(b) {
   } catch(e) {
     el.innerHTML = '<div class="det-empty">Could not load activity.</div>';
   }
+}
+
+// ── QUICK LOG SHEET ──
+var CONTACTED_OPTIONS = [
+  'Spoke with owner',
+  'Spoke with manager',
+  'Left voicemail',
+  'Call back later',
+  'Sent email',
+  'Not interested',
+  'Wrong number'
+];
+var VISITED_OPTIONS = [
+  'Spoke with owner',
+  'Spoke with manager',
+  'Left flyer / brochure',
+  'Call back later',
+  'Not interested',
+  'Not a valid prospect',
+  'Requested quote'
+];
+
+function _openActivitySheet(type) {
+  _removeActivitySheet();
+  var biz = lastSelectedBiz; if (!biz) return;
+  var opts = type === 'contacted' ? CONTACTED_OPTIONS : VISITED_OPTIONS;
+  var color = type === 'contacted' ? '#059669' : '#d97706';
+  var title = type === 'contacted' ? 'Contacted' : 'Visited';
+
+  var overlay = document.createElement('div');
+  overlay.id = 'activity-sheet-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;bottom:60px;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:flex-end;justify-content:center;font-family:Inter,sans-serif;';
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) _removeActivitySheet(); });
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'background:#fff;width:100%;max-width:480px;border-radius:16px 16px 0 0;overflow:hidden;box-shadow:0 -4px 32px rgba(0,0,0,.18);';
+
+  var optsHtml = opts.map(function(o){
+    return '<button onclick="_selectActivityOption(\''+type+'\',\''+o.replace(/'/g,"\\'")+'\')" style="width:100%;text-align:left;padding:13px 20px;background:none;border:none;border-bottom:1px solid #f5f5f5;font-size:14px;font-weight:500;color:#0d0d14;cursor:pointer;font-family:Inter,sans-serif;">'+o+'</button>';
+  }).join('');
+
+  sheet.innerHTML =
+    '<div style="padding:12px 20px 10px;border-bottom:1px solid #f0f0f0;">'+
+      '<div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px;"></div>'+
+      '<div style="font-size:16px;font-weight:700;color:'+color+';">'+title+'</div>'+
+      '<div style="font-size:12px;color:#999;margin-top:2px;">Select outcome or tap Skip to just log the '+type+'</div>'+
+    '</div>'+
+    optsHtml+
+    '<button onclick="_selectActivityOption(\''+type+'\',\'\')" style="width:100%;padding:14px 20px;background:none;border:none;font-size:14px;font-weight:600;color:#999;cursor:pointer;font-family:Inter,sans-serif;border-top:6px solid #f5f5f5;">Skip — just log '+title+'</button>';
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  sheet.style.transform = 'translateY(100%)';
+  sheet.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ sheet.style.transform='translateY(0)'; }); });
+}
+
+function _removeActivitySheet() {
+  var el = document.getElementById('activity-sheet-overlay');
+  if (el) el.remove();
+}
+
+function _selectActivityOption(type, outcome) {
+  _removeActivitySheet();
+  // If outcome selected, open note prompt; if skip, log immediately
+  if (outcome) {
+    _openActivityNote(type, outcome);
+  } else {
+    _doLogActivity(type, '');
+  }
+}
+
+function _openActivityNote(type, outcome) {
+  _removeActivitySheet();
+  var biz = lastSelectedBiz; if (!biz) return;
+  var color = type === 'contacted' ? '#059669' : '#d97706';
+
+  var overlay = document.createElement('div');
+  overlay.id = 'activity-sheet-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;bottom:60px;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:flex-end;justify-content:center;font-family:Inter,sans-serif;';
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) _removeActivitySheet(); });
+
+  var sheet = document.createElement('div');
+  sheet.style.cssText = 'background:#fff;width:100%;max-width:480px;border-radius:16px 16px 0 0;overflow:hidden;box-shadow:0 -4px 32px rgba(0,0,0,.18);padding-bottom:env(safe-area-inset-bottom,16px);';
+  sheet.innerHTML =
+    '<div style="padding:12px 20px 10px;border-bottom:1px solid #f0f0f0;">'+
+      '<div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 12px;"></div>'+
+      '<div style="font-size:15px;font-weight:700;color:'+color+';">'+outcome+'</div>'+
+      '<div style="font-size:12px;color:#999;margin-top:2px;">Add a note (optional)</div>'+
+    '</div>'+
+    '<div style="padding:16px 20px;">'+
+      '<textarea id="activity-note-input" placeholder="Add details..." style="width:100%;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;font-family:Inter,sans-serif;color:#0d0d14;resize:none;min-height:80px;outline:none;box-sizing:border-box;"></textarea>'+
+      '<div style="display:flex;gap:10px;margin-top:12px;">'+
+        '<button onclick="_removeActivitySheet()" style="flex:1;padding:11px;background:#f3f4f6;border:none;border-radius:9px;font-size:14px;font-weight:600;color:#555;cursor:pointer;font-family:Inter,sans-serif;">Skip</button>'+
+        '<button onclick="_doLogActivity(\''+type+'\',\''+outcome.replace(/'/g,"\\'")+'\')" style="flex:2;padding:11px;background:'+color+';border:none;border-radius:9px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">Save</button>'+
+      '</div>'+
+    '</div>';
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+  sheet.style.transform = 'translateY(100%)';
+  sheet.style.transition = 'transform .28s cubic-bezier(.4,0,.2,1)';
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    sheet.style.transform='translateY(0)';
+    setTimeout(function(){ var ta=document.getElementById('activity-note-input'); if(ta) ta.focus(); }, 300);
+  }); });
+}
+
+async function _doLogActivity(type, outcome) {
+  var biz = lastSelectedBiz; if (!biz) return;
+  var noteEl = document.getElementById('activity-note-input');
+  var note = (noteEl ? noteEl.value.trim() : '');
+  _removeActivitySheet();
+  var byName = currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown';
+  var fullNote = outcome ? (outcome + (note ? ': ' + note : '')) : (note || '');
+
+  try {
+    // Mark as visited if type is visited
+    if (type === 'visited' && !biz.visited) {
+      await sb.from('businesses').update({visited:true, updated_at:new Date().toISOString()}).eq('id',biz.id||biz._id);
+      biz.visited = true;
+      if (_bizById[biz._id]) _bizById[biz._id].visited = true;
+    }
+    await sb.from('activity').insert({
+      business_id: String(biz.id||biz._id),
+      type: type,
+      note: fullNote,
+      client_id: currentProfile ? currentProfile.client_id : null,
+      created_by: byName
+    });
+    _showToast(type === 'contacted' ? 'Logged: Contacted' : 'Logged: Visited');
+    // Refresh profile to update visited button state
+    renderDetailPanel(biz);
+    switchTab('profile');
+    // Reload activity feed in background
+    loadActivity(biz);
+  } catch(e) { _showToast('Save failed'); }
+}
+
+async function _saveQuickNote() {
+  var biz = lastSelectedBiz; if (!biz) return;
+  var el = document.getElementById('quick-note-input');
+  var note = el ? el.value.trim() : '';
+  if (!note) return;
+  var byName = currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown';
+  try {
+    await sb.from('activity').insert({
+      business_id: String(biz.id||biz._id),
+      type: 'note', note: note,
+      client_id: currentProfile ? currentProfile.client_id : null,
+      created_by: byName
+    });
+    if (el) el.value = '';
+    _showToast('Note saved');
+    loadActivity(biz);
+  } catch(e) { _showToast('Save failed'); }
 }
 
 async function logActivity(type) {
