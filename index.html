@@ -3494,27 +3494,72 @@ function renderOpportunities(b, opp) {
   var el = document.getElementById('opp-body');
   if (!el) return;
 
-  var html = '<div style="padding:.25rem 0 .5rem;font-size:11px;color:var(--muted);">Track what this business currently uses and who supplies them.</div>';
+  var STAGES = ['Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
+  var STAGE_SHORT = ['Lead','Qualified','Fact-Find','Proposal','Credit','Won ✓'];
+  var STAGE_COLORS = {
+    'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706',
+    'Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669'
+  };
+
+  function miniPipeline(key, currentStage) {
+    var stageIdx = STAGES.indexOf(currentStage);
+    if (stageIdx < 0) stageIdx = 0;
+    var stageColor = currentStage === 'Won Opportunity' ? '#059669' : (STAGE_COLORS[currentStage] || '#9b93d4');
+    var pct = Math.round((stageIdx / (STAGES.length-1)) * 100);
+    var dots = STAGES.map(function(s, i){
+      var isActive = i === stageIdx;
+      var isPast = i < stageIdx;
+      var isWon = s === 'Won Opportunity' && isActive;
+      var dotBg = isActive ? (isWon ? '#059669' : stageColor) : isPast ? stageColor : '#fff';
+      var dotBorder = (isActive||isPast) ? (isWon?'#059669':stageColor) : 'var(--border)';
+      var opacity = isPast ? '.55' : '1';
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;position:relative;z-index:1;" '+
+        'onclick="setOppStage(\''+key+'\',\''+s+'\')" title="'+s+'">'+
+        '<div style="width:14px;height:14px;border-radius:50%;border:2px solid '+dotBorder+';background:'+dotBg+';transition:all .2s;flex-shrink:0;box-shadow:0 0 0 2px #fff;opacity:'+opacity+'"></div>'+
+        '<div style="font-size:8px;font-weight:600;color:'+(isActive?stageColor:'var(--muted)')+';white-space:nowrap;text-align:center;line-height:1.2;">'+STAGE_SHORT[i]+'</div>'+
+      '</div>';
+    }).join('');
+
+    return '<div style="margin:.5rem 0 .75rem;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'+
+        '<span style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Pipeline Stage</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+stageColor+';" id="opp-stage-lbl-'+key+'">'+(currentStage||'Lead Captured')+'</span>'+
+      '</div>'+
+      '<div style="position:relative;padding-bottom:20px;">'+
+        '<div style="position:absolute;left:0;right:0;top:7px;height:4px;background:var(--paper2);border-radius:2px;">'+
+          '<div style="position:absolute;left:0;top:0;height:100%;width:'+pct+'%;background:'+stageColor+';border-radius:2px;transition:width .3s;" id="opp-stage-fill-'+key+'"></div>'+
+        '</div>'+
+        '<div style="position:relative;display:flex;justify-content:space-between;">'+dots+'</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  var html = '<div style="padding:.25rem 0 .5rem;font-size:11px;color:var(--muted);">Track usage, supplier, volume and pipeline stage per product.</div>';
 
   OPP_PRODUCTS.forEach(function(p) {
     var isOn = opp['uses_'+p.key] || false;
     var supplier = opp[p.field+'_supplier'] || '';
     var gallons = opp[p.field+'_gallons'] || 0;
-    var summaryText = isOn ? (supplier ? supplier + ' · ' : '') + fmtGallons(gallons) : 'Not tracked';
+    var stage = opp[p.field+'_stage'] || 'Lead Captured';
+    var stageColor = stage === 'Won Opportunity' ? '#059669' : (STAGE_COLORS[stage] || '#9b93d4');
+    var summaryText = isOn
+      ? (supplier ? supplier+' · ' : '') + fmtGallons(gallons) + ' · <span style="color:'+stageColor+';font-weight:600;">'+stage+'</span>'
+      : 'Not tracked';
 
     html +=
       '<div class="opp-product">'+
         '<div class="opp-product-header">'+
-          '<div>'+
+          '<div style="flex:1;min-width:0;">'+
             '<div class="opp-product-name">'+p.label+'</div>'+
             '<div class="opp-summary" id="opp-summary-'+p.key+'">'+summaryText+'</div>'+
           '</div>'+
-          '<label class="opp-toggle">'+
+          '<label class="opp-toggle" style="flex-shrink:0;margin-left:8px;">'+
             '<input type="checkbox" id="opp-on-'+p.key+'" '+(isOn?'checked':'')+' onchange="toggleOppFields(\''+p.key+'\')">'+
             '<span class="opp-toggle-slider"></span>'+
           '</label>'+
         '</div>'+
         '<div class="opp-fields'+(isOn?' active':'')+'" id="opp-fields-'+p.key+'">'+
+          miniPipeline(p.key, stage)+
           '<label class="opp-field-label">Current Supplier</label>'+
           '<input class="opp-supplier-input" id="opp-sup-'+p.key+'" placeholder="e.g. Shell, Chevron, Local co-op..." value="'+supplier+'">'+
           '<label class="opp-field-label">Volume ('+p.unit+')</label>'+
@@ -3528,6 +3573,45 @@ function renderOpportunities(b, opp) {
 
   html += '<button class="opp-save-btn" id="opp-save-btn" onclick="saveOpportunities()">Save Opportunities</button>';
   el.innerHTML = html;
+}
+
+function setOppStage(key, stage) {
+  var STAGE_COLORS = {
+    'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706',
+    'Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669'
+  };
+  var STAGES = ['Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity'];
+  var stageColor = stage === 'Won Opportunity' ? '#059669' : (STAGE_COLORS[stage] || '#9b93d4');
+  var stageIdx = STAGES.indexOf(stage);
+  var pct = Math.round((stageIdx / (STAGES.length-1)) * 100);
+
+  // Update label
+  var lbl = document.getElementById('opp-stage-lbl-'+key);
+  if (lbl) { lbl.textContent = stage; lbl.style.color = stageColor; }
+
+  // Update fill bar
+  var fill = document.getElementById('opp-stage-fill-'+key);
+  if (fill) { fill.style.width = pct+'%'; fill.style.background = stageColor; }
+
+  // Update dots
+  var container = fill ? fill.closest('[style*="padding-bottom"]') : null;
+  if (container) {
+    var dots = container.querySelectorAll('div[style*="border-radius:50%"]');
+    dots.forEach(function(dot, i){
+      var isActive = i === stageIdx;
+      var isPast = i < stageIdx;
+      var isWon = STAGES[i] === 'Won Opportunity' && isActive;
+      var c = isActive ? (isWon?'#059669':stageColor) : isPast ? stageColor : '#fff';
+      var border = (isActive||isPast) ? (isWon?'#059669':stageColor) : 'var(--border)';
+      dot.style.background = c;
+      dot.style.borderColor = border;
+      dot.style.opacity = isPast ? '.55' : '1';
+    });
+  }
+
+  // Store on a data attribute so saveOpportunities can read it
+  var fields = document.getElementById('opp-fields-'+key);
+  if (fields) fields.dataset.stage = stage;
 }
 
 function toggleOppFields(key) {
@@ -3555,12 +3639,14 @@ async function saveOpportunities() {
   };
 
   OPP_PRODUCTS.forEach(function(p){
-    var cb  = document.getElementById('opp-on-'+p.key);
-    var sup = document.getElementById('opp-sup-'+p.key);
-    var vol = document.getElementById('opp-vol-'+p.key);
-    payload['uses_'+p.key]          = cb  ? cb.checked : false;
-    payload[p.field+'_supplier']    = sup ? sup.value.trim() : '';
-    payload[p.field+'_gallons']     = vol ? parseInt(vol.value)||0 : 0;
+    var cb     = document.getElementById('opp-on-'+p.key);
+    var sup    = document.getElementById('opp-sup-'+p.key);
+    var vol    = document.getElementById('opp-vol-'+p.key);
+    var fields = document.getElementById('opp-fields-'+p.key);
+    payload['uses_'+p.key]       = cb  ? cb.checked : false;
+    payload[p.field+'_supplier'] = sup ? sup.value.trim() : '';
+    payload[p.field+'_gallons']  = vol ? parseInt(vol.value)||0 : 0;
+    payload[p.field+'_stage']    = fields && fields.dataset.stage ? fields.dataset.stage : 'Lead Captured';
   });
 
   try {
@@ -3568,14 +3654,22 @@ async function saveOpportunities() {
       .upsert(payload, { onConflict: 'business_id,client_id' });
     if (r.error) throw r.error;
 
+    // Update cache
+    _oppCache[String(b.id||b._id)] = payload;
+
     // Update summary lines
+    var STAGE_COLORS = {'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669'};
     OPP_PRODUCTS.forEach(function(p){
       var sumEl = document.getElementById('opp-summary-'+p.key);
       if (sumEl) {
         var isOn = payload['uses_'+p.key];
         var sup  = payload[p.field+'_supplier'];
         var gal  = payload[p.field+'_gallons'];
-        sumEl.textContent = isOn ? (sup ? sup+' · ' : '') + fmtGallons(gal) : 'Not tracked';
+        var stg  = payload[p.field+'_stage'] || 'Lead Captured';
+        var sc   = stg === 'Won Opportunity' ? '#059669' : (STAGE_COLORS[stg]||'#9b93d4');
+        sumEl.innerHTML = isOn
+          ? (sup ? sup+' · ' : '') + fmtGallons(gal) + ' · <span style="color:'+sc+';font-weight:600;">'+stg+'</span>'
+          : 'Not tracked';
       }
     });
 
@@ -3585,7 +3679,9 @@ async function saveOpportunities() {
       await sb.from('activity').insert({
         business_id: String(b.id||b._id),
         type: 'opportunities',
-        note: 'Opportunities updated: ' + active.map(function(p){ return p.label+' ('+fmtGallons(payload[p.field+'_gallons'])+')'; }).join(', '),
+        note: 'Opportunities updated: ' + active.map(function(p){
+          return p.label+' — '+fmtGallons(payload[p.field+'_gallons'])+' ('+payload[p.field+'_stage']+')';
+        }).join(', '),
         client_id: currentProfile ? currentProfile.client_id : null,
         created_by: currentProfile ? (currentProfile.full_name||'') : ''
       });
