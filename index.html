@@ -419,6 +419,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .act-icon.note{background:#f0f4ff;color:#4a36c8;}
 .act-icon.contacted{background:#f0fdf4;color:#059669;}
 .act-icon.visited{background:#fff7e6;color:#d97706;}
+.act-icon.pipeline{background:#fdf4ff;color:#9333ea;}
 .act-content{flex:1;}
 .act-text{font-size:12px;color:var(--ink);line-height:1.4;margin-bottom:2px;}
 .act-time{font-size:10px;color:var(--muted);}
@@ -3122,18 +3123,30 @@ async function saveBusinessEdits() {
 // ── PIPELINE STAGE DOT CLICK (in detail hero) ──
 async function setDetailStage(stage) {
   var b = lastSelectedBiz; if (!b) return;
+  var prevStage = b.pipeline_stage || 'Lead Captured';
+  if (stage === prevStage) return; // no change, do nothing
+
   try {
+    // Update business pipeline stage
     var r = await sb.from('businesses').update({
       pipeline_stage: stage,
       updated_at: new Date().toISOString()
     }).eq('id', b.id||b._id);
     if (r.error) throw r.error;
+
+    // Log the stage change to activity
+    await sb.from('activity').insert({
+      business_id: String(b.id||b._id),
+      type: 'pipeline',
+      note: 'Pipeline moved from "' + prevStage + '" → "' + stage + '"'
+    });
+
     b.pipeline_stage = stage;
     b.score = calcScore(b);
     renderDetailPanel(b);
-    switchTab('profile');
+    switchTab('activity'); // switch to activity so they see the new log entry
   } catch(e) {
-    // Update locally even if save fails — save will retry on next edit
+    // Update locally even if save fails
     b.pipeline_stage = stage;
     b.score = calcScore(b);
     renderDetailPanel(b);
@@ -3217,9 +3230,9 @@ async function loadActivity(b) {
       return;
     }
     el.innerHTML = '<div class="activity-feed">'+r.data.map(function(a){
-      var icon = a.type==='contacted'?'📞':a.type==='visited'?'📍':'💬';
-      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':'note';
-      var text = a.type==='note' ? a.note : (a.type.charAt(0).toUpperCase()+a.type.slice(1));
+      var icon = a.type==='contacted'?'📞':a.type==='visited'?'📍':a.type==='pipeline'?'🔄':'💬';
+      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'?'pipeline':'note';
+      var text = a.type==='note' ? a.note : a.type==='pipeline' ? a.note : (a.type.charAt(0).toUpperCase()+a.type.slice(1));
       return '<div class="activity-item">'+
         '<div class="act-icon '+iconCls+'">'+icon+'</div>'+
         '<div class="act-content">'+
