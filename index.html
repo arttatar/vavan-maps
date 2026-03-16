@@ -3783,7 +3783,7 @@ function renderDetailPanel(b) {
         '<div class="edit-field-group"><label class="edit-field-label">Location Type</label>'+
           '<select class="edit-input" id="edit-location-type">'+
             '<option value="">— Select type —</option>'+
-            ['Business Office','Yard','Job Site','Warehouse','Shop / Garage','Truck Stop','Farm','Plant / Facility','Other'].map(function(t){
+            ['Business Address','Office','Yard','Job Site','Other'].map(function(t){
               return '<option value="'+t+'"'+((b.location_type||'')=== t?' selected':'')+'>'+t+'</option>';
             }).join('')+
           '</select></div>'+
@@ -5414,14 +5414,10 @@ function onMapClick(e) {
           <label class="abiz-label">Location Type</label>
           <select class="abiz-select" id="ab-location-type">
             <option value="">Select type</option>
-            <option value="Business Office">Business Office</option>
+            <option value="Business Address">Business Address</option>
+            <option value="Office">Office</option>
             <option value="Yard">Yard</option>
             <option value="Job Site">Job Site</option>
-            <option value="Warehouse">Warehouse</option>
-            <option value="Shop / Garage">Shop / Garage</option>
-            <option value="Truck Stop">Truck Stop</option>
-            <option value="Farm">Farm</option>
-            <option value="Plant / Facility">Plant / Facility</option>
             <option value="Other">Other</option>
           </select>
         </div>
