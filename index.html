@@ -613,24 +613,6 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   backdrop-filter:blur(2px);
 }
 #add-biz-modal.open{ display:flex; }
-@media(max-width:768px){
-  #sidebar{
-    left:0 !important;
-    right:0 !important;
-    top:auto !important;
-    bottom:0 !important;
-    width:100% !important;
-    height:55vh !important;
-    min-height:80px !important;
-    max-height:calc(100vh - 60px) !important;
-    border-radius:20px 20px 0 0 !important;
-    transform:translateY(110%) !important;
-    transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
-    box-shadow:0 -4px 32px rgba(0,0,0,.22) !important;
-    overflow:hidden !important;
-  }
-  #sidebar.open{ transform:translateY(0) !important; }
-}
 @media(min-width:769px){
   #add-biz-modal{ align-items:center; }
   #add-biz-inner{ border-radius:16px !important; max-height:90vh; width:480px !important; }
@@ -2503,17 +2485,27 @@ function _bsOpen(panelId, pct, closeFn) {
   var el = document.getElementById(panelId);
   if (!el) return;
 
-  // Use innerHeight for true full-screen on mobile
   var vh = window.innerHeight;
   var targetH = Math.round(vh * pct / 100);
 
   el.classList.add('open');
-  el.style.cssText += ';position:fixed!important;bottom:0!important;top:auto!important;left:0!important;right:0!important;width:100%!important;border-radius:20px 20px 0 0!important;transform:translateY(100%);transition:none;height:' + targetH + 'px!important;';
+  // Set all positioning via setProperty so !important overrides CSS
+  el.style.setProperty('position', 'fixed', 'important');
+  el.style.setProperty('bottom', '0', 'important');
+  el.style.setProperty('top', 'auto', 'important');
+  el.style.setProperty('left', '0', 'important');
+  el.style.setProperty('right', '0', 'important');
+  el.style.setProperty('width', '100%', 'important');
+  el.style.setProperty('max-height', '100vh', 'important');
+  el.style.setProperty('border-radius', '20px 20px 0 0', 'important');
+  el.style.setProperty('height', targetH + 'px', 'important');
+  el.style.setProperty('transform', 'translateY(100%)', 'important');
+  el.style.setProperty('transition', 'none', 'important');
 
   requestAnimationFrame(function() {
     requestAnimationFrame(function() {
-      el.style.transition = 'transform .35s cubic-bezier(.2,.8,.3,1)';
-      el.style.transform = 'translateY(0)';
+      el.style.setProperty('transition', 'transform .35s cubic-bezier(.2,.8,.3,1)', 'important');
+      el.style.setProperty('transform', 'translateY(0)', 'important');
       el._bsPct = pct;
       el._bsCloseFn = closeFn;
     });
@@ -2549,10 +2541,10 @@ function _bsSnapToNearest(el, currentPct, velocity, snaps) {
 }
 
 function _bsSnap(el, pct) {
-  var targetH = window.innerHeight - _bsPx(pct);
-  el.style.transition = 'height .3s cubic-bezier(.2,.8,.3,1), transform .3s cubic-bezier(.2,.8,.3,1)';
-  el.style.height = targetH + 'px';
-  el.style.transform = 'translateY(0)';
+  var targetH = Math.round(window.innerHeight * pct / 100);
+  el.style.setProperty('transition', 'height .3s cubic-bezier(.2,.8,.3,1), transform .3s cubic-bezier(.2,.8,.3,1)', 'important');
+  el.style.setProperty('height', targetH + 'px', 'important');
+  el.style.setProperty('transform', 'translateY(0)', 'important');
   el._bsPct = pct;
 }
 
