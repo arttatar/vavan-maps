@@ -2689,17 +2689,28 @@ var _soSelectedStatuses = [];
 var _soSearchTimer = null;
 
 function openSearchOverlay() {
+  var overlay = document.getElementById('search-overlay');
+  if (!overlay) return;
   _soSelectedInds = Array.isArray(filters.industry) ? filters.industry.slice() : [];
   _soSelectedStatuses = filters.statuses ? filters.statuses.slice() : [];
   _soSyncUI();
-  document.getElementById('search-overlay').classList.add('open');
-  setTimeout(function(){ document.getElementById('search-overlay-input').focus(); }, 150);
+  overlay.style.display = 'flex';
+  overlay.classList.add('open');
+  setTimeout(function(){
+    var inp = document.getElementById('search-overlay-input');
+    if (inp) inp.focus();
+  }, 150);
 }
 
 function closeSearchOverlay() {
-  document.getElementById('search-overlay').classList.remove('open');
-  document.getElementById('search-overlay-input').value = '';
-  document.getElementById('so-results').style.display = 'none';
+  var overlay = document.getElementById('search-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  overlay.style.display = 'none';
+  var inp = document.getElementById('search-overlay-input');
+  if (inp) inp.value = '';
+  var res = document.getElementById('so-results');
+  if (res) res.style.display = 'none';
   var clr = document.getElementById('so-clear');
   if (clr) clr.style.display = 'none';
 }
