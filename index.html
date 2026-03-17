@@ -3141,7 +3141,7 @@ function navTo(tab) {
     if (fs) fs.scrollTop = 0;
     _initTagFilterDropdown();
     if (window.innerWidth <= 768) {
-      _bsOpen('sidebar', BS.WORK, closeSidebar);
+      _bsOpen('sidebar', BS.FULL, closeSidebar);
     } else {
       sidebar.classList.add('open');
       overlay.classList.add('show');
