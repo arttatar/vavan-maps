@@ -116,10 +116,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   position:fixed;top:0;left:0;right:0;z-index:1000;
   padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;
   background:transparent;
-  pointer-events:none;
   display:flex;flex-direction:column;gap:0;
   height:auto;
   align-items:flex-start;
+  pointer-events:none;
+}
+#search-bar, #filter-chips-bar, #filter-chips-bar *{
+  pointer-events:all;
 }
 #search-bar{
   pointer-events:all;
@@ -133,6 +136,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   width:100%;
   cursor:pointer;
   font-family:'Inter',sans-serif;
+  border:none;
+  text-align:left;
   -webkit-tap-highlight-color:rgba(0,0,0,.05);
   user-select:none;
 }
@@ -1000,19 +1005,19 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 <div id="app">
   <!-- GOOGLE MAPS STYLE HEADER -->
   <div id="header">
-    <div id="search-bar" onclick="openSearchOverlay()" role="button" style="cursor:pointer;">
+    <button id="search-bar" onclick="openSearchOverlay()" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <div id="search-bar-text" style="pointer-events:none;">Search businesses...</div>
       <!-- + Add button -->
-      <button onclick="event.stopPropagation();openAddBusiness()" style="width:36px;height:36px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Add Business">
+      <span onclick="event.stopPropagation();openAddBusiness()" style="width:36px;height:36px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" title="Add Business">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a36c8" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
+      </span>
       <div style="width:1px;height:24px;background:#e5e7eb;margin:0 2px;flex-shrink:0;pointer-events:none;"></div>
       <!-- Profile avatar -->
-      <button id="account-btn" onclick="event.stopPropagation();toggleAccountMenu()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">
+      <span id="account-btn" onclick="event.stopPropagation();toggleAccountMenu()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">
         <span id="account-initials" style="pointer-events:none;">?</span>
-      </button>
-    </div>
+      </span>
+    </button>
     <!-- Quick filter chips -->
     <div id="filter-chips-bar">
       <button class="fchip" id="chip-myaccounts" onclick="filterMyAccounts()">
