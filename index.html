@@ -158,20 +158,31 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 /* Mode row — secondary, below search, inside same card */
 #desktop-mode-row{
-  display:flex;gap:6px;
+  display:flex;gap:4px;
   margin-top:8px;padding-top:8px;
   border-top:1px solid #f0f0f4;
 }
 .dsk-mode-btn{
-  flex:1;padding:6px 4px;border-radius:8px;
-  background:transparent;border:none;cursor:pointer;
-  font-size:12px;font-weight:500;color:#6b7280;
+  flex:1;
+  height:32px;
+  padding:0 6px;
+  border-radius:999px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  font-size:12px;font-weight:600;color:#6b7280;
   font-family:Inter,sans-serif;
-  white-space:nowrap;transition:background .1s,color .1s;
+  white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s;
 }
-.dsk-mode-btn:hover{ background:#f3f4f6;color:#0d0d14; }
+.dsk-mode-btn:hover{
+  background:#f3f4f6;
+  color:#0d0d14;
+}
 .dsk-mode-btn.active{
-  background:var(--accent-light);color:var(--accent);font-weight:700;
+  background:var(--accent);
+  color:#fff;
 }
 
 /* Panel host — solid white full-height column below the card */
@@ -1023,9 +1034,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
       <!-- Mode row: secondary actions — no Filters (search bar handles that) -->
       <div id="desktop-mode-row">
         <button class="dsk-mode-btn" id="dskm-accounts" onclick="filterMyAccounts()">My Accounts</button>
-        <button class="dsk-mode-btn" id="dskm-list" onclick="openDesktopSection('list')">List</button>
-        <button class="dsk-mode-btn" id="dskm-contacts" onclick="openDesktopSection('contacts')">Contacts</button>
         <button class="dsk-mode-btn" id="dskm-route" onclick="toggleRouteNav()">Route</button>
+        <button class="dsk-mode-btn" id="dskm-contacts" onclick="openDesktopSection('contacts')">Contacts</button>
+        <button class="dsk-mode-btn" id="dskm-list" onclick="openDesktopSection('list')">List</button>
       </div>
     </div>
     <!-- Panel host: content swaps here, attached below the card -->
@@ -1055,13 +1066,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         My Accounts
       </button>
-      <button class="fchip" id="chip-contacts" onclick="navTo('contacts')">
-        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Contacts
-      </button>
       <button class="fchip" id="chip-route" onclick="toggleRouteNav()">
         <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
         Route
+      </button>
+      <button class="fchip" id="chip-contacts" onclick="navTo('contacts')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contacts
       </button>
       <button class="fchip" id="chip-list" onclick="navTo('list')">
         <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
