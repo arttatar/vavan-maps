@@ -37,12 +37,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     top: auto !important; bottom: 60px !important;
     left: 0 !important; right: 0 !important;
     width: 100% !important; max-width: 100% !important;
-    height: 65vh !important;
+    height: 55vh !important;
+    min-height: 80px !important;
+    max-height: calc(100vh - 60px) !important;
     border-radius: 20px 20px 0 0 !important;
     transform: translateY(110%) !important;
     transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
     border-right: none !important;
-    border-top: 1px solid var(--border) !important;
     z-index: 3000 !important;
     box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
     overflow: hidden !important;
@@ -52,28 +53,34 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   #results-panel {
     top: auto !important; bottom: 60px !important;
     left: 0 !important; right: 0 !important;
-    width: 100% !important; height: 65vh !important;
+    width: 100% !important;
+    height: 55vh !important;
+    min-height: 80px !important;
+    max-height: calc(100vh - 60px) !important;
     border-radius: 20px 20px 0 0 !important;
     transform: translateY(110%) !important;
     transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
     border-right: none !important;
-    border-top: 1px solid var(--border) !important;
     z-index: 3100 !important;
     box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
+    overflow: hidden !important;
   }
   #results-panel.open { transform: translateY(0) !important; }
 
   #detail {
     top: auto !important; bottom: 60px !important;
     left: 0 !important; right: 0 !important;
-    width: 100% !important; height: 65vh !important;
+    width: 100% !important;
+    height: 75vh !important;
+    min-height: 80px !important;
+    max-height: calc(100vh - 60px) !important;
     border-radius: 20px 20px 0 0 !important;
     transform: translateY(110%) !important;
     transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
     border-left: none !important;
-    border-top: 1px solid var(--border) !important;
     z-index: 3200 !important;
     box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
+    overflow: hidden !important;
   }
   #detail.open { transform: translateY(0) !important; }
 
@@ -279,13 +286,16 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   #contacts-panel{
     top:auto !important; bottom:60px !important;
     left:0 !important; right:0 !important;
-    width:100% !important; height:65vh !important;
+    width:100% !important;
+    height:55vh !important;
+    min-height:80px !important;
+    max-height:calc(100vh - 60px) !important;
     border-radius:20px 20px 0 0 !important;
     transform:translateY(110%) !important;
     transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
     border-right:none !important;
-    border-top:1px solid var(--border) !important;
     z-index:1900 !important;
+    overflow:hidden !important;
   }
   #contacts-panel.open{ transform:translateY(0) !important; }
 }
@@ -563,11 +573,14 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     top:auto !important;
     bottom:60px !important;
     width:100% !important;
-    height:65vh !important;
+    height:55vh !important;
+    min-height:80px !important;
+    max-height:calc(100vh - 60px) !important;
     border-radius:20px 20px 0 0 !important;
     transform:translateY(110%) !important;
     transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
     box-shadow:0 -4px 32px rgba(0,0,0,.22) !important;
+    overflow:hidden !important;
   }
   #sidebar.open{ transform:translateY(0) !important; }
 }
@@ -719,8 +732,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   #route-panel{
     top:auto !important;bottom:60px !important;
     left:0 !important;right:0 !important;
-    width:100% !important;height:65vh !important;
-    border-radius:0 !important;
+    width:100% !important;
+    height:55vh !important;
+    min-height:80px !important;
+    max-height:calc(100vh - 60px) !important;
+    border-radius:20px 20px 0 0 !important;
     transform:translateY(110%) !important;
     transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
     box-shadow:0 -4px 32px rgba(0,0,0,.22) !important;
@@ -2379,41 +2395,179 @@ map.on('zoomstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); })
 map.on('dragstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
 
 // ── DRAG TO DISMISS BOTTOM SHEETS ──
-function addDragDismiss(panelId, closeFn) {
+// ── UNIVERSAL SNAP PANEL SYSTEM ──
+// Snap points as % of window height from bottom (above nav bar)
+var SNAP = {
+  CLOSED:  0,    // fully dismissed
+  PEEK:    30,   // just the handle visible (~30% height)
+  HALF:    55,   // half screen
+  FULL:    85    // nearly full screen
+};
+
+var NAV_H = 60; // bottom nav height px
+
+function _snapHeight(pct) {
+  return Math.round((window.innerHeight - NAV_H) * pct / 100);
+}
+
+function initSnapPanel(panelId, closeFn, opts) {
   var el = document.getElementById(panelId);
   if (!el) return;
-  var startY = 0, currentY = 0, dragging = false;
-  
-  el.addEventListener('touchstart', function(e) {
-    // Only drag from the handle area (top 60px)
-    if (e.touches[0].clientY - el.getBoundingClientRect().top > 60) return;
-    startY = e.touches[0].clientY;
-    dragging = true;
+  opts = opts || {};
+
+  // Default snap points — can override per panel
+  var snaps = opts.snaps || [SNAP.PEEK, SNAP.HALF, SNAP.FULL];
+  var defaultSnap = opts.defaultSnap || SNAP.HALF;
+
+  // Store current snap state
+  el._snapPct = defaultSnap;
+
+  function applyHeight(pct, animate) {
+    var h = _snapHeight(pct);
+    el.style.transition = animate ? 'height .3s cubic-bezier(.4,0,.2,1), transform .3s cubic-bezier(.4,0,.2,1)' : 'none';
+    el.style.height = h + 'px';
+    el.style.transform = 'translateY(0)';
+    el._snapPct = pct;
+  }
+
+  function snapToNearest(currentPct, velocityDir) {
+    // velocityDir: -1 = dragging up (open), 1 = dragging down (close)
+    var sorted = snaps.slice().sort(function(a,b){ return a-b; });
+
+    // If dragged down past peek threshold → close
+    if (currentPct < snaps[0] * 0.5) {
+      el.style.transition = 'transform .25s cubic-bezier(.4,0,.2,1)';
+      el.style.transform = 'translateY(110%)';
+      setTimeout(function(){ if(closeFn) closeFn(); }, 250);
+      return;
+    }
+
+    // Find nearest snap
+    var nearest = sorted[0];
+    var minDist = Math.abs(currentPct - sorted[0]);
+    sorted.forEach(function(s) {
+      var d = Math.abs(currentPct - s);
+      // Bias toward direction of drag
+      if (velocityDir < 0) d *= (currentPct < s ? 0.6 : 1.4); // dragging up → prefer higher snap
+      else d *= (currentPct > s ? 0.6 : 1.4); // dragging down → prefer lower snap
+      if (d < minDist) { minDist = d; nearest = s; }
+    });
+
+    applyHeight(nearest, true);
+  }
+
+  // ── DRAG LOGIC ──
+  var dragStartY = 0, dragStartH = 0, isDragging = false, lastY = 0, velocity = 0;
+
+  function onDragStart(clientY) {
+    // Only allow drag from top 56px of panel (handle area)
+    var rect = el.getBoundingClientRect();
+    if (clientY - rect.top > 56) return false;
+    isDragging = true;
+    dragStartY = clientY;
+    dragStartH = el.offsetHeight;
+    lastY = clientY;
+    velocity = 0;
     el.style.transition = 'none';
-  }, {passive:true});
+    return true;
+  }
+
+  function onDragMove(clientY) {
+    if (!isDragging) return;
+    velocity = clientY - lastY;
+    lastY = clientY;
+    var dy = dragStartY - clientY; // positive = dragging up = bigger panel
+    var newH = Math.max(40, Math.min(dragStartH + dy, window.innerHeight - NAV_H - 20));
+    el.style.height = newH + 'px';
+    el.style.transform = 'translateY(0)';
+  }
+
+  function onDragEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    var currentH = el.offsetHeight;
+    var maxH = window.innerHeight - NAV_H;
+    var currentPct = (currentH / maxH) * 100;
+    var dir = velocity > 0 ? 1 : -1; // positive velocity = moving down
+    snapToNearest(currentPct, dir);
+  }
+
+  // Touch events
+  el.addEventListener('touchstart', function(e) {
+    onDragStart(e.touches[0].clientY);
+  }, {passive: true});
 
   el.addEventListener('touchmove', function(e) {
-    if (!dragging) return;
-    currentY = e.touches[0].clientY - startY;
-    if (currentY > 0) {
-      el.style.transform = 'translateY(' + currentY + 'px)';
-    }
-  }, {passive:true});
+    if (!isDragging) return;
+    onDragMove(e.touches[0].clientY);
+  }, {passive: true});
 
-  el.addEventListener('touchend', function() {
-    if (!dragging) return;
-    dragging = false;
-    el.style.transition = '';
-    if (currentY > 80) {
-      // Dragged down enough — dismiss
-      closeFn();
-    } else {
-      // Snap back
-      el.style.transform = '';
+  el.addEventListener('touchend', function() { onDragEnd(); });
+  el.addEventListener('touchcancel', function() { onDragEnd(); });
+
+  // Mouse events (desktop)
+  el.addEventListener('mousedown', function(e) {
+    if (!onDragStart(e.clientY)) return;
+    function onMove(e) { onDragMove(e.clientY); }
+    function onUp() {
+      onDragEnd();
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
     }
-    currentY = 0;
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // Expose open function
+  el._snapOpen = function(pct) {
+    pct = pct || defaultSnap;
+    el.style.transition = 'none';
+    el.style.transform = 'translateY(110%)';
+    el.style.height = _snapHeight(pct) + 'px';
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        el.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+        el.style.transform = 'translateY(0)';
+        el._snapPct = pct;
+      });
+    });
+  };
+}
+
+// ── INIT ALL PANELS ──
+function initAllSnapPanels() {
+  // Filters sidebar
+  initSnapPanel('sidebar', closeSidebar, {
+    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
+    defaultSnap: SNAP.HALF
+  });
+  // Results list
+  initSnapPanel('results-panel', closeResults, {
+    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
+    defaultSnap: SNAP.HALF
+  });
+  // Business detail
+  initSnapPanel('detail', closeDetail, {
+    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
+    defaultSnap: SNAP.FULL
+  });
+  // Contacts
+  initSnapPanel('contacts-panel', function(){ navTo('map'); }, {
+    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
+    defaultSnap: SNAP.HALF
+  });
+  // Route panel
+  initSnapPanel('route-panel', closeRoutePanel, {
+    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
+    defaultSnap: SNAP.HALF
+  });
+  // Add business (special — only 2 snaps, no peek)
+  initSnapPanel('add-biz-inner', closeAddBusiness, {
+    snaps: [SNAP.HALF, SNAP.FULL],
+    defaultSnap: SNAP.FULL
   });
 }
+
 
 function addHQMarker() {
   var el = document.createElement('div');
@@ -2463,9 +2617,7 @@ function addHQMarker() {
 }
 
 
-  addDragDismiss('sidebar', closeSidebar);
-  addDragDismiss('results-panel', closeResults);
-  addDragDismiss('detail', closeDetail);
+  initAllSnapPanels();
 }
 
 function startLocationTracking() {
@@ -2744,9 +2896,11 @@ function navTo(tab) {
     var fs = document.getElementById('filter-scroll');
     if (fs) fs.scrollTop = 0;
     _initTagFilterDropdown();
+    if (window.innerWidth <= 768 && sidebar._snapOpen) sidebar._snapOpen(SNAP.HALF);
   } else if (tab === 'list') {
     renderList();
     results.classList.add('open');
+    if (window.innerWidth <= 768 && results._snapOpen) results._snapOpen(SNAP.HALF);
   } else if (tab === 'contacts') {
     loadAllContacts();
     contacts.classList.add('open');
@@ -4654,7 +4808,9 @@ function selectBiz(id) {
   var titleEl = document.getElementById('det-x-title');
   if (titleEl) titleEl.textContent = b.name||'';
   renderDetailPanel(b);
-  document.getElementById('detail').classList.add('open');
+  var det = document.getElementById('detail');
+  det.classList.add('open');
+  if (window.innerWidth <= 768 && det._snapOpen) det._snapOpen(SNAP.FULL);
   closeSidebar();
   closeResults();
 }
@@ -6884,9 +7040,11 @@ function _drawRouteOnMap() {
 
 // ── ROUTE PANEL ──
 function openRoutePanel() {
-  document.getElementById('route-panel').classList.add('open');
+  var rp = document.getElementById('route-panel');
+  rp.classList.add('open');
+  if (window.innerWidth <= 768 && rp._snapOpen) rp._snapOpen(SNAP.HALF);
   var vrBtn = document.getElementById('view-route-btn');
-  if (vrBtn) vrBtn.style.display = 'none'; // hidden while panel is open
+  if (vrBtn) vrBtn.style.display = 'none';
   if (_routeStops.length) {
     var bounds = new mapboxgl.LngLatBounds();
     if (_routeStartPoint) bounds.extend([_routeStartPoint.lon, _routeStartPoint.lat]);
