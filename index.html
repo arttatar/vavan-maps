@@ -2716,15 +2716,22 @@ var _soSearchTimer = null;
 
 function openSearchOverlay() {
   var overlay = document.getElementById('search-overlay');
-  if (!overlay) return;
-  // Move to body top level if not already there
-  if (overlay.parentNode !== document.body) {
-    document.body.appendChild(overlay);
-  }
+  if (!overlay) { alert('overlay not found'); return; }
+  // Move to body top level to escape any stacking context
+  document.body.appendChild(overlay);
   _soSelectedInds = Array.isArray(filters.industry) ? filters.industry.slice() : [];
   _soSelectedStatuses = filters.statuses ? filters.statuses.slice() : [];
   _soSyncUI();
-  overlay.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:99999;background:#fff;flex-direction:column;font-family:Inter,sans-serif;';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.right = '0';
+  overlay.style.bottom = '0';
+  overlay.style.zIndex = '99999';
+  overlay.style.background = '#fff';
+  overlay.style.flexDirection = 'column';
+  overlay.style.fontFamily = 'Inter,sans-serif';
+  overlay.style.display = 'flex';
   setTimeout(function(){
     var inp = document.getElementById('search-overlay-input');
     if (inp) inp.focus();
