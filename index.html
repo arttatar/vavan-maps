@@ -119,37 +119,36 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   pointer-events:none;
   display:flex;flex-direction:column;gap:0;
   height:auto;
+  align-items:flex-start;
 }
 #search-bar{
   pointer-events:all;
-  margin-top:10px;
+  margin-top:0;
   display:flex;align-items:center;gap:8px;
   background:#fff;
   border-radius:24px;
   box-shadow:0 2px 12px rgba(0,0,0,.25);
   padding:0 6px 0 16px;
   height:48px;
-  flex:1;
+  width:100%;
   cursor:pointer;
   font-family:'Inter',sans-serif;
+}
+/* Desktop — constrain to 25% width */
+@media(min-width:769px){
+  #search-bar{ width:25%; min-width:280px; }
+  #filter-chips-bar{ max-width:calc(25% + 80px); }
 }
 #search-bar-text{
   flex:1;font-size:15px;color:#9ca3af;font-weight:400;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 #search-bar-text.has-filters{color:#0d0d14;font-weight:500;}
-#search-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--accent);border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;font-size:12px;font-weight:700;color:#fff;
-  font-family:'Inter',sans-serif;
-}
 /* Filter chips row below search bar */
 #filter-chips-bar{
   pointer-events:all;
-  display:flex;gap:6px;overflow-x:auto;padding:6px 12px 0;
-  scrollbar-width:none;margin-top:0;
+  display:flex;gap:6px;overflow-x:auto;padding:6px 0 0;
+  scrollbar-width:none;margin-top:0;width:100%;
 }
 #filter-chips-bar::-webkit-scrollbar{display:none;}
 .fchip{
