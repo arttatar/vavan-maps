@@ -2989,7 +2989,6 @@ function closeDesktopSection() {
 function _renderDesktopFilters(host) {
   var sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  // Show a close button at top + the full filter scroll + apply buttons
   host.innerHTML =
     '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
       '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">Filters</div>'+
@@ -3000,10 +2999,45 @@ function _renderDesktopFilters(host) {
       '<button onclick="applyFilters();updateFilterBadge();closeDesktopSection();setTimeout(function(){openDesktopSection(\'list\');},200);" style="width:100%;padding:10px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Apply Filters</button>'+
       '<button onclick="clearFilters();" style="width:100%;padding:8px;border-radius:8px;background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px;font-weight:500;font-family:Inter,sans-serif;cursor:pointer;">Clear Filters</button>'+
     '</div>';
+
   // Copy sidebar filter scroll content into host
   var src = document.getElementById('filter-scroll');
   var dst = host.querySelector('#dsk-filter-scroll');
-  if (src && dst) dst.innerHTML = src.innerHTML;
+  if (src && dst) {
+    dst.innerHTML = src.innerHTML;
+
+    // Fix cloned rep dropdown — remove duplicate id, repopulate, make visible
+    var dskRepSel = dst.querySelector('#s-rep');
+    if (dskRepSel) {
+      dskRepSel.removeAttribute('id'); // avoid duplicate ID
+      dskRepSel.style.display = 'block'; // always show in desktop panel
+      // Clear and repopulate options
+      while (dskRepSel.options.length > 1) dskRepSel.remove(1);
+      var reps = getTerritoryReps();
+      // Add Unassigned option
+      var unassOpt = document.createElement('option');
+      unassOpt.value = 'unassigned'; unassOpt.textContent = 'Unassigned';
+      dskRepSel.appendChild(unassOpt);
+      reps.forEach(function(r){
+        var opt = document.createElement('option');
+        opt.value = r; opt.textContent = r;
+        dskRepSel.appendChild(opt);
+      });
+      // Wire up change handler
+      dskRepSel.onchange = function(){ _repFilterAdd(this); };
+    }
+
+    // Fix cloned rep chip pills — wire onclick handlers
+    var dskRepPills = {
+      'rep-pill-all':        _repFilterAll,
+      'rep-pill-assigned':   _repFilterAssigned,
+      'rep-pill-unassigned': _repFilterUnassigned
+    };
+    Object.keys(dskRepPills).forEach(function(id){
+      var el = dst.querySelector('#'+id);
+      if (el) { el.removeAttribute('id'); el.onclick = dskRepPills[id]; }
+    });
+  }
   _initTagFilterDropdown();
 }
 
