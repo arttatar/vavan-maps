@@ -87,22 +87,67 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #app.visible{display:block;}
 
 /* HEADER - clean, minimal */
-/* ── GOOGLE MAPS STYLE HEADER ──
-   Transparent floating container — search bar and chips float above map */
-#header{
-  position:fixed;top:0;left:0;right:0;z-index:1000;
-  padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;
-  background:transparent;
-  display:flex;flex-direction:column;gap:0;
-  height:auto;
-  align-items:flex-start;
-  touch-action:manipulation;
-  user-select:none;
-  -webkit-user-select:none;
+/* ── DESKTOP CONTROL STACK ── */
+/* One unified left column: topbar + panel host */
+#desktop-control-stack{
+  display:none; /* mobile: hidden */
+  position:fixed;
+  top:calc(env(safe-area-inset-top,0px) + 12px);
+  left:16px;
+  width:380px;
+  z-index:1000;
+  flex-direction:column;
+  pointer-events:none;
 }
-#search-bar, #filter-chips-bar, #filter-chips-bar *{
+@media(min-width:769px){
+  #desktop-control-stack{ display:flex; }
+  /* Hide the old header on desktop — stack replaces it */
+  #header{ display:none; }
+}
+@media(max-width:768px){
+  #desktop-control-stack{ display:none !important; }
+  #header{ display:flex; }
+}
+#desktop-topbar{
   pointer-events:all;
+  display:flex;align-items:center;gap:8px;
+  background:#fff;
+  border-radius:24px;
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
+  padding:0 6px 0 16px;
+  height:48px;
+  transition:border-radius .2s;
 }
+#desktop-topbar.panel-open{
+  border-radius:16px 16px 0 0;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);
+}
+#desktop-topbar-text{
+  flex:1;font-size:15px;color:#9ca3af;font-weight:400;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  cursor:pointer;
+}
+#desktop-topbar-text.has-filters{color:#0d0d14;font-weight:500;}
+#desktop-panel-host{
+  pointer-events:all;
+  display:none;
+  background:#fff;
+  border-radius:0 0 16px 16px;
+  box-shadow:0 8px 32px rgba(0,0,0,.18);
+  overflow:hidden;
+  max-height:calc(100vh - 100px);
+  flex-direction:column;
+}
+#desktop-panel-host.open{
+  display:flex;
+}
+/* Desktop chip row */
+#desktop-chips{
+  pointer-events:all;
+  display:flex;gap:6px;overflow-x:auto;padding:6px 0 0;
+  scrollbar-width:none;
+}
+#desktop-chips::-webkit-scrollbar{display:none;}
 #search-bar{
   pointer-events:all;
   margin-top:0;
@@ -908,6 +953,49 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 <!-- APP -->
 <div id="app">
+
+  <!-- ── DESKTOP CONTROL STACK (hidden on mobile) ── -->
+  <div id="desktop-control-stack">
+    <!-- Topbar: search + add + avatar -->
+    <div id="desktop-topbar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;cursor:pointer;" onclick="openDesktopSection('filters')"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span id="desktop-topbar-text" onclick="openDesktopSection('filters')">Search &amp; Filter...</span>
+      <!-- + Add -->
+      <button type="button" onclick="openAddBusiness()" style="width:36px;height:36px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Add Business">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a36c8" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <div style="width:1px;height:24px;background:#e5e7eb;margin:0 2px;flex-shrink:0;"></div>
+      <!-- Avatar -->
+      <button id="account-btn" type="button" onclick="toggleAccountMenu()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">
+        <span id="account-initials">?</span>
+      </button>
+    </div>
+    <!-- Quick chips -->
+    <div id="desktop-chips">
+      <button class="fchip" onclick="openDesktopSection('filters')">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        Filters
+      </button>
+      <button class="fchip" onclick="filterMyAccounts()">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Accounts
+      </button>
+      <button class="fchip" onclick="openDesktopSection('list')">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+        List
+      </button>
+      <button class="fchip" onclick="openDesktopSection('contacts')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contacts
+      </button>
+      <button class="fchip" onclick="toggleRouteNav()">
+        <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
+        Route
+      </button>
+    </div>
+    <!-- Panel host: content swaps here -->
+    <div id="desktop-panel-host"></div>
+  </div>
   <!-- GOOGLE MAPS STYLE HEADER -->
   <div id="header">
     <!-- Row 1: search + buttons — desktop constrained to 25% -->
@@ -2753,6 +2841,132 @@ function _soApply() {
   setTimeout(function(){ navTo('list'); }, 150);
 }
 
+// ── DESKTOP CONTROL STACK ──
+var _desktopSection = null;
+
+function openDesktopSection(section) {
+  if (window.innerWidth <= 768) { navTo(section); return; }
+
+  // Toggle: same section = close
+  if (_desktopSection === section) {
+    closeDesktopSection();
+    return;
+  }
+  _desktopSection = section;
+
+  var topbar = document.getElementById('desktop-topbar');
+  var host = document.getElementById('desktop-panel-host');
+  if (!topbar || !host) return;
+
+  topbar.classList.add('panel-open');
+  host.classList.add('open');
+
+  // Update topbar text
+  var txt = document.getElementById('desktop-topbar-text');
+  var labels = {filters:'Filters', list:'List', contacts:'Contacts', route:'Route'};
+  if (txt) {
+    txt.textContent = labels[section] || 'Search & Filter...';
+    txt.classList.toggle('has-filters', section !== 'filters' || filtersApplied);
+  }
+
+  // Render content into host
+  if (section === 'filters') {
+    _renderDesktopFilters(host);
+  } else if (section === 'list') {
+    _renderDesktopList(host);
+  } else if (section === 'contacts') {
+    _renderDesktopContacts(host);
+  }
+}
+
+function closeDesktopSection() {
+  _desktopSection = null;
+  var topbar = document.getElementById('desktop-topbar');
+  var host = document.getElementById('desktop-panel-host');
+  if (topbar) topbar.classList.remove('panel-open');
+  if (host) { host.classList.remove('open'); host.innerHTML = ''; }
+  var txt = document.getElementById('desktop-topbar-text');
+  if (txt) { txt.textContent = 'Search & Filter...'; txt.classList.remove('has-filters'); }
+}
+
+function _renderDesktopFilters(host) {
+  // Move the existing sidebar content into the host
+  var sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  host.innerHTML = '';
+  // Clone sidebar content (filter-scroll + apply-wrap)
+  var scroll = sidebar.querySelector('#filter-scroll');
+  var applyWrap = sidebar.querySelector('.apply-wrap');
+  if (scroll) {
+    var scrollClone = scroll.cloneNode(true);
+    scrollClone.style.maxHeight = 'calc(100vh - 200px)';
+    scrollClone.style.overflowY = 'auto';
+    host.appendChild(scrollClone);
+    // Wire up events on the clone
+    _rewireFilterClone(scrollClone);
+  }
+  if (applyWrap) {
+    var applyClone = applyWrap.cloneNode(true);
+    // Rewire apply/clear buttons
+    var applyBtn = applyClone.querySelector('#apply-btn');
+    var clearBtn = applyClone.querySelector('#clear-btn');
+    if (applyBtn) { applyBtn.removeAttribute('id'); applyBtn.onclick = function(){ applyFilters(); updateFilterBadge(); closeDesktopSection(); setTimeout(function(){ openDesktopSection('list'); }, 200); }; }
+    if (clearBtn) { clearBtn.removeAttribute('id'); clearBtn.onclick = function(){ clearFilters(); }; }
+    host.appendChild(applyClone);
+  }
+  _initTagFilterDropdown();
+}
+
+function _rewireFilterClone(el) {
+  // Sync real filter inputs with the clone
+  var realInputs = ['s-name','s-city','s-zip','s-state'];
+  realInputs.forEach(function(id){
+    var real = document.getElementById(id);
+    var clone = el.querySelector('#'+id);
+    if (real && clone) {
+      clone.removeAttribute('id'); // avoid duplicate IDs
+      clone.value = real.value;
+      clone.oninput = function(){ real.value = this.value; };
+      clone.onchange = function(){ real.value = this.value; };
+    }
+  });
+}
+
+function _renderDesktopList(host) {
+  host.innerHTML = '<div style="max-height:calc(100vh - 120px);overflow-y:auto;font-family:Inter,sans-serif;" id="desktop-biz-list-wrap"></div>';
+  var wrap = host.querySelector('#desktop-biz-list-wrap');
+  if (!wrap) return;
+  var raw = getVisibleData().filter(function(b){ return b.lat&&b.lon; });
+  if (!filtersApplied && !_routeMode) {
+    wrap.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">Apply filters to see businesses</div>';
+    return;
+  }
+  if (!raw.length) {
+    wrap.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No results in view.<br>Zoom or pan the map.</div>';
+    return;
+  }
+  var data = _applySortToData(raw);
+  wrap.innerHTML = '<div style="padding:8px 12px 4px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">'+data.length.toLocaleString()+' in view</div>'+
+    data.slice(0,200).map(function(b){
+      var color = bizColor(b);
+      return '<div style="padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;" onmouseover="this.style.background=\'var(--paper)\'" onmouseout="this.style.background=\'\'" onclick="closeDesktopSection();selectBiz('+b._id+')">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'+b.name+'</div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+(b.street||'')+'</div>'+
+        (b.assigned_rep ? '<div style="font-size:11px;color:var(--accent);margin-top:1px;">'+b.assigned_rep+'</div>' : '')+
+      '</div>';
+    }).join('');
+}
+
+function _renderDesktopContacts(host) {
+  host.innerHTML = '<div style="max-height:calc(100vh - 120px);overflow-y:auto;" id="desktop-contacts-wrap"><div style="padding:1rem;font-size:13px;color:var(--muted);text-align:center;">Loading...</div></div>';
+  var wrap = host.querySelector('#desktop-contacts-wrap');
+  loadAllContacts().then(function(){
+    // Copy rendered contacts-panel-list into desktop host
+    var src = document.getElementById('contacts-panel-list');
+    if (src && wrap) wrap.innerHTML = src.innerHTML;
+  });
+}
+
 // ── INIT ALL PANELS ──
 function initAllSnapPanels() {
   // Attach BottomSheet engine to every mobile panel
@@ -3129,22 +3343,21 @@ function navTo(tab) {
     if (window.innerWidth <= 768) {
       _bsOpen('sidebar', BS.FULL, closeSidebar);
     } else {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
+      openDesktopSection('filters');
     }
   } else if (tab === 'list') {
     renderList();
     if (window.innerWidth <= 768) {
       _bsOpen('results-panel', BS.WORK, closeResults);
     } else {
-      results.classList.add('open');
+      openDesktopSection('list');
     }
   } else if (tab === 'contacts') {
     loadAllContacts();
     if (window.innerWidth <= 768) {
       _bsOpen('contacts-panel', BS.WORK, function(){ navTo('map'); });
     } else {
-      contacts.classList.add('open');
+      openDesktopSection('contacts');
     }
   }
 }
@@ -3191,8 +3404,13 @@ function closeSidebar()   {
 function applyAndClose() {
   applyFilters();
   updateFilterBadge();
-  closeSidebar();
-  setTimeout(function(){ navTo('list'); }, 300);
+  if (window.innerWidth > 768) {
+    closeDesktopSection();
+    setTimeout(function(){ openDesktopSection('list'); }, 200);
+  } else {
+    closeSidebar();
+    setTimeout(function(){ navTo('list'); }, 300);
+  }
 }
 function updateFabCount() {
   var source = filtersApplied ? filteredData : allData;
@@ -4358,57 +4576,66 @@ function renderMarketsTab(body) {
 
 // ── ADD BUSINESS ──
 function openAddBusiness() {
-  // Close all other panels first
-  var sidebar = document.getElementById('sidebar');
-  var results = document.getElementById('results-panel');
-  var contacts = document.getElementById('contacts-panel');
+  // Cancel any pending close animation
+  if (window._abCloseTimer) { clearTimeout(window._abCloseTimer); window._abCloseTimer = null; }
+
+  var modal = document.getElementById('add-biz-modal');
+  // Reset form state cleanly
+  modal.classList.remove('open');
+  modal.style.display = 'none';
+  modal.style.filter = '';
+  modal.style.opacity = '';
+
+  // Close all other panels
+  ['sidebar','results-panel','contacts-panel','route-panel'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('open');
+    el.style.transform = ''; el.style.height = ''; el.style.top = ''; el.style.bottom = ''; el.style.left = ''; el.style.right = ''; el.style.width = ''; el.style.borderRadius = '';
+  });
   var overlay = document.getElementById('overlay');
-  if (sidebar) sidebar.classList.remove('open');
-  if (results) results.classList.remove('open');
-  if (contacts) var cEl = document.getElementById('contacts-panel');
-  if (cEl) { cEl.classList.remove('open'); cEl.style.transform=''; cEl.style.height=''; cEl.style.top=''; cEl.style.bottom=''; cEl.style.left=''; cEl.style.right=''; cEl.style.width=''; cEl.style.borderRadius=''; }
   if (overlay) overlay.classList.remove('show');
-  var rp = document.getElementById('route-panel');
-  if (rp) rp.classList.remove('open');
-  // Update nav — none active
   ['filters','list','contacts'].forEach(function(t){
-    var m = document.getElementById('nm-'+t);
-    var d = document.getElementById('nd-'+t);
+    var m = document.getElementById('nm-'+t), d = document.getElementById('nd-'+t);
     if (m) m.classList.remove('active');
     if (d) d.classList.remove('active');
   });
 
-  var modal = document.getElementById('add-biz-modal');
   modal.style.display = 'flex';
-  setTimeout(function(){ modal.classList.add('open'); }, 10);
-  document.getElementById('ab-name').focus();
-  document.getElementById('ab-status-msg').textContent = '';
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      modal.classList.add('open');
+    });
+  });
+  setTimeout(function(){ var el = document.getElementById('ab-name'); if (el) el.focus(); }, 100);
+  var msg = document.getElementById('ab-status-msg'); if (msg) msg.textContent = '';
 }
 
 function closeAddBusiness() {
   var modal = document.getElementById('add-biz-modal');
   modal.classList.remove('open');
-  setTimeout(function(){ modal.style.display = 'none'; }, 300);
-  ['ab-name','ab-phone','ab-website','ab-street','ab-zip'].forEach(function(id){
-    var el = document.getElementById(id); if(el) el.value = '';
-  });
-  document.getElementById('ab-city').value = 'Las Vegas';
-  document.getElementById('ab-state').value = 'NV';
-  document.getElementById('ab-industry').value = '';
-  document.getElementById('ab-status').value = 'Lead';
-  document.getElementById('ab-location-type').value = '';
-  document.getElementById('ab-status-msg').textContent = '';
-  // Reset sub-industry
-  var subChips = document.getElementById('ab-sub-chips');
-  if (subChips) subChips.innerHTML = '';
-  _abUpdateSubIndustry('');
-  // Reset product checkboxes
-  ['lubricants','fuel_delivery','cardlock','propane','uco'].forEach(function(k){
-    var cb = document.getElementById('ab-prod-'+k);
-    if (cb) { cb.checked = false; abToggleProd(k); }
-  });
-  var btn = document.getElementById('ab-save-btn');
-  btn.disabled = false; btn.textContent = 'Add to Map';
+  window._abCloseTimer = setTimeout(function(){
+    window._abCloseTimer = null;
+    modal.style.display = 'none';
+    // Reset form
+    ['ab-name','ab-phone','ab-website','ab-street','ab-zip'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.value = '';
+    });
+    var city = document.getElementById('ab-city'); if (city) city.value = 'Las Vegas';
+    var state = document.getElementById('ab-state'); if (state) state.value = 'NV';
+    var ind = document.getElementById('ab-industry'); if (ind) ind.value = '';
+    var st = document.getElementById('ab-status'); if (st) st.value = 'Lead';
+    var lt = document.getElementById('ab-location-type'); if (lt) lt.value = '';
+    var msg = document.getElementById('ab-status-msg'); if (msg) msg.textContent = '';
+    var subChips = document.getElementById('ab-sub-chips'); if (subChips) subChips.innerHTML = '';
+    _abUpdateSubIndustry('');
+    ['lubricants','fuel_delivery','cardlock','propane','uco'].forEach(function(k){
+      var cb = document.getElementById('ab-prod-'+k);
+      if (cb) { cb.checked = false; abToggleProd(k); }
+    });
+    var btn = document.getElementById('ab-save-btn');
+    if (btn) { btn.disabled = false; btn.textContent = 'Add to Map'; }
+  }, 300);
 }
 
 function abToggleProd(key) {
@@ -5078,6 +5305,7 @@ function selectBiz(id) {
   }
   closeSidebar();
   closeResults();
+  if (window.innerWidth > 768) closeDesktopSection();
 }
 
 function closeDetail() {
