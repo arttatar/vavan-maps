@@ -2707,11 +2707,14 @@ var _soSearchTimer = null;
 function openSearchOverlay() {
   var overlay = document.getElementById('search-overlay');
   if (!overlay) return;
+  // Move to body top level if not already there
+  if (overlay.parentNode !== document.body) {
+    document.body.appendChild(overlay);
+  }
   _soSelectedInds = Array.isArray(filters.industry) ? filters.industry.slice() : [];
   _soSelectedStatuses = filters.statuses ? filters.statuses.slice() : [];
   _soSyncUI();
-  overlay.style.display = 'flex';
-  overlay.classList.add('open');
+  overlay.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:99999;background:#fff;flex-direction:column;font-family:Inter,sans-serif;';
   setTimeout(function(){
     var inp = document.getElementById('search-overlay-input');
     if (inp) inp.focus();
@@ -2721,7 +2724,6 @@ function openSearchOverlay() {
 function closeSearchOverlay() {
   var overlay = document.getElementById('search-overlay');
   if (!overlay) return;
-  overlay.classList.remove('open');
   overlay.style.display = 'none';
   var inp = document.getElementById('search-overlay-input');
   if (inp) inp.value = '';
