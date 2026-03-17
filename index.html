@@ -2451,40 +2451,6 @@ async function loadData() {
   }
 }
 
-function initMap() {
-  // Start at user location if available, otherwise Las Vegas
-map = new mapboxgl.Map({ container:'map', style:'mapbox://styles/mapbox/dark-v11', center:[-115.1398, 36.1899], zoom:11 });
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    map.flyTo({ center:[pos.coords.longitude, pos.coords.latitude], zoom:12, speed:1.5 });
-  }, null, { enableHighAccuracy:true, timeout:5000 });
-}
-  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-  draw = new MapboxDraw({ displayControlsDefault:false });
-  map.addControl(draw);
-  map.on('draw.create', onDraw);
-  map.on('click', onMapClick);
-  map.on('load', function() {
-    startLocationTracking();
-    initAllSnapPanels();
-    setTimeout(addHQMarker, 500);
-  });
-
-// Refresh list as map moves — shows only what's visible
-map.on('moveend', function() {
-  if (document.getElementById('results-panel').classList.contains('open')) renderList();
-  // Allow taps again shortly after movement stops
-  clearTimeout(_moveTimer);
-  _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
-});
-map.on('zoomend', function() {
-  if (document.getElementById('results-panel').classList.contains('open')) renderList();
-  clearTimeout(_moveTimer);
-  _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
-});
-map.on('movestart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
-map.on('zoomstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
-map.on('dragstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
 
 // ── DRAG TO DISMISS BOTTOM SHEETS ──
 // ════════════════════════════════════════════════════════════
@@ -2813,6 +2779,43 @@ function initAllSnapPanels() {
   _bsAttach('route-panel',    [BS.PEEK, BS.WORK, BS.FULL], closeRoutePanel);
   _bsAttach('add-biz-inner',  [BS.WORK, BS.FULL],          closeAddBusiness);
 }
+
+
+
+function initMap() {
+  // Start at user location if available, otherwise Las Vegas
+map = new mapboxgl.Map({ container:'map', style:'mapbox://styles/mapbox/dark-v11', center:[-115.1398, 36.1899], zoom:11 });
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    map.flyTo({ center:[pos.coords.longitude, pos.coords.latitude], zoom:12, speed:1.5 });
+  }, null, { enableHighAccuracy:true, timeout:5000 });
+}
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  draw = new MapboxDraw({ displayControlsDefault:false });
+  map.addControl(draw);
+  map.on('draw.create', onDraw);
+  map.on('click', onMapClick);
+  map.on('load', function() {
+    startLocationTracking();
+    initAllSnapPanels();
+    setTimeout(addHQMarker, 500);
+  });
+
+// Refresh list as map moves — shows only what's visible
+map.on('moveend', function() {
+  if (document.getElementById('results-panel').classList.contains('open')) renderList();
+  // Allow taps again shortly after movement stops
+  clearTimeout(_moveTimer);
+  _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
+});
+map.on('zoomend', function() {
+  if (document.getElementById('results-panel').classList.contains('open')) renderList();
+  clearTimeout(_moveTimer);
+  _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
+});
+map.on('movestart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
+map.on('zoomstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
+map.on('dragstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
 
 
 function addHQMarker() {
