@@ -1007,20 +1007,26 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 <div id="app">
   <!-- GOOGLE MAPS STYLE HEADER -->
   <div id="header">
-    <div style="pointer-events:all;display:flex;flex-direction:column;gap:0;width:100%;">
-      <button id="search-bar" onclick="openSearchOverlay()" type="button">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <div id="search-bar-text" style="pointer-events:none;">Search businesses...</div>
+    <div style="display:flex;flex-direction:column;gap:0;width:100%;pointer-events:all;">
+      <div style="display:flex;align-items:center;gap:8px;width:100%;">
+        <!-- SEARCH BUTTON — opens filter overlay -->
+        <button id="search-bar" type="button"
+          style="flex:1;display:flex;align-items:center;gap:10px;background:#fff;border:none;border-radius:24px;box-shadow:0 2px 12px rgba(0,0,0,.25);padding:0 10px 0 16px;height:48px;cursor:pointer;font-family:Inter,sans-serif;text-align:left;touch-action:manipulation;"
+          onclick="openSearchOverlay()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span id="search-bar-text" style="flex:1;font-size:15px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Search businesses...</span>
+        </button>
         <!-- + Add button -->
-        <span onclick="event.stopPropagation();openAddBusiness()" style="width:36px;height:36px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" title="Add Business">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a36c8" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </span>
-        <div style="width:1px;height:24px;background:#e5e7eb;margin:0 2px;flex-shrink:0;pointer-events:none;"></div>
+        <button type="button" onclick="openAddBusiness()"
+          style="width:44px;height:44px;border-radius:50%;background:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a36c8" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
         <!-- Profile avatar -->
-        <span id="account-btn" onclick="event.stopPropagation();toggleAccountMenu()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">
-          <span id="account-initials" style="pointer-events:none;">?</span>
-        </span>
-      </button>
+        <button id="account-btn" type="button" onclick="toggleAccountMenu()"
+          style="width:44px;height:44px;border-radius:50%;background:var(--accent);border:none;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;color:#fff;font-family:Inter,sans-serif;touch-action:manipulation;">
+          <span id="account-initials">?</span>
+        </button>
+      </div>
       <!-- Quick filter chips -->
       <div id="filter-chips-bar">
         <button class="fchip" id="chip-myaccounts" onclick="filterMyAccounts()">
