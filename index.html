@@ -88,12 +88,10 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 /* HEADER - clean, minimal */
 /* ── DESKTOP CONTROL STACK ── */
-/* One unified left column: topbar + panel host */
 #desktop-control-stack{
-  display:none; /* mobile: hidden */
+  display:none;
   position:fixed;
-  top:calc(env(safe-area-inset-top,0px) + 12px);
-  left:16px;
+  top:0; left:0; bottom:0;
   width:380px;
   z-index:1000;
   flex-direction:column;
@@ -101,26 +99,29 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 @media(min-width:769px){
   #desktop-control-stack{ display:flex; }
-  /* Hide the old header on desktop — stack replaces it */
-  #header{ display:none; }
+  #header{ display:none !important; }
 }
 @media(max-width:768px){
   #desktop-control-stack{ display:none !important; }
-  #header{ display:flex; }
+  #header{ display:flex !important; }
 }
+
+/* Desktop topbar — sits at top of the stack with padding */
 #desktop-topbar{
   pointer-events:all;
   display:flex;align-items:center;gap:8px;
   background:#fff;
-  border-radius:24px;
+  border-radius:12px;
   box-shadow:0 2px 12px rgba(0,0,0,.25);
   padding:0 6px 0 16px;
   height:48px;
-  transition:border-radius .2s;
+  margin:12px 12px 0;
+  flex-shrink:0;
+  transition:border-radius .15s, margin-bottom .15s;
 }
 #desktop-topbar.panel-open{
-  border-radius:16px 16px 0 0;
-  box-shadow:0 2px 12px rgba(0,0,0,.2);
+  border-radius:12px 12px 0 0;
+  margin-bottom:0;
 }
 #desktop-topbar-text{
   flex:1;font-size:15px;color:#9ca3af;font-weight:400;
@@ -128,26 +129,43 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   cursor:pointer;
 }
 #desktop-topbar-text.has-filters{color:#0d0d14;font-weight:500;}
+
+/* Desktop chip row */
+#desktop-chips{
+  pointer-events:all;
+  display:flex;gap:6px;overflow-x:auto;
+  padding:6px 12px 0;
+  scrollbar-width:none;
+  flex-shrink:0;
+}
+#desktop-chips::-webkit-scrollbar{display:none;}
+
+/* Desktop panel host — solid white, full height from below topbar */
 #desktop-panel-host{
   pointer-events:all;
   display:none;
   background:#fff;
-  border-radius:0 0 16px 16px;
-  box-shadow:0 8px 32px rgba(0,0,0,.18);
+  flex:1;
   overflow:hidden;
-  max-height:calc(100vh - 100px);
   flex-direction:column;
+  margin:0 12px;
+  border-radius:0 0 0 0;
+  box-shadow:2px 0 16px rgba(0,0,0,.12);
 }
 #desktop-panel-host.open{
   display:flex;
 }
-/* Desktop chip row */
-#desktop-chips{
-  pointer-events:all;
-  display:flex;gap:6px;overflow-x:auto;padding:6px 0 0;
-  scrollbar-width:none;
+/* Mobile header — floats above map */
+#header{
+  position:fixed;top:0;left:0;right:0;
+  z-index:1000;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 0;
+  background:transparent;
+  display:flex;flex-direction:column;gap:0;
+  height:auto;align-items:flex-start;
+  touch-action:manipulation;
+  user-select:none;-webkit-user-select:none;
 }
-#desktop-chips::-webkit-scrollbar{display:none;}
 #search-bar{
   pointer-events:all;
   margin-top:0;
@@ -2890,81 +2908,72 @@ function closeDesktopSection() {
 }
 
 function _renderDesktopFilters(host) {
-  // Move the existing sidebar content into the host
   var sidebar = document.getElementById('sidebar');
   if (!sidebar) return;
-  host.innerHTML = '';
-  // Clone sidebar content (filter-scroll + apply-wrap)
-  var scroll = sidebar.querySelector('#filter-scroll');
-  var applyWrap = sidebar.querySelector('.apply-wrap');
-  if (scroll) {
-    var scrollClone = scroll.cloneNode(true);
-    scrollClone.style.maxHeight = 'calc(100vh - 200px)';
-    scrollClone.style.overflowY = 'auto';
-    host.appendChild(scrollClone);
-    // Wire up events on the clone
-    _rewireFilterClone(scrollClone);
-  }
-  if (applyWrap) {
-    var applyClone = applyWrap.cloneNode(true);
-    // Rewire apply/clear buttons
-    var applyBtn = applyClone.querySelector('#apply-btn');
-    var clearBtn = applyClone.querySelector('#clear-btn');
-    if (applyBtn) { applyBtn.removeAttribute('id'); applyBtn.onclick = function(){ applyFilters(); updateFilterBadge(); closeDesktopSection(); setTimeout(function(){ openDesktopSection('list'); }, 200); }; }
-    if (clearBtn) { clearBtn.removeAttribute('id'); clearBtn.onclick = function(){ clearFilters(); }; }
-    host.appendChild(applyClone);
-  }
+  // Show a close button at top + the full filter scroll + apply buttons
+  host.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
+      '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">Filters</div>'+
+      '<button onclick="closeDesktopSection()" style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;">✕</button>'+
+    '</div>'+
+    '<div id="dsk-filter-scroll" style="flex:1;overflow-y:auto;"></div>'+
+    '<div style="padding:.875rem 1rem;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:6px;">'+
+      '<button onclick="applyFilters();updateFilterBadge();closeDesktopSection();setTimeout(function(){openDesktopSection(\'list\');},200);" style="width:100%;padding:10px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:13px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">Apply Filters</button>'+
+      '<button onclick="clearFilters();" style="width:100%;padding:8px;border-radius:8px;background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px;font-weight:500;font-family:Inter,sans-serif;cursor:pointer;">Clear Filters</button>'+
+    '</div>';
+  // Copy sidebar filter scroll content into host
+  var src = document.getElementById('filter-scroll');
+  var dst = host.querySelector('#dsk-filter-scroll');
+  if (src && dst) dst.innerHTML = src.innerHTML;
   _initTagFilterDropdown();
 }
 
-function _rewireFilterClone(el) {
-  // Sync real filter inputs with the clone
-  var realInputs = ['s-name','s-city','s-zip','s-state'];
-  realInputs.forEach(function(id){
-    var real = document.getElementById(id);
-    var clone = el.querySelector('#'+id);
-    if (real && clone) {
-      clone.removeAttribute('id'); // avoid duplicate IDs
-      clone.value = real.value;
-      clone.oninput = function(){ real.value = this.value; };
-      clone.onchange = function(){ real.value = this.value; };
-    }
-  });
-}
-
 function _renderDesktopList(host) {
-  host.innerHTML = '<div style="max-height:calc(100vh - 120px);overflow-y:auto;font-family:Inter,sans-serif;" id="desktop-biz-list-wrap"></div>';
-  var wrap = host.querySelector('#desktop-biz-list-wrap');
+  host.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
+      '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">Results</div>'+
+      '<button onclick="closeDesktopSection()" style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;">✕</button>'+
+    '</div>'+
+    '<div id="dsk-list-body" style="flex:1;overflow-y:auto;"></div>';
+  var wrap = host.querySelector('#dsk-list-body');
   if (!wrap) return;
-  var raw = getVisibleData().filter(function(b){ return b.lat&&b.lon; });
   if (!filtersApplied && !_routeMode) {
     wrap.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">Apply filters to see businesses</div>';
     return;
   }
+  var raw = getVisibleData().filter(function(b){ return b.lat&&b.lon; });
   if (!raw.length) {
     wrap.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No results in view.<br>Zoom or pan the map.</div>';
     return;
   }
   var data = _applySortToData(raw);
-  wrap.innerHTML = '<div style="padding:8px 12px 4px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">'+data.length.toLocaleString()+' in view</div>'+
+  wrap.innerHTML =
+    '<div style="padding:8px 12px 4px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">'+data.length.toLocaleString()+' in view</div>'+
     data.slice(0,200).map(function(b){
       var color = bizColor(b);
-      return '<div style="padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;" onmouseover="this.style.background=\'var(--paper)\'" onmouseout="this.style.background=\'\'" onclick="closeDesktopSection();selectBiz('+b._id+')">'+
-        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'+b.name+'</div>'+
+      return '<div style="padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;" '+
+        'onmouseover="this.style.background=\'var(--paper)\'" onmouseout="this.style.background=\'\'" '+
+        'onclick="closeDesktopSection();selectBiz('+b._id+')">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;display:flex;align-items:center;gap:6px;">'+
+          '<span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'+b.name+
+        '</div>'+
         '<div style="font-size:11px;color:var(--muted);">'+(b.street||'')+'</div>'+
         (b.assigned_rep ? '<div style="font-size:11px;color:var(--accent);margin-top:1px;">'+b.assigned_rep+'</div>' : '')+
       '</div>';
     }).join('');
 }
 
-function _renderDesktopContacts(host) {
-  host.innerHTML = '<div style="max-height:calc(100vh - 120px);overflow-y:auto;" id="desktop-contacts-wrap"><div style="padding:1rem;font-size:13px;color:var(--muted);text-align:center;">Loading...</div></div>';
-  var wrap = host.querySelector('#desktop-contacts-wrap');
-  loadAllContacts().then(function(){
-    // Copy rendered contacts-panel-list into desktop host
-    var src = document.getElementById('contacts-panel-list');
-    if (src && wrap) wrap.innerHTML = src.innerHTML;
-  });
+async function _renderDesktopContacts(host) {
+  host.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
+      '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">Contacts</div>'+
+      '<button onclick="closeDesktopSection()" style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;">✕</button>'+
+    '</div>'+
+    '<div id="dsk-contacts-body" style="flex:1;overflow-y:auto;"><div style="padding:1rem;text-align:center;color:var(--muted);font-size:13px;">Loading...</div></div>';
+  await loadAllContacts();
+  var src = document.getElementById('contacts-panel-list');
+  var dst = host.querySelector('#dsk-contacts-body');
+  if (src && dst) dst.innerHTML = src.innerHTML;
 }
 
 // ── INIT ALL PANELS ──
