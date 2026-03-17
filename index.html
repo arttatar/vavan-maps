@@ -901,11 +901,15 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <div id="overlay" onclick="closeSidebar();closeResults();"></div>
 
   <div id="sidebar">
-    <div class="panel-hdr" style="flex-direction:column;padding:0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:#fff;flex-shrink:0;">
-      <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
-      <div class="sheet-topbar">
-        <div class="sheet-title">Filters</div>
-        <button class="sheet-close" onclick="closeSidebar()">✕</button>
+    <div style="flex-direction:column;padding:0;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:10;background:#fff;flex-shrink:0;display:flex;">
+      <!-- Drag handle -->
+      <div style="display:flex;justify-content:center;align-items:center;padding:10px 0 4px;flex-shrink:0;">
+        <div style="width:36px;height:4px;background:#ddd;border-radius:2px;"></div>
+      </div>
+      <!-- Title row -->
+      <div style="display:flex;align-items:center;padding:0 16px 12px;position:relative;flex-shrink:0;">
+        <div style="flex:1;text-align:center;font-size:15px;font-weight:600;color:#0d0d14;font-family:Inter,sans-serif;">Filters</div>
+        <button onclick="closeSidebar()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
       </div>
     </div>
 
@@ -7264,10 +7268,16 @@ function onMapClick(e) {
 <!-- ADD BUSINESS MODAL -->
 <div id="add-biz-modal" onclick="if(event.target===this)closeAddBusiness()">
   <div id="add-biz-inner">
-    <div class="abiz-header">
-      <div style="width:36px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 2px;position:absolute;left:50%;transform:translateX(-50%);top:10px;"></div>
-      <div class="abiz-title">Add Business</div>
-      <button class="sheet-close" onclick="closeAddBusiness()">✕</button>
+    <div style="padding:10px 16px 12px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;z-index:1;flex-shrink:0;">
+      <!-- Drag handle -->
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <div style="width:36px;height:4px;background:#ddd;border-radius:2px;"></div>
+      </div>
+      <!-- Title row -->
+      <div style="display:flex;align-items:center;position:relative;">
+        <div style="flex:1;text-align:center;font-size:16px;font-weight:700;color:#0d0d14;font-family:Inter,sans-serif;">Add Business</div>
+        <button onclick="closeAddBusiness()" style="position:absolute;right:0;background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+      </div>
     </div>
     <div class="abiz-body">
       <div class="abiz-field">
@@ -7424,9 +7434,12 @@ function onMapClick(e) {
 
 <!-- ROUTE PANEL -->
 <div id="route-panel">
-  <div id="rp-header" style="background:var(--ink);flex:0 0 auto;padding:14px 14px 10px;">
-    <!-- drag handle -->
-    <div style="width:36px;height:4px;background:rgba(255,255,255,.3);border-radius:2px;margin:0 auto 12px;"></div>
+  <div style="background:#0d0d14;flex-shrink:0;padding:10px 14px 12px;display:flex;flex-direction:column;">
+    <!-- Drag handle -->
+    <div style="display:flex;justify-content:center;margin-bottom:10px;">
+      <div style="width:36px;height:4px;background:rgba(255,255,255,.35);border-radius:2px;"></div>
+    </div>
+    <!-- Title + close -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:17px;font-weight:700;color:#fff;font-family:'Syne',sans-serif;line-height:1.2;">Route</div>
@@ -7434,6 +7447,7 @@ function onMapClick(e) {
       </div>
       <button onclick="closeRoutePanel()" style="background:rgba(255,255,255,.15);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:10px;line-height:1;">✕</button>
     </div>
+    <!-- Action buttons -->
     <div style="display:flex;gap:8px;">
       <button class="rp-action-btn blue" onclick="reoptimizeRoute()" style="flex:1;">Re-Optimize</button>
       <button class="rp-action-btn blue" onclick="changeRouteStart()" style="flex:1;">Start Point</button>
