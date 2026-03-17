@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Vavan — Market Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
@@ -119,7 +119,9 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   display:flex;flex-direction:column;gap:0;
   height:auto;
   align-items:flex-start;
-  pointer-events:none;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
 }
 #search-bar, #filter-chips-bar, #filter-chips-bar *{
   pointer-events:all;
@@ -1005,37 +1007,39 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 <div id="app">
   <!-- GOOGLE MAPS STYLE HEADER -->
   <div id="header">
-    <button id="search-bar" onclick="openSearchOverlay()" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <div id="search-bar-text" style="pointer-events:none;">Search businesses...</div>
-      <!-- + Add button -->
-      <span onclick="event.stopPropagation();openAddBusiness()" style="width:36px;height:36px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" title="Add Business">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a36c8" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </span>
-      <div style="width:1px;height:24px;background:#e5e7eb;margin:0 2px;flex-shrink:0;pointer-events:none;"></div>
-      <!-- Profile avatar -->
-      <span id="account-btn" onclick="event.stopPropagation();toggleAccountMenu()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">
-        <span id="account-initials" style="pointer-events:none;">?</span>
-      </span>
-    </button>
-    <!-- Quick filter chips -->
-    <div id="filter-chips-bar">
-      <button class="fchip" id="chip-myaccounts" onclick="filterMyAccounts()">
-        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        My Accounts
+    <div style="pointer-events:all;display:flex;flex-direction:column;gap:0;width:100%;">
+      <button id="search-bar" onclick="openSearchOverlay()" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div id="search-bar-text" style="pointer-events:none;">Search businesses...</div>
+        <!-- + Add button -->
+        <span onclick="event.stopPropagation();openAddBusiness()" style="width:36px;height:36px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;" title="Add Business">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a36c8" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <div style="width:1px;height:24px;background:#e5e7eb;margin:0 2px;flex-shrink:0;pointer-events:none;"></div>
+        <!-- Profile avatar -->
+        <span id="account-btn" onclick="event.stopPropagation();toggleAccountMenu()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:#fff;font-family:Inter,sans-serif;">
+          <span id="account-initials" style="pointer-events:none;">?</span>
+        </span>
       </button>
-      <button class="fchip" id="chip-contacts" onclick="navTo('contacts')">
-        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Contacts
-      </button>
-      <button class="fchip" id="chip-route" onclick="toggleRouteNav()">
-        <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
-        Route
-      </button>
-      <button class="fchip" id="chip-list" onclick="navTo('list')">
-        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
-        List
-      </button>
+      <!-- Quick filter chips -->
+      <div id="filter-chips-bar">
+        <button class="fchip" id="chip-myaccounts" onclick="filterMyAccounts()">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          My Accounts
+        </button>
+        <button class="fchip" id="chip-contacts" onclick="navTo('contacts')">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Contacts
+        </button>
+        <button class="fchip" id="chip-route" onclick="toggleRouteNav()">
+          <svg viewBox="0 0 24 24"><circle cx="3" cy="6" r="2"/><circle cx="21" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M5 6h6a4 4 0 0 1 4 4v4"/><path d="M19 6h-6"/></svg>
+          Route
+        </button>
+        <button class="fchip" id="chip-list" onclick="navTo('list')">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+          List
+        </button>
+      </div>
     </div>
   </div>
 
