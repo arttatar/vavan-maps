@@ -809,26 +809,42 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   padding:0;
   transition:background .15s;
 }
-#locate-btn svg{
-  width:20px; height:20px;
-  stroke:#333;
-}
+#locate-btn svg{ width:20px; height:20px; stroke:#333; }
 #locate-btn:hover{ background:#f0f0f0; }
 #locate-btn.locating svg{ stroke:var(--accent); }
-/* Mapbox zoom+compass — sit above locate button */
+
+/* ── MOBILE: zoom+compass above locate ── */
 .mapboxgl-ctrl-bottom-right{
-  bottom:calc(env(safe-area-inset-bottom,0px) + 68px) !important;
-  right:12px !important;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 164px) !important;
+  right:10px !important;
 }
-@media(min-width:769px){
-  .mapboxgl-ctrl-bottom-right{ bottom:80px !important; right:16px !important; }
-}
-#locate-btn.locating svg{ stroke:var(--accent); }
 @media(max-width:768px){
-  #locate-btn{ right:12px; bottom:calc(env(safe-area-inset-bottom,0px) + 20px); }
+  #locate-btn{ right:10px; bottom:calc(env(safe-area-inset-bottom,0px) + 120px); }
 }
+
+/* ── DESKTOP: clean right rail — zoom, compass, locate ── */
 @media(min-width:769px){
-  #locate-btn{ right:16px; bottom:32px; }
+  /* Right rail: zoom + compass sit at bottom-right with clean spacing */
+  .mapboxgl-ctrl-bottom-right{
+    bottom:88px !important;
+    right:16px !important;
+  }
+  /* Locate sits just below zoom/compass rail */
+  #locate-btn{
+    right:16px;
+    bottom:44px;
+    width:36px; height:36px;
+    border-radius:6px;
+  }
+  /* Attribution moves to bottom-left — away from action controls */
+  .mapboxgl-ctrl-bottom-left{
+    bottom:8px !important;
+    left:8px !important;
+  }
+  /* Hide default bottom-right attribution on desktop */
+  .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl-attrib{
+    display:none !important;
+  }
 }
 
 /* Opportunities */
@@ -3038,6 +3054,8 @@ if (navigator.geolocation) {
   }, null, { enableHighAccuracy:true, timeout:5000 });
 }
   map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  // Attribution anchored bottom-left on desktop, away from action controls
+  map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left');
   draw = new MapboxDraw({ displayControlsDefault:false });
   map.addControl(draw);
   map.on('draw.create', onDraw);
