@@ -7411,9 +7411,17 @@ if (navigator.geolocation) {
 
 function toggleRouteMode() {
   _routeMode = !_routeMode;
+
+  // Update mobile route-btn if visible
   var btn = document.getElementById('route-btn');
-  btn.classList.toggle('active', _routeMode);
-  btn.textContent = _routeMode ? 'Cancel' : 'Route';
+  if (btn) {
+    btn.classList.toggle('active', _routeMode);
+    btn.textContent = _routeMode ? 'Cancel' : 'Route';
+  }
+
+  // Update desktop mode button active state
+  var dskRouteBtn = document.getElementById('dskm-route');
+  if (dskRouteBtn) dskRouteBtn.classList.toggle('active', _routeMode);
 
   // Show/hide route controls in list toolbar
   var ctrl = document.getElementById('route-list-controls');
@@ -7430,8 +7438,15 @@ function toggleRouteMode() {
     _routeSelected = {};
     updateRouteSelCount();
   }
+
   renderList();
-  navTo('list');
+
+  // Open list so rep can select stops
+  if (window.innerWidth > 768) {
+    openDesktopSection('list');
+  } else {
+    navTo('list');
+  }
 }
 
 // Route nav button — if route exists, toggle route panel; else enter selection mode
@@ -7746,21 +7761,52 @@ function _drawRouteOnMap() {
 
 // ── ROUTE PANEL ──
 function openRoutePanel() {
-  var rp = document.getElementById('route-panel');
-  if (window.innerWidth <= 768) {
-    _bsOpen('route-panel', BS.WORK, closeRoutePanel);
-  } else {
-    rp.classList.add('open');
-  }
   var vrBtn = document.getElementById('view-route-btn');
   if (vrBtn) vrBtn.style.display = 'none';
+
   if (_routeStops.length) {
     var bounds = new mapboxgl.LngLatBounds();
     if (_routeStartPoint) bounds.extend([_routeStartPoint.lon, _routeStartPoint.lat]);
     _routeStops.forEach(function(s){ if(s.biz.lon&&s.biz.lat) bounds.extend([s.biz.lon,s.biz.lat]); });
     if (!bounds.isEmpty()) map.fitBounds(bounds, {padding:60, maxZoom:14});
   }
-  _renderRPStops();
+
+  if (window.innerWidth <= 768) {
+    _bsOpen('route-panel', BS.WORK, closeRoutePanel);
+    _renderRPStops();
+  } else {
+    // Desktop — render route into left panel host
+    var host = document.getElementById('desktop-panel-host');
+    var topControls = document.getElementById('desktop-top-controls');
+    if (topControls) topControls.classList.add('panel-open');
+    if (host) {
+      host.classList.add('open');
+      _desktopSection = 'route';
+      document.querySelectorAll('.dsk-mode-btn').forEach(function(b){ b.classList.remove('active'); });
+      var rb = document.getElementById('dskm-route');
+      if (rb) rb.classList.add('active');
+      // Move route-panel content into host
+      var rp = document.getElementById('route-panel');
+      host.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
+          '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">Route</div>'+
+          '<button onclick="closeDesktopSection();_routeMode=false;_routeSelected={};updateRouteSelCount();" style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;">✕</button>'+
+        '</div>'+
+        '<div id="dsk-route-body" style="flex:1;overflow-y:auto;"></div>';
+      // Clone route panel content into desktop host
+      if (rp) {
+        var rpBody = rp.querySelector('.rp-body') || rp;
+        var dskBody = host.querySelector('#dsk-route-body');
+        if (dskBody) dskBody.innerHTML = rpBody.innerHTML || '';
+      }
+      _renderRPStops(); // render into actual route-panel, then mirror
+      if (rp) {
+        var rpBody2 = rp.querySelector('.rp-body') || rp;
+        var dskBody2 = host.querySelector('#dsk-route-body');
+        if (dskBody2 && rpBody2) dskBody2.innerHTML = rpBody2.innerHTML;
+      }
+    }
+  }
 }
 
 function closeRoutePanel() {
