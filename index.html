@@ -3119,7 +3119,8 @@ function navTo(tab) {
   // Close ALL panels on every navigation
   sidebar.classList.remove('open');
   results.classList.remove('open');
-  contacts.classList.remove('open');
+  var cEl = document.getElementById('contacts-panel');
+  if (cEl) { cEl.classList.remove('open'); cEl.style.transform=''; cEl.style.height=''; cEl.style.top=''; cEl.style.bottom=''; cEl.style.left=''; cEl.style.right=''; cEl.style.width=''; cEl.style.borderRadius=''; }
   overlay.classList.remove('show');
   if (detail) detail.classList.remove('open');
 
@@ -3167,7 +3168,16 @@ function toggleSidebar()  { navTo('filters'); }
 function toggleList()     { navTo('list'); }
 function openResults()    { navTo('list'); }
 function closeResults()   {
-  document.getElementById('results-panel').classList.remove('open');
+  var el = document.getElementById('results-panel');
+  el.classList.remove('open');
+  el.style.transform = '';
+  el.style.height = '';
+  el.style.top = '';
+  el.style.bottom = '';
+  el.style.left = '';
+  el.style.right = '';
+  el.style.width = '';
+  el.style.borderRadius = '';
   if (currentNav === 'list') {
     currentNav = 'map';
     var m = document.getElementById('nm-list'); if(m) m.classList.remove('active');
@@ -3176,7 +3186,16 @@ function closeResults()   {
 }
 function openSidebar()    { navTo('filters'); }
 function closeSidebar()   {
-  document.getElementById('sidebar').classList.remove('open');
+  var el = document.getElementById('sidebar');
+  el.classList.remove('open');
+  el.style.transform = '';
+  el.style.height = '';
+  el.style.top = '';
+  el.style.bottom = '';
+  el.style.left = '';
+  el.style.right = '';
+  el.style.width = '';
+  el.style.borderRadius = '';
   document.getElementById('overlay').classList.remove('show');
   if (currentNav === 'filters') {
     currentNav = 'map';
@@ -4361,7 +4380,8 @@ function openAddBusiness() {
   var overlay = document.getElementById('overlay');
   if (sidebar) sidebar.classList.remove('open');
   if (results) results.classList.remove('open');
-  if (contacts) contacts.classList.remove('open');
+  if (contacts) var cEl = document.getElementById('contacts-panel');
+  if (cEl) { cEl.classList.remove('open'); cEl.style.transform=''; cEl.style.height=''; cEl.style.top=''; cEl.style.bottom=''; cEl.style.left=''; cEl.style.right=''; cEl.style.width=''; cEl.style.borderRadius=''; }
   if (overlay) overlay.classList.remove('show');
   var rp = document.getElementById('route-panel');
   if (rp) rp.classList.remove('open');
@@ -5076,8 +5096,16 @@ function selectBiz(id) {
 }
 
 function closeDetail() {
-  document.getElementById('detail').classList.remove('open');
-  
+  var el = document.getElementById('detail');
+  el.classList.remove('open');
+  el.style.transform = '';
+  el.style.height = '';
+  el.style.top = '';
+  el.style.bottom = '';
+  el.style.left = '';
+  el.style.right = '';
+  el.style.width = '';
+  el.style.borderRadius = '';
   if (lastSelectedBiz && lastSelectedBiz.lat && lastSelectedBiz.lon) {
     map.easeTo({center:[lastSelectedBiz.lon, lastSelectedBiz.lat], zoom:16, duration:300});
   }
@@ -7318,7 +7346,16 @@ function openRoutePanel() {
 }
 
 function closeRoutePanel() {
-  document.getElementById('route-panel').classList.remove('open');
+  var el = document.getElementById('route-panel');
+  el.classList.remove('open');
+  el.style.transform = '';
+  el.style.height = '';
+  el.style.top = '';
+  el.style.bottom = '';
+  el.style.left = '';
+  el.style.right = '';
+  el.style.width = '';
+  el.style.borderRadius = '';
   // Show View Route button in list if route exists
   var vrBtn = document.getElementById('view-route-btn');
   if (vrBtn) vrBtn.style.display = _routeStops.length > 0 ? 'block' : 'none';
