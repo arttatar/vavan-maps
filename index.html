@@ -2520,8 +2520,8 @@ if (navigator.geolocation) {
   map.on('click', onMapClick);
   map.on('load', function() {
     startLocationTracking();
-    initDragDismiss();
-    setTimeout(addHQMarker, 500); // slight delay ensures map is fully ready
+    initAllSnapPanels();
+    setTimeout(addHQMarker, 500);
   });
 
 // Refresh list as map moves — shows only what's visible
