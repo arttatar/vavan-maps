@@ -32,57 +32,35 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   /* Map — full screen, header floats above */
   #map { top: 0; bottom: 60px; }
 
-  /* All panels slide up from bottom, above nav */
-  #sidebar {
-    top: auto !important; bottom: 0 !important;
+  /* ── BOTTOM SHEET ENGINE — all panels ── */
+  /* Panels start off-screen, BS engine controls height dynamically */
+  #sidebar, #results-panel, #detail, #contacts-panel, #route-panel {
+    position: fixed !important;
     left: 0 !important; right: 0 !important;
-    width: 100% !important; max-width: 100% !important;
-    height: 55vh !important;
-    min-height: 80px !important;
-    max-height: calc(100vh - 60px) !important;
-    border-radius: 20px 20px 0 0 !important;
-    transform: translateY(110%) !important;
-    transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
-    border-right: none !important;
-    z-index: 3000 !important;
-    box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
-    overflow: hidden !important;
-  }
-  #sidebar.open { transform: translateY(0) !important; }
-
-  #results-panel {
-    top: auto !important; bottom: 0 !important;
-    left: 0 !important; right: 0 !important;
+    bottom: 0 !important; top: auto !important;
     width: 100% !important;
-    height: 55vh !important;
+    height: 80vh !important;           /* default — overridden by BS engine */
     min-height: 80px !important;
-    max-height: calc(100vh - 60px) !important;
+    max-height: 100vh !important;
     border-radius: 20px 20px 0 0 !important;
-    transform: translateY(110%) !important;
-    transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
-    border-right: none !important;
-    z-index: 3100 !important;
-    box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
+    transform: translateY(100%) !important;
+    transition: transform .35s cubic-bezier(.2,.8,.3,1) !important;
     overflow: hidden !important;
-  }
-  #results-panel.open { transform: translateY(0) !important; }
-
-  #detail {
-    top: auto !important; bottom: 0 !important;
-    left: 0 !important; right: 0 !important;
-    width: 100% !important;
-    height: 75vh !important;
-    min-height: 80px !important;
-    max-height: calc(100vh - 60px) !important;
-    border-radius: 20px 20px 0 0 !important;
-    transform: translateY(110%) !important;
-    transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
+    border-right: none !important;
     border-left: none !important;
-    z-index: 3200 !important;
-    box-shadow: 0 -4px 32px rgba(0,0,0,0.2) !important;
-    overflow: hidden !important;
+    box-shadow: 0 -4px 40px rgba(0,0,0,0.22) !important;
   }
-  #detail.open { transform: translateY(0) !important; }
+  #sidebar        { z-index: 3000 !important; }
+  #results-panel  { z-index: 3100 !important; }
+  #detail         { z-index: 3200 !important; }
+  #contacts-panel { z-index: 3150 !important; }
+  #route-panel    { z-index: 3050 !important; }
+
+  /* Open state — BS engine will set height, just need transform reset */
+  #sidebar.open, #results-panel.open, #detail.open,
+  #contacts-panel.open, #route-panel.open {
+    transform: translateY(0) !important;
+  }
 
   #det-x { min-height: auto !important; padding: 0 !important; flex-direction: column !important; }
   #overlay { z-index: 2900; }
@@ -407,23 +385,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 @media (max-width:768px){
   #nav-desktop{ display:none; }
-  #header-add-btn{ display:none; } /* now in bottom nav */
-  #map{ bottom:60px; }
-  #contacts-panel{
-    top:auto !important; bottom:0 !important;
-    left:0 !important; right:0 !important;
-    width:100% !important;
-    height:55vh !important;
-    min-height:80px !important;
-    max-height:calc(100vh - 60px) !important;
-    border-radius:20px 20px 0 0 !important;
-    transform:translateY(110%) !important;
-    transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
-    border-right:none !important;
-    z-index:1900 !important;
-    overflow:hidden !important;
-  }
-  #contacts-panel.open{ transform:translateY(0) !important; }
+  #header-add-btn{ display:none; }
+  #map{ bottom:0; }
 }
 
 /* MAP */
@@ -868,15 +831,15 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     top:auto !important;bottom:0 !important;
     left:0 !important;right:0 !important;
     width:100% !important;
-    height:55vh !important;
+    height:80vh !important;
     min-height:80px !important;
-    max-height:calc(100vh - 60px) !important;
+    max-height:100vh !important;
     border-radius:20px 20px 0 0 !important;
-    transform:translateY(110%) !important;
-    transition:transform .3s cubic-bezier(.4,0,.2,1) !important;
-    box-shadow:0 -4px 32px rgba(0,0,0,.22) !important;
+    transform:translateY(100%) !important;
+    transition:transform .35s cubic-bezier(.2,.8,.3,1) !important;
+    box-shadow:0 -4px 40px rgba(0,0,0,.22) !important;
     overflow:hidden !important;
-    z-index:3000 !important;
+    z-index:3050 !important;
   }
   #route-panel.open{transform:translateY(0) !important;}
 }
@@ -2565,144 +2528,179 @@ map.on('zoomstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); })
 map.on('dragstart', function(){ mapIsMoving = true; clearTimeout(_moveTimer); });
 
 // ── DRAG TO DISMISS BOTTOM SHEETS ──
-// ── UNIVERSAL SNAP PANEL SYSTEM ──
-// Snap points as % of window height from bottom (above nav bar)
-var SNAP = {
-  CLOSED:  0,    // fully dismissed
-  PEEK:    30,   // just the handle visible (~30% height)
-  HALF:    55,   // half screen
-  FULL:    85    // nearly full screen
+// ════════════════════════════════════════════════════════════
+// VAVAN BOTTOM SHEET ENGINE — single system for all panels
+// Snap points: 0=closed  25=peek  80=working  100=fullscreen
+// ════════════════════════════════════════════════════════════
+
+var BS = {
+  CLOSED: 0,
+  PEEK:   25,
+  WORK:   80,
+  FULL:   100
 };
 
-var NAV_H = 60; // bottom nav height px
-
-function _snapHeight(pct) {
-  return Math.round((window.innerHeight - NAV_H) * pct / 100);
+// px from top of viewport for each snap
+function _bsPx(pct) {
+  return Math.round(window.innerHeight * (1 - pct / 100));
 }
 
-function initSnapPanel(panelId, closeFn, opts) {
+// Convert current panel top offset → pct open
+function _bsTopToPct(topPx) {
+  return Math.max(0, Math.min(100, Math.round((1 - topPx / window.innerHeight) * 100)));
+}
+
+// One active sheet at a time
+var _bsActive = null;
+
+function _bsClose(panelId, closeFn) {
   var el = document.getElementById(panelId);
   if (!el) return;
-  opts = opts || {};
+  el.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
+  el.style.transform = 'translateY(100%)';
+  if (_bsActive === panelId) _bsActive = null;
+  setTimeout(function() {
+    el.classList.remove('open');
+    if (closeFn) closeFn();
+  }, 300);
+}
 
-  // Default snap points — can override per panel
-  var snaps = opts.snaps || [SNAP.PEEK, SNAP.HALF, SNAP.FULL];
-  var defaultSnap = opts.defaultSnap || SNAP.HALF;
-
-  // Store current snap state
-  el._snapPct = defaultSnap;
-
-  function applyHeight(pct, animate) {
-    var h = _snapHeight(pct);
-    el.style.transition = animate ? 'height .3s cubic-bezier(.4,0,.2,1), transform .3s cubic-bezier(.4,0,.2,1)' : 'none';
-    el.style.height = h + 'px';
-    el.style.transform = 'translateY(0)';
-    el._snapPct = pct;
-  }
-
-  function snapToNearest(currentPct, velocityDir) {
-    // velocityDir: -1 = dragging up (open), 1 = dragging down (close)
-    var sorted = snaps.slice().sort(function(a,b){ return a-b; });
-
-    // If dragged down past peek threshold → close
-    if (currentPct < snaps[0] * 0.5) {
-      el.style.transition = 'transform .25s cubic-bezier(.4,0,.2,1)';
-      el.style.transform = 'translateY(110%)';
-      setTimeout(function(){ if(closeFn) closeFn(); }, 250);
-      return;
+function _bsOpen(panelId, pct, closeFn) {
+  // Close any other active sheet first
+  if (_bsActive && _bsActive !== panelId) {
+    var prev = document.getElementById(_bsActive);
+    if (prev) {
+      prev.style.transition = 'transform .25s cubic-bezier(.4,0,.2,1)';
+      prev.style.transform = 'translateY(100%)';
+      prev.classList.remove('open');
     }
-
-    // Find nearest snap
-    var nearest = sorted[0];
-    var minDist = Math.abs(currentPct - sorted[0]);
-    sorted.forEach(function(s) {
-      var d = Math.abs(currentPct - s);
-      // Bias toward direction of drag
-      if (velocityDir < 0) d *= (currentPct < s ? 0.6 : 1.4); // dragging up → prefer higher snap
-      else d *= (currentPct > s ? 0.6 : 1.4); // dragging down → prefer lower snap
-      if (d < minDist) { minDist = d; nearest = s; }
-    });
-
-    applyHeight(nearest, true);
   }
+  _bsActive = panelId;
 
-  // ── DRAG LOGIC ──
-  var dragStartY = 0, dragStartH = 0, isDragging = false, lastY = 0, velocity = 0;
+  var el = document.getElementById(panelId);
+  if (!el) return;
+  var targetPx = _bsPx(pct);
 
-  function onDragStart(clientY) {
-    // Only allow drag from top 56px of panel (handle area)
+  el.classList.add('open');
+  el.style.transition = 'none';
+  el.style.transform = 'translateY(100%)';
+  el.style.height = (window.innerHeight - targetPx) + 'px';
+  el.style.top = 'auto';
+  el.style.bottom = '0';
+
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      el.style.transition = 'transform .35s cubic-bezier(.2,.8,.3,1)';
+      el.style.transform = 'translateY(0)';
+      el._bsPct = pct;
+      el._bsCloseFn = closeFn;
+    });
+  });
+}
+
+function _bsSnapToNearest(el, currentPct, velocity, snaps) {
+  // Fast downward flick → close
+  if (velocity > 8) {
+    _bsClose(el.id, el._bsCloseFn);
+    return;
+  }
+  // Fast upward flick → full
+  if (velocity < -8) {
+    _bsSnap(el, BS.FULL);
+    return;
+  }
+  // Dragged below minimum snap → close
+  if (currentPct < snaps[0] * 0.4) {
+    _bsClose(el.id, el._bsCloseFn);
+    return;
+  }
+  // Find nearest snap with velocity bias
+  var best = snaps[0], bestDist = Infinity;
+  snaps.forEach(function(s) {
+    var d = Math.abs(currentPct - s);
+    // Bias: if moving down, prefer lower snaps; if up, prefer higher
+    if (velocity > 0 && s < currentPct) d *= 0.6;
+    if (velocity < 0 && s > currentPct) d *= 0.6;
+    if (d < bestDist) { bestDist = d; best = s; }
+  });
+  _bsSnap(el, best);
+}
+
+function _bsSnap(el, pct) {
+  var targetH = window.innerHeight - _bsPx(pct);
+  el.style.transition = 'height .3s cubic-bezier(.2,.8,.3,1), transform .3s cubic-bezier(.2,.8,.3,1)';
+  el.style.height = targetH + 'px';
+  el.style.transform = 'translateY(0)';
+  el._bsPct = pct;
+}
+
+function _bsAttach(panelId, snaps, closeFn) {
+  var el = document.getElementById(panelId);
+  if (!el) return;
+
+  var dragStartY = 0, dragStartH = 0, isDragging = false, lastY = 0, velocity = 0, lastTime = 0;
+
+  function dragStart(clientY) {
     var rect = el.getBoundingClientRect();
-    if (clientY - rect.top > 56) return false;
+    // Only drag from top 60px (handle area)
+    if (clientY - rect.top > 60) return false;
+    // Don't drag if content is scrolled down
+    var scrollable = el.querySelector('[style*="overflow-y:auto"],[style*="overflow-y: auto"],.rp-stops,#det-body,#filter-scroll,#contacts-panel-list,.abiz-body');
+    if (scrollable && scrollable.scrollTop > 4) return false;
     isDragging = true;
     dragStartY = clientY;
     dragStartH = el.offsetHeight;
     lastY = clientY;
     velocity = 0;
+    lastTime = Date.now();
     el.style.transition = 'none';
     return true;
   }
 
-  function onDragMove(clientY) {
+  function dragMove(clientY) {
     if (!isDragging) return;
-    velocity = clientY - lastY;
+    var now = Date.now();
+    var dt = now - lastTime || 16;
+    velocity = (clientY - lastY) / dt * 16; // px per frame approx
     lastY = clientY;
-    var dy = dragStartY - clientY; // positive = dragging up = bigger panel
-    var newH = Math.max(40, Math.min(dragStartH + dy, window.innerHeight - NAV_H - 20));
+    lastTime = now;
+    var dy = dragStartY - clientY;
+    var newH = Math.max(60, Math.min(dragStartH + dy, window.innerHeight - 10));
     el.style.height = newH + 'px';
-    el.style.transform = 'translateY(0)';
   }
 
-  function onDragEnd() {
+  function dragEnd() {
     if (!isDragging) return;
     isDragging = false;
-    var currentH = el.offsetHeight;
-    var maxH = window.innerHeight - NAV_H;
-    var currentPct = (currentH / maxH) * 100;
-    var dir = velocity > 0 ? 1 : -1; // positive velocity = moving down
-    snapToNearest(currentPct, dir);
+    var currentPct = _bsTopToPct(el.getBoundingClientRect().top);
+    _bsSnapToNearest(el, currentPct, velocity, snaps || [BS.PEEK, BS.WORK, BS.FULL]);
   }
 
-  // Touch events
+  // Touch
   el.addEventListener('touchstart', function(e) {
-    onDragStart(e.touches[0].clientY);
+    dragStart(e.touches[0].clientY);
   }, {passive: true});
-
   el.addEventListener('touchmove', function(e) {
-    if (!isDragging) return;
-    onDragMove(e.touches[0].clientY);
+    if (isDragging) dragMove(e.touches[0].clientY);
   }, {passive: true});
+  el.addEventListener('touchend', dragEnd);
+  el.addEventListener('touchcancel', dragEnd);
 
-  el.addEventListener('touchend', function() { onDragEnd(); });
-  el.addEventListener('touchcancel', function() { onDragEnd(); });
-
-  // Mouse events (desktop)
+  // Mouse
   el.addEventListener('mousedown', function(e) {
-    if (!onDragStart(e.clientY)) return;
-    function onMove(e) { onDragMove(e.clientY); }
-    function onUp() {
-      onDragEnd();
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    }
+    if (!dragStart(e.clientY)) return;
+    function onMove(e) { dragMove(e.clientY); }
+    function onUp() { dragEnd(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   });
 
-  // Expose open function
-  el._snapOpen = function(pct) {
-    pct = pct || defaultSnap;
-    el.style.transition = 'none';
-    el.style.transform = 'translateY(110%)';
-    el.style.height = _snapHeight(pct) + 'px';
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){
-        el.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1)';
-        el.style.transform = 'translateY(0)';
-        el._snapPct = pct;
-      });
-    });
-  };
+  el._bsSnap  = function(pct) { _bsSnap(el, pct); };
+  el._bsOpen  = function(pct) { _bsOpen(panelId, pct, el._bsCloseFn); };
+  el._bsClose = function()    { _bsClose(panelId, el._bsCloseFn); };
+  el._bsCloseFn = closeFn;
 }
+
 
 // ── SEARCH OVERLAY ──
 var _soSelectedInds = [];
@@ -2843,36 +2841,14 @@ function _soApply() {
 
 // ── INIT ALL PANELS ──
 function initAllSnapPanels() {
-  // Filters sidebar
-  initSnapPanel('sidebar', closeSidebar, {
-    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
-    defaultSnap: SNAP.HALF
-  });
-  // Results list
-  initSnapPanel('results-panel', closeResults, {
-    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
-    defaultSnap: SNAP.HALF
-  });
-  // Business detail
-  initSnapPanel('detail', closeDetail, {
-    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
-    defaultSnap: SNAP.FULL
-  });
-  // Contacts
-  initSnapPanel('contacts-panel', function(){ navTo('map'); }, {
-    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
-    defaultSnap: SNAP.HALF
-  });
-  // Route panel
-  initSnapPanel('route-panel', closeRoutePanel, {
-    snaps: [SNAP.PEEK, SNAP.HALF, SNAP.FULL],
-    defaultSnap: SNAP.HALF
-  });
-  // Add business (special — only 2 snaps, no peek)
-  initSnapPanel('add-biz-inner', closeAddBusiness, {
-    snaps: [SNAP.HALF, SNAP.FULL],
-    defaultSnap: SNAP.FULL
-  });
+  // Attach BottomSheet engine to every mobile panel
+  // Per-panel snap points and default open heights per spec:
+  _bsAttach('sidebar',        [BS.PEEK, BS.WORK, BS.FULL], closeSidebar);
+  _bsAttach('results-panel',  [BS.PEEK, BS.WORK, BS.FULL], closeResults);
+  _bsAttach('detail',         [BS.PEEK, BS.WORK, BS.FULL], closeDetail);
+  _bsAttach('contacts-panel', [BS.PEEK, BS.WORK, BS.FULL], function(){ navTo('map'); });
+  _bsAttach('route-panel',    [BS.PEEK, BS.WORK, BS.FULL], closeRoutePanel);
+  _bsAttach('add-biz-inner',  [BS.WORK, BS.FULL],          closeAddBusiness);
 }
 
 
@@ -3203,14 +3179,15 @@ function navTo(tab) {
     var fs = document.getElementById('filter-scroll');
     if (fs) fs.scrollTop = 0;
     _initTagFilterDropdown();
-    if (window.innerWidth <= 768 && sidebar._snapOpen) sidebar._snapOpen(SNAP.HALF);
+    _bsOpen("sidebar", BS.WORK, closeSidebar);
   } else if (tab === 'list') {
     renderList();
     results.classList.add('open');
-    if (window.innerWidth <= 768 && results._snapOpen) results._snapOpen(SNAP.HALF);
+    _bsOpen("results-panel", BS.WORK, closeResults);
   } else if (tab === 'contacts') {
     loadAllContacts();
     contacts.classList.add('open');
+    if (window.innerWidth <= 768) _bsOpen('contacts-panel', BS.WORK, function(){ navTo('map'); });
   }
 }
 
@@ -5117,7 +5094,7 @@ function selectBiz(id) {
   renderDetailPanel(b);
   var det = document.getElementById('detail');
   det.classList.add('open');
-  if (window.innerWidth <= 768 && det._snapOpen) det._snapOpen(SNAP.FULL);
+  if (window.innerWidth <= 768) _bsOpen("detail", BS.FULL, closeDetail);
   closeSidebar();
   closeResults();
 }
@@ -7349,7 +7326,7 @@ function _drawRouteOnMap() {
 function openRoutePanel() {
   var rp = document.getElementById('route-panel');
   rp.classList.add('open');
-  if (window.innerWidth <= 768 && rp._snapOpen) rp._snapOpen(SNAP.HALF);
+  if (window.innerWidth <= 768) _bsOpen("route-panel", BS.WORK, closeRoutePanel);
   var vrBtn = document.getElementById('view-route-btn');
   if (vrBtn) vrBtn.style.display = 'none';
   if (_routeStops.length) {
