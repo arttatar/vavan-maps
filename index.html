@@ -1642,13 +1642,15 @@ async function sendPasswordReset2() {
 
 // ── SUPER ADMIN / CLIENT MANAGEMENT ──
 // Role hierarchy: vavan_super > client_admin > rep
-var SUPER_ADMIN_EMAILS = ['art@interstate-oil.com', 'arttatar1@gmail.com', 'atatar@interstateoil.com', 'info@vavan.co'];
+var SUPER_ADMIN_EMAILS = ['info@vavan.co']; // Vavan internal only
 
 async function checkIfSuperAdmin() {
+  // Use already-loaded profile first (fastest)
+  if (currentProfile) return currentProfile.role === 'vavan_super';
+  // Fallback: check email list or DB
   var session = await sb.auth.getSession();
   if (!session.data || !session.data.session) return false;
   var email = session.data.session.user.email;
-  // Check by email OR by role in sales_profiles
   if (SUPER_ADMIN_EMAILS.indexOf(email) >= 0) return true;
   var r = await sb.from('sales_profiles').select('role').eq('user_id', session.data.session.user.id).single();
   return r.data && r.data.role === 'vavan_super';
