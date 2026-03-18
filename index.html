@@ -4929,7 +4929,14 @@ async function renderUsersTab(body) {
 
     var roleColors = { account_owner:'#7c3aed', client_admin:'var(--accent)', admin:'var(--accent)', user:'var(--muted)', rep:'var(--muted)', vavan_super:'#d97706' };
 
-    var profilesHtml = _allProfiles.map(function(p){
+    // Separate active and disabled users
+    var activeProfiles = _allProfiles.filter(function(p){ return p.active !== false; });
+    var disabledProfiles = _allProfiles.filter(function(p){ return p.active === false; });
+    var showDisabled = document.getElementById('show-disabled-toggle') ? 
+      document.getElementById('show-disabled-toggle').checked : false;
+    var visibleProfiles = showDisabled ? _allProfiles : activeProfiles;
+
+    var profilesHtml = visibleProfiles.map(function(p){
       var acts = actThisWeek.filter(function(a){ return a.created_by === p.full_name; });
       var visits = acts.filter(function(a){ return a.type==='visited'; }).length;
       var contacts = acts.filter(function(a){ return a.type==='contacted'; }).length;
@@ -5074,7 +5081,14 @@ async function renderUsersTab(body) {
     ) : '';
 
     body.innerHTML = '<div class="settings-section">' +
-      '<div class="settings-section-title">All Users ('+_allProfiles.length+')</div>' +
+      '<div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;">' +
+        '<span>Users ('+activeProfiles.length+' active'+(disabledProfiles.length ? ', '+disabledProfiles.length+' disabled' : '')+')</span>' +
+        (disabledProfiles.length ? 
+          '<label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;">' +
+            '<input type="checkbox" id="show-disabled-toggle" '+(showDisabled?'checked':'')+' style="accent-color:var(--accent);" onchange="renderUsersTab(document.getElementById(\'settings-body\'))">' +
+            'Show disabled' +
+          '</label>' : '') +
+      '</div>' +
       profilesHtml + pendingHtml +
     '</div>';
 
@@ -5151,7 +5165,7 @@ async function toggleUserActive(profileId, makeActive) {
     if (!confirm('Disable this user? They will be immediately signed out and cannot log in until re-enabled.')) return;
   }
   try {
-    var r = await _callFn('manage-user', { 
+    var r = await _callFn('hyper-api', { 
       action: makeActive ? 'enable' : 'disable', 
       profile_id: profileId 
     });
@@ -5181,7 +5195,7 @@ async function sendPasswordReset(profileId) {
     // Try edge function first (proper password reset flow)
     var fnOk = false;
     try {
-      var result = await _callFn('manage-user', { action: 'reset_password', profile_id: profileId });
+      var result = await _callFn('hyper-api', { action: 'reset_password', profile_id: profileId });
       if (result.success) fnOk = true;
     } catch(fnErr) { console.warn('manage-user fn not available:', fnErr.message); }
 
@@ -5220,7 +5234,7 @@ async function deleteUser(profileId, userId, name) {
   if (!confirm('Permanently delete "'+name+'"?\n\nThis will:\n• Remove their access immediately\n• Delete their account from Auth\n• Cannot be undone')) return;
   try {
     // Use edge function to delete from both profile AND Auth
-    await _callFn('manage-user', { action: 'delete', profile_id: profileId });
+    await _callFn('hyper-api', { action: 'delete', profile_id: profileId });
     _showToast('✓ ' + name + ' permanently deleted');
     renderUsersTab(document.getElementById('settings-body'));
   } catch(e) {
