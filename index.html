@@ -5115,25 +5115,29 @@ async function saveUserEdit(id) {
   });
   statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Saving...';
   try {
-    var fnOk = false;
-    try {
-      await _callFn('update-user', {
-        profile_id: id, full_name: name.trim(), email: email.trim(), role: role,
-        territory_name: tname, territory_code: tcode,
-        permissions: perms, market_ids: marketIds.length ? marketIds : undefined
-      });
-      fnOk = true;
-    } catch(fnErr) { console.warn('update-user fn not available:', fnErr.message); }
-    if (!fnOk) {
-      var updates = { full_name: name.trim(), role: role, territory_name: tname, territory_code: tcode, permissions: perms, updated_at: new Date().toISOString() };
-      if (email.trim()) updates.email = email.trim();
-      var r = await sb.from('sales_profiles').update(updates).eq('id', id);
-      if (r.error) throw r.error;
-      if (marketIds.length) await _saveProfileMarkets(id, marketIds);
+    // Save directly to DB — edge functions not deployed yet
+    var updates = {
+      full_name: name.trim(),
+      role: role,
+      territory_name: tname,
+      territory_code: tcode,
+      permissions: perms,
+      updated_at: new Date().toISOString()
+    };
+    if (email.trim()) updates.email = email.trim();
+
+    console.log('Saving user edit:', id, updates);
+    var r = await sb.from('sales_profiles').update(updates).eq('id', id);
+    if (r.error) {
+      console.error('Save error:', r.error);
+      throw r.error;
     }
+    if (marketIds.length) await _saveProfileMarkets(id, marketIds);
+
     statusEl.style.color = '#059669'; statusEl.textContent = '✓ Saved';
     setTimeout(function(){ renderUsersTab(document.getElementById('settings-body')); }, 800);
   } catch(e) {
+    console.error('saveUserEdit failed:', e);
     statusEl.style.color = '#dc2626'; statusEl.textContent = 'Error: '+e.message;
   }
 }
