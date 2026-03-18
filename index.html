@@ -2142,7 +2142,10 @@ function _updateAccountUI(fullName, isAdmin) {
   if (menuName) menuName.textContent = fullName || '—';
   var settingsRow = document.getElementById('account-menu-settings');
   if (settingsRow) {
-    settingsRow.style.display = isAdmin ? 'flex' : 'none';
+    // Show Admin Settings only for client_admin, not vavan_super
+    var isClientAdmin = currentProfile && 
+      (currentProfile.role === 'client_admin' || currentProfile.role === 'admin');
+    settingsRow.style.display = isClientAdmin ? 'flex' : 'none';
   }
 }
 
@@ -4826,11 +4829,24 @@ async function _saveProfileMarkets(profileId, marketIds) {
 // ── USERS TAB ──
 async function renderUsersTab(body) {
   try {
+    // vavan_super manages clients via Client Management, not Admin Settings
+    if (currentProfile && currentProfile.role === 'vavan_super') {
+      body.innerHTML = '<div class="det-empty" style="padding:24px;text-align:center;">'+
+        '<div style="font-size:24px;margin-bottom:8px;">🏢</div>'+
+        '<div style="font-weight:600;margin-bottom:6px;">You\'re a Vavan Super Admin</div>'+
+        '<div style="font-size:13px;color:var(--muted);">Use <strong>Client Management</strong> from your account menu to manage clients and their users.</div>'+
+        '</div>';
+      return;
+    }
+
     if (!_dbMarketsLoaded) await _loadMarketsFromDB();
 
     var r = await sb.from('sales_profiles').select('*').order('full_name', {ascending:true});
     if (r.error) throw r.error;
-    _allProfiles = (r.data || []).filter(function(p){ return p.client_id === (currentProfile ? currentProfile.client_id : null) || currentProfile.role === 'vavan_super'; });
+    // Only show users belonging to same client — never cross-client
+    _allProfiles = (r.data || []).filter(function(p){
+      return currentProfile && p.client_id === currentProfile.client_id;
+    });
 
     var pi = await sb.from('pending_invites').select('*').order('invited_at', {ascending:false});
     var pendingInvites = (pi.data || []).filter(function(inv){
