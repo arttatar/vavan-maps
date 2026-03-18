@@ -1585,15 +1585,22 @@ async function _cmLoadClients() {
   body.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:24px;text-align:center;">Loading...</div>';
   try {
     var r = await sb.from('clients').select('*').order('name', {ascending:true});
+    if (r.error) throw r.error;
     var clients = r.data || [];
 
-    // Load user counts per client
-    var profR = await sb.from('sales_profiles').select('client_id, active');
-    var profiles = profR.data || [];
+    // Load user counts per client — safe fallback if RLS blocks
+    var profiles = [];
+    try {
+      var profR = await sb.from('sales_profiles').select('client_id, active');
+      profiles = profR.data || [];
+    } catch(e){ console.warn('Could not load profiles for counts:', e.message); }
 
-    // Load market counts per client
-    var mkR = await sb.from('client_markets').select('client_id, market_id, markets(name)');
-    var mkRows = mkR.data || [];
+    // Load market counts per client — safe fallback
+    var mkRows = [];
+    try {
+      var mkR = await sb.from('client_markets').select('client_id, market_id, markets(name)');
+      mkRows = mkR.data || [];
+    } catch(e){ console.warn('Could not load client_markets:', e.message); }
 
     if (!clients.length) {
       body.innerHTML =
@@ -1628,10 +1635,8 @@ async function _cmLoadClients() {
             '</div>' +
           '</div>' +
           '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-          '<div style="display:flex;gap:6px;flex-shrink:0;">' +
             '<button onclick="_cmManageClient(this.dataset.id,this.dataset.name)" data-id="'+c.id+'" data-name="'+c.name.replace(/"/g,'&quot;')+'" style="padding:7px 14px;background:var(--accent);border:none;border-radius:7px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">Manage →</button>' +
           '</div>' +
-        '</div>' +
         '</div>' +
       '</div>';
     }).join('') +
