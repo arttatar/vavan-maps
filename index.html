@@ -2533,16 +2533,10 @@ function _renderRepChips() {
       label+'<button onclick="_repRemoveChip(\''+r.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button></span>';
   }).join('');
 }
-function filterMyAccounts() {
-  if (!currentProfile) return;
-
+function _getMyAccountsRep() {
+  if (!currentProfile) return null;
   var profileName = (currentProfile.full_name || '').trim().toLowerCase();
-
-  // Super admins can still use My Accounts — match by name
-  var matchedRep = ALL_REPS.find(function(r){
-    return r.toLowerCase() === profileName;
-  });
-  // Partial match fallback
+  var matchedRep = ALL_REPS.find(function(r){ return r.toLowerCase() === profileName; });
   if (!matchedRep && profileName) {
     matchedRep = ALL_REPS.find(function(r){
       var parts = r.toLowerCase().split(' ');
@@ -2550,27 +2544,18 @@ function filterMyAccounts() {
       return parts.some(function(p){ return profileParts.indexOf(p) > -1; });
     });
   }
-  // Last resort — use full_name directly even if not in ALL_REPS list
-  if (!matchedRep && currentProfile.full_name) {
-    matchedRep = currentProfile.full_name;
-  }
-  if (!matchedRep) {
-    alert('No rep name found for your profile. Go to Admin Settings and make sure your Full Name is set.');
-    return;
-  }
+  if (!matchedRep && currentProfile.full_name) matchedRep = currentProfile.full_name;
+  return matchedRep || null;
+}
 
-  // Clear stale map state FIRST
-  if (map && map.getSource('biz')) {
-    map.getSource('biz').setData({type:'FeatureCollection',features:[]});
-  }
-  if (map && map.getSource('biz-selected')) {
-    map.getSource('biz-selected').setData({type:'FeatureCollection',features:[]});
-  }
-  if (map && map.getSource('biz-hover')) {
-    map.getSource('biz-hover').setData({type:'FeatureCollection',features:[]});
-  }
+function applyMyAccountsToMap() {
+  var matchedRep = _getMyAccountsRep();
+  if (!matchedRep) return;
+  // Clear stale map state
+  if (map && map.getSource('biz')) map.getSource('biz').setData({type:'FeatureCollection',features:[]});
+  if (map && map.getSource('biz-selected')) map.getSource('biz-selected').setData({type:'FeatureCollection',features:[]});
+  if (map && map.getSource('biz-hover')) map.getSource('biz-hover').setData({type:'FeatureCollection',features:[]});
   lastSelectedBiz = null;
-
   clearFilters();
   filters.reps = [matchedRep];
   filters.rep = 'multi';
@@ -2578,6 +2563,28 @@ function filterMyAccounts() {
   _renderRepChips();
   applyFilters();
   updateFilterBadge();
+  // Close My Accounts panel — map now reflects filter
+  if (window.innerWidth > 768) {
+    closeDesktopSection();
+    setTimeout(function(){ openDesktopSection('list'); }, 100);
+  } else {
+    navTo('list');
+  }
+}
+
+function filterMyAccounts() {
+  if (!currentProfile) return;
+  var matchedRep = _getMyAccountsRep();
+  if (!matchedRep) {
+    alert('No rep name found. Go to Admin Settings and make sure your Full Name is set.');
+    return;
+  }
+
+  // Show My Accounts list WITHOUT applying map filter
+  // Rep sees their accounts in list, map stays unchanged until they hit Apply
+  var myData = allData.filter(function(b){
+    return b.assigned_rep && b.assigned_rep.toLowerCase() === matchedRep.toLowerCase();
+  });
 
   // Set My Accounts button active
   var dskBtn = document.getElementById('dskm-accounts');
@@ -2586,11 +2593,68 @@ function filterMyAccounts() {
     dskBtn.classList.add('active');
   }
 
-  // Open list to show results
   if (window.innerWidth > 768) {
-    setTimeout(function(){ openDesktopSection('list'); }, 200);
+    // Desktop: open panel with my accounts list + Apply button at top
+    var host = document.getElementById('desktop-panel-host');
+    var topControls = document.getElementById('desktop-top-controls');
+    if (topControls) topControls.classList.add('panel-open');
+    if (host) {
+      host.classList.add('open');
+      _desktopSection = 'myaccounts';
+      host.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
+          '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">My Accounts ('+myData.length+')</div>'+
+          '<button onclick="closeDesktopSection()" style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;">✕</button>'+
+        '</div>'+
+        '<div style="padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;">'+
+          '<button onclick="applyMyAccountsToMap()" style="width:100%;padding:9px;background:var(--accent);border:none;border-radius:8px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">Apply to Map</button>'+
+        '</div>'+
+        '<div style="flex:1;overflow-y:auto;" id="dsk-myacc-body"></div>';
+      var body = host.querySelector('#dsk-myacc-body');
+      if (body) {
+        if (!myData.length) {
+          body.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No accounts assigned to you yet.</div>';
+        } else {
+          var sorted = myData.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+          body.innerHTML = sorted.slice(0,200).map(function(b){
+            var color = bizColor(b);
+            return '<div class="dsk-list-item" style="padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;" onclick="closeDesktopSection();selectBiz('+b._id+')">'+
+              '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;display:flex;align-items:center;gap:6px;">'+
+                '<span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'+b.name+
+                (b.pipeline_stage ? '<span style="font-size:10px;color:var(--accent);font-weight:600;margin-left:4px;">'+b.pipeline_stage+'</span>' : '') +
+              '</div>'+
+              '<div style="font-size:11px;color:var(--muted);">'+(b.street||'')+'</div>'+
+            '</div>';
+          }).join('') + (myData.length>200?'<div style="padding:.75rem;font-size:12px;color:var(--muted);text-align:center">Showing 200 of '+myData.length+'</div>':'');
+        }
+      }
+    }
   } else {
-    setTimeout(function(){ navTo('list'); }, 300);
+    // Mobile: show in results panel with Apply banner at top
+    var panel = document.getElementById('results-panel');
+    var listEl = document.getElementById('biz-list');
+    var rcountEl = document.getElementById('rcount');
+    if (rcountEl) rcountEl.textContent = myData.length + ' of your accounts';
+    if (listEl) {
+      var applyBanner = '<div style="padding:8px 10px;background:var(--accent-light);border-bottom:1px solid var(--accent);display:flex;align-items:center;justify-content:space-between;">'+
+        '<span style="font-size:12px;font-weight:600;color:var(--accent);">My accounts — map not filtered yet</span>'+
+        '<button onclick="applyMyAccountsToMap()" style="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">Apply to Map</button>'+
+      '</div>';
+      if (!myData.length) {
+        listEl.innerHTML = applyBanner + '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No accounts assigned to you yet.</div>';
+      } else {
+        var sorted2 = myData.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+        listEl.innerHTML = applyBanner + sorted2.slice(0,200).map(function(b){
+          var color = bizColor(b);
+          return '<div class="bitem" onclick="selectBiz('+b._id+')">'+
+            '<div class="bname"><span class="sdot" style="background:'+color+'"></span>'+b.name+'</div>'+
+            '<div class="baddr">'+(b.street||'')+(b.industry?' · <em style="color:var(--muted)">'+b.industry+'</em>':'')+'</div>'+
+            (b.phone?'<div class="bphone"><a href="tel:'+b.phone.replace(/\D/g,'')+'">'+b.phone+'</a></div>':'')+
+          '</div>';
+        }).join('');
+      }
+    }
+    _bsOpen('results-panel', 'WORK', closeResults);
   }
 }
 
@@ -8700,17 +8764,27 @@ var _rpScrollTimer = null;
 var _rpDragOffsetY = 0;
 
 function _rpInitDrag() {
-  var list = document.getElementById('rp-stops-list');
-  if (!list) return;
-  list.querySelectorAll('.rp-drag-handle').forEach(function(handle) {
-    var stop = handle.closest('.rp-stop');
-    if (!stop) return;
-    // Remove old listeners by cloning
-    var newHandle = handle.cloneNode(true);
-    handle.parentNode.replaceChild(newHandle, handle);
-    newHandle.addEventListener('mousedown', _rpMouseDown, {passive:false});
-    newHandle.addEventListener('touchstart', _rpTouchStart, {passive:false});
-  });
+  var isDesktop = window.innerWidth > 768;
+
+  // Mobile: attach touch to rp-stops-list only
+  var mobileList = document.getElementById('rp-stops-list');
+  if (mobileList && !isDesktop) {
+    mobileList.querySelectorAll('.rp-drag-handle').forEach(function(handle) {
+      var newHandle = handle.cloneNode(true);
+      handle.parentNode.replaceChild(newHandle, handle);
+      newHandle.addEventListener('touchstart', _rpTouchStart, {passive:false});
+    });
+  }
+
+  // Desktop: attach mouse to dsk-rp-stops only
+  var dskList = document.getElementById('dsk-rp-stops');
+  if (dskList && isDesktop) {
+    dskList.querySelectorAll('.rp-drag-handle').forEach(function(handle) {
+      var newHandle = handle.cloneNode(true);
+      handle.parentNode.replaceChild(newHandle, handle);
+      newHandle.addEventListener('mousedown', _rpMouseDown, {passive:false});
+    });
+  }
 }
 
 function _rpGetIdx(el) {
@@ -8720,7 +8794,9 @@ function _rpGetIdx(el) {
 }
 
 function _rpFindStopAt(y) {
-  var stops = document.querySelectorAll('#rp-stops-list .rp-stop');
+  var isDesktop = window.innerWidth > 768;
+  var listId = isDesktop ? '#dsk-rp-stops .rp-stop' : '#rp-stops-list .rp-stop';
+  var stops = document.querySelectorAll(listId);
   for (var i = 0; i < stops.length; i++) {
     var r = stops[i].getBoundingClientRect();
     if (y >= r.top && y <= r.bottom) return stops[i];
@@ -8734,13 +8810,7 @@ function _rpMoveStop(fromIdx, toIdx) {
   _routeStops.splice(toIdx, 0, moved);
   _saveRoute();
   _drawRouteOnMap();
-  _renderRPStops();
-  _rpInitDrag();
-  // Re-highlight dragged item
-  var newEl = document.getElementById('rpstop-' + toIdx);
-  if (newEl) newEl.classList.add('dragging');
-  _rpDragIdx = toIdx;
-  _rpDragEl = newEl;
+  _renderRPStops(); // re-renders both lists and re-attaches drag handlers
 }
 
 // ── GHOST ELEMENT ──
@@ -8799,15 +8869,17 @@ function _rpMouseUp(e) {
   _rpStopAutoScroll();
   _rpRemoveGhost();
   if (_rpDragEl) _rpDragEl.style.opacity = '';
-  if (_rpDragIdx === null) return;
+  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
+  if (_rpDragIdx === null) { _rpDragEl = null; return; }
   var target = _rpFindStopAt(e.clientY);
   var toIdx = target ? _rpGetIdx(target) : -1;
-  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
-  if (toIdx >= 0 && toIdx !== _rpDragIdx) {
-    _rpMoveStop(_rpDragIdx, toIdx);
-  }
+  var fromIdx = _rpDragIdx;
+  // Clear drag state BEFORE re-rendering to avoid stale refs
   _rpDragIdx = null;
   _rpDragEl = null;
+  if (toIdx >= 0 && toIdx !== fromIdx) {
+    _rpMoveStop(fromIdx, toIdx);
+  }
 }
 
 // ── TOUCH DRAG ──
@@ -8858,11 +8930,19 @@ function _rpTouchEnd(e) {
 
 // ── AUTO-SCROLL when near edge ──
 function _rpAutoScroll(clientY) {
-  var list = document.getElementById('rp-stops-list');
-  // Also check desktop panel host
-  var scrollEl = list;
-  var dskBody = document.getElementById('dsk-route-body');
-  if (dskBody && dskBody.contains && _rpDragEl && dskBody.contains(_rpDragEl)) scrollEl = dskBody;
+  // Find the correct scrollable container based on where the drag element is
+  var scrollEl = null;
+  var dskStops = document.getElementById('dsk-rp-stops');
+  var rpStops = document.getElementById('rp-stops-list');
+  if (_rpDragEl) {
+    if (dskStops && dskStops.contains(_rpDragEl)) {
+      // Find the nearest scrollable ancestor of dsk-rp-stops
+      scrollEl = document.getElementById('dsk-route-body') || dskStops.parentElement;
+    } else {
+      scrollEl = rpStops;
+    }
+  }
+  if (!scrollEl) scrollEl = rpStops;
   if (!scrollEl) return;
   _rpStopAutoScroll();
   var rect = scrollEl.getBoundingClientRect();
