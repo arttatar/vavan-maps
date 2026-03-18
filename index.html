@@ -1479,10 +1479,52 @@ async function _callFn(fnName, body) {
 }
 
 var allData = [], filteredData = [], filtersApplied = false, map, draw;
-var _bizById = {}; // fast lookup by _id
-var currentProfile = null; // loaded sales profile for logged-in user
-var clientMarkets  = [];   // markets this client has purchased, loaded on login
-var userMarkets    = [];   // markets THIS USER is assigned to (subset of clientMarkets)
+var _bizById = {};
+var currentProfile = null;
+var clientMarkets  = [];
+var userMarkets    = [];
+
+// ── PERMISSION SYSTEM ──
+// All available permissions with labels, groups, and defaults for new users
+var PERM_DEFS = [
+  // Map & Businesses
+  { key:'view_map',            label:'View Map',              group:'Map',          def:true  },
+  { key:'view_business',       label:'View Business Details', group:'Map',          def:true  },
+  { key:'add_business',        label:'Add Business',          group:'Map',          def:false },
+  { key:'edit_business',       label:'Edit Business',         group:'Map',          def:false },
+  { key:'delete_business',     label:'Delete Business',       group:'Map',          def:false },
+  // CRM
+  { key:'view_contacts',       label:'View Contacts',         group:'CRM',          def:true  },
+  { key:'edit_contacts',       label:'Edit Contacts',         group:'CRM',          def:false },
+  { key:'view_activity',       label:'View Activity',         group:'CRM',          def:true  },
+  { key:'log_activity',        label:'Log Activity',          group:'CRM',          def:false },
+  { key:'view_opportunities',  label:'View Opportunities',    group:'CRM',          def:true  },
+  { key:'edit_opportunities',  label:'Edit Opportunities',    group:'CRM',          def:false },
+  // Route
+  { key:'view_route',          label:'View Route Builder',    group:'Route',        def:true  },
+  { key:'build_route',         label:'Build Routes',          group:'Route',        def:false },
+  // Data
+  { key:'view_list',           label:'View List',             group:'Data',         def:true  },
+  { key:'export_data',         label:'Export Data',           group:'Data',         def:false },
+  // Team
+  { key:'view_all_users',      label:'See All Users on Map',  group:'Team',         def:false },
+  { key:'view_all_activity',   label:'See All Users Activity',group:'Team',         def:false },
+];
+
+// Default permissions for a brand new user (view-only defaults)
+var PERM_DEFAULTS = {};
+PERM_DEFS.forEach(function(p){ PERM_DEFAULTS[p.key] = p.def; });
+
+// Check if current user has a permission
+function _can(permKey) {
+  if (!currentProfile) return false;
+  var role = currentProfile.role;
+  // account_owner and client_admin always have all permissions
+  if (role === 'account_owner' || role === 'client_admin' || role === 'vavan_super') return true;
+  var perms = currentProfile.permissions || {};
+  // If permission not explicitly set, use default
+  return perms[permKey] !== undefined ? perms[permKey] : (PERM_DEFAULTS[permKey] || false);
+}
 
 // ── VAVAN MARKETS ──
 // These are Vavan's sellable market units. Each is exclusive per industry per client.
@@ -1884,7 +1926,7 @@ function _cmAddUserForClient(clientId, clientName) {
               '<input class="settings-input" id="cmu-name" placeholder="First Last" style="margin:0;"></div>' +
             '<div><label class="abiz-label">Role</label>' +
               '<select class="settings-select" id="cmu-role" style="margin:0;">' +
-                '<option value="rep">Rep</option>' +
+                '<option value="user">User</option>' +
                 '<option value="client_admin">Admin</option>' +
               '</select></div>' +
           '</div>' +
@@ -2348,7 +2390,18 @@ async function loadProfile() {
       var maBtn = document.getElementById('my-accounts-btn');
       if (maBtn && currentProfile.full_name) maBtn.style.display = '';
       var routeBtn = document.getElementById('route-btn');
-      if (routeBtn) routeBtn.style.display = '';
+      if (routeBtn) routeBtn.style.display = _can('view_route') ? '' : 'none';
+
+      // Show/hide add business button based on permission
+      var addBtns = ['desktop-add-btn','header-add-btn'];
+      addBtns.forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.style.display = _can('add_business') ? '' : 'none';
+      });
+
+      // Show/hide route chip based on permission
+      var routeChip = document.getElementById('chip-route') || document.getElementById('dskm-route');
+      if (routeChip) routeChip.style.display = _can('view_route') ? '' : 'none';
 
       _updateAccountUI(currentProfile.full_name || '', isAdmin);
       populateRepFilter();
@@ -4872,7 +4925,7 @@ async function renderUsersTab(body) {
       return;
     }
 
-    var roleColors = { admin:'var(--accent)', rep:'var(--muted)', vavan_super:'#d97706' };
+    var roleColors = { account_owner:'#7c3aed', client_admin:'var(--accent)', admin:'var(--accent)', user:'var(--muted)', rep:'var(--muted)', vavan_super:'#d97706' };
 
     var profilesHtml = _allProfiles.map(function(p){
       var acts = actThisWeek.filter(function(a){ return a.created_by === p.full_name; });
@@ -4903,7 +4956,7 @@ async function renderUsersTab(body) {
               '</div>' +
             '</div>' +
             '<div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">' +
-              '<span style="font-size:10px;background:'+(p.role==='admin'?'var(--accent-light)':p.role==='vavan_super'?'#fff7e6':'var(--paper2)')+';color:'+(roleColors[p.role]||'var(--muted)')+';padding:3px 8px;border-radius:100px;font-weight:600;">'+(p.role||'rep')+'</span>' +
+              '<span style="font-size:10px;background:'+(p.role==='account_owner'?'#f3e8ff':p.role==='client_admin'||p.role==='admin'?'var(--accent-light)':p.role==='vavan_super'?'#fff7e6':'var(--paper2)')+';color:'+(roleColors[p.role]||'var(--muted)')+';padding:3px 8px;border-radius:100px;font-weight:600;">'+(p.role||'rep')+'</span>' +
               '<button onclick="editUserInline(\''+p.id+'\')" style="background:var(--paper);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:var(--ink);">Edit</button>' +
               '<button onclick="toggleUserActive(\''+p.id+'\','+(isActive?'false':'true')+')" style="background:'+(isActive?'#fff5f5':'#f0fdf4')+';border:1px solid '+(isActive?'#fca5a5':'#6ee7b7')+';border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;color:'+(isActive?'#dc2626':'#059669')+'">'+(isActive?'Disable':'Enable')+'</button>' +
             '</div>' +
@@ -4925,10 +4978,10 @@ async function renderUsersTab(body) {
                 '<input class="settings-input" id="ue-name-'+p.id+'" value="'+(p.full_name||'')+'" style="margin:0;"></div>' +
               '<div><label class="abiz-label">Role</label>' +
                 '<select class="settings-select" id="ue-role-'+p.id+'" style="margin:0;">' +
-                '<select class="settings-select" id="ue-role-'+p.id+'" style="margin:0;">' +
-                  '<option value="rep"'+(p.role==='rep'?' selected':'')+'>Rep</option>' +
+                  '<option value="user"'+(p.role==='user'||p.role==='rep'?' selected':'')+'>User</option>' +
                   '<option value="client_admin"'+(['client_admin','admin'].indexOf(p.role)>-1?' selected':'')+'>Admin</option>' +
-            '</div>' +
+                  '<option value="account_owner"'+(p.role==='account_owner'?' selected':'')+'>Account Owner</option>' +
+                '</select></div>' +
 
             // Email + Send Link
             '<div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:end;">' +
@@ -4955,24 +5008,35 @@ async function renderUsersTab(body) {
               '</div>';
             })() +
 
-            // Permissions
-            '<div><label class="abiz-label">Feature Permissions</label>' +
-              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:.625rem;background:#fff;border:1px solid var(--border);border-radius:8px;">' +
-                [
-                  {key:'can_add_business',    label:'Add Businesses',  def:true},
-                  {key:'can_edit_business',   label:'Edit Businesses', def:true},
-                  {key:'can_log_activity',    label:'Log Activity',    def:true},
-                  {key:'can_manage_contacts', label:'Contacts',        def:true},
-                  {key:'can_view_all_reps',   label:'See All Reps',    def:false},
-                  {key:'can_export',          label:'Export Data',     def:false},
-                ].map(function(perm){
-                  var val = perms[perm.key] !== undefined ? perms[perm.key] : perm.def;
-                  return '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">' +
-                    '<input type="checkbox" id="ue-perm-'+perm.key+'-'+p.id+'" '+(val?'checked':'')+' style="accent-color:var(--accent);">' +
-                    perm.label+'</label>';
-                }).join('') +
-              '</div>' +
-            '</div>' +
+            // Permissions — admin can only grant what they have
+            (function(){
+              var adminPerms = currentProfile ? (currentProfile.permissions || {}) : {};
+              var isOwnerOrAdmin = currentProfile && ['account_owner','client_admin'].includes(currentProfile.role);
+              // Group permissions
+              var groups = {};
+              PERM_DEFS.forEach(function(pd){
+                if (!groups[pd.group]) groups[pd.group] = [];
+                groups[pd.group].push(pd);
+              });
+              var html = '<div><label class="abiz-label">Feature Permissions</label>';
+              Object.keys(groups).forEach(function(grp){
+                html += '<div style="margin-bottom:8px;">';
+                html += '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">'+grp+'</div>';
+                html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:.5rem;background:#fff;border:1px solid var(--border);border-radius:8px;">';
+                groups[grp].forEach(function(pd){
+                  var val = perms[pd.key] !== undefined ? perms[pd.key] : pd.def;
+                  // Admin can only grant perms they have (or if they are owner/admin role)
+                  var adminHas = isOwnerOrAdmin ? true : (adminPerms[pd.key] !== undefined ? adminPerms[pd.key] : pd.def);
+                  var locked = !adminHas;
+                  html += '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:'+(locked?'not-allowed':'pointer')+';opacity:'+(locked?.45:1)+';">' +
+                    '<input type="checkbox" id="ue-perm-'+pd.key+'-'+p.id+'" '+(val?'checked':'')+' '+(locked?'disabled':'')+' style="accent-color:var(--accent);">' +
+                    pd.label+(locked?' 🔒':'')+'</label>';
+                });
+                html += '</div></div>';
+              });
+              html += '</div>';
+              return html;
+            })() +
 
             '<div id="ue-status-'+p.id+'" style="font-size:12px;color:var(--muted);min-height:16px;"></div>' +
             '<div style="display:flex;gap:8px;">' +
@@ -5040,11 +5104,16 @@ async function saveUserEdit(id) {
   var tname = marketNames.join(', ');
   var tcode = marketNames.length ? marketNames[0].toUpperCase().replace(/ /g,'-')+'-ALL' : 'LAS-ALL';
   var statusEl = document.getElementById('ue-status-'+id);
-  var permKeys = ['can_add_business','can_edit_business','can_log_activity','can_manage_contacts','can_view_all_reps','can_export'];
+  var permKeys = PERM_DEFS.map(function(pd){ return pd.key; });
   var perms = {};
   permKeys.forEach(function(k){
     var el = document.getElementById('ue-perm-'+k+'-'+id);
-    if (el) perms[k] = el.checked;
+    if (el && !el.disabled) perms[k] = el.checked;
+    else if (el && el.disabled) {
+      // Keep existing value for locked permissions
+      var existing = (_allProfiles.find(function(p){ return p.id===id; })||{}).permissions||{};
+      perms[k] = existing[k] !== undefined ? existing[k] : false;
+    }
   });
   statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Saving...';
   try {
@@ -5164,7 +5233,7 @@ async function renderInviteTab(body) {
             '<input class="settings-input" id="inv-name" placeholder="First Last" style="margin:0;"></div>'+
           '<div><label class="abiz-label">Role</label>'+
             '<select class="settings-select" id="inv-role" style="margin:0;">'+
-              '<option value="rep">Rep</option>'+
+              '<option value="user">User</option>'+
               '<option value="client_admin">Admin</option>'+
             '</select></div>'+
         '</div>'+
@@ -5338,6 +5407,7 @@ async function renderMarketsTab(body) {
 
 // ── ADD BUSINESS ──
 function openAddBusiness() {
+  if (!_can('add_business')) { _showToast('You don\'t have permission to add businesses.'); return; }
   // Cancel any pending close animation
   if (window._abCloseTimer) { clearTimeout(window._abCloseTimer); window._abCloseTimer = null; }
 
