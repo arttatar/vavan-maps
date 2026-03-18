@@ -5147,19 +5147,27 @@ async function saveUserEdit(id) {
 }
 
 async function toggleUserActive(profileId, makeActive) {
+  if (!makeActive) {
+    if (!confirm('Disable this user? They will be immediately signed out and cannot log in until re-enabled.')) return;
+  }
   try {
-    var fnOk = false;
-    try {
-      await _callFn('manage-user', { action: makeActive ? 'enable' : 'disable', profile_id: profileId });
-      fnOk = true;
-    } catch(e) { console.warn('manage-user fn not available:', e.message); }
-    if (!fnOk) {
-      var r = await sb.from('sales_profiles').update({ active: makeActive, updated_at: new Date().toISOString() }).eq('id', profileId);
-      if (r.error) throw r.error;
-    }
-    _showToast(makeActive ? 'User enabled' : 'User disabled');
+    var r = await _callFn('manage-user', { 
+      action: makeActive ? 'enable' : 'disable', 
+      profile_id: profileId 
+    });
+    _showToast(makeActive ? '✓ User enabled' : '✓ User disabled and signed out immediately');
     renderUsersTab(document.getElementById('settings-body'));
-  } catch(e) { _showToast('Failed: ' + e.message); }
+  } catch(e) { 
+    // Fallback: at minimum update the profile
+    try {
+      var r2 = await sb.from('sales_profiles').update({ 
+        active: makeActive, updated_at: new Date().toISOString() 
+      }).eq('id', profileId);
+      if (r2.error) throw r2.error;
+      _showToast(makeActive ? '✓ User enabled' : '✓ User disabled (sign out may take up to 1 hour)');
+      renderUsersTab(document.getElementById('settings-body'));
+    } catch(e2) { _showToast('Failed: ' + e2.message); }
+  }
 }
 
 async function sendPasswordReset(profileId) {
@@ -5209,13 +5217,22 @@ async function deletePendingInvite(email, name) {
 }
 
 async function deleteUser(profileId, userId, name) {
-  if (!confirm('Delete user "'+name+'"? This cannot be undone.')) return;
+  if (!confirm('Permanently delete "'+name+'"?\n\nThis will:\n• Remove their access immediately\n• Delete their account from Auth\n• Cannot be undone')) return;
   try {
-    var r = await sb.from('sales_profiles').delete().eq('id', profileId);
-    if (r.error) throw r.error;
+    // Use edge function to delete from both profile AND Auth
+    await _callFn('manage-user', { action: 'delete', profile_id: profileId });
+    _showToast('✓ ' + name + ' permanently deleted');
     renderUsersTab(document.getElementById('settings-body'));
   } catch(e) {
-    alert('Delete failed: '+e.message);
+    // Fallback: at minimum delete the profile row
+    try {
+      var r = await sb.from('sales_profiles').delete().eq('id', profileId);
+      if (r.error) throw r.error;
+      _showToast('Profile deleted. Remove from Supabase Auth manually to fully block access.');
+      renderUsersTab(document.getElementById('settings-body'));
+    } catch(e2) {
+      alert('Delete failed: ' + e2.message);
+    }
   }
 }
 
