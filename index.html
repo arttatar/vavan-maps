@@ -1930,7 +1930,7 @@ function _cmAddUserForClient(clientId, clientName) {
           '</div>' +
 
           '<div><label class="abiz-label">Email Address *</label>' +
-            '<input class="settings-input" id="cmu-email" type="email" placeholder="rep@company.com" style="margin:0;"></div>' +
+            '<input class="settings-input" id="cmu-email" type="email" placeholder="user@company.com" style="margin:0;"></div>' +
 
           '<div><label class="abiz-label">Markets — which can this user see?</label>' +
             '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:.5rem;background:#fff;border:1px solid var(--border);border-radius:8px;" id="cmu-markets">' +
@@ -4923,7 +4923,7 @@ async function renderUsersTab(body) {
     }
 
     if (!_allProfiles.length && !pendingInvites.length) {
-      body.innerHTML = '<div class="det-empty">No users yet. Use Invite Rep to add someone.</div>';
+      body.innerHTML = '<div class="det-empty">No users yet. Use Invite User to add someone.</div>';
       return;
     }
 
@@ -4995,7 +4995,7 @@ async function renderUsersTab(body) {
             // Email + Send Link
             '<div style="display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:end;">' +
               '<div><label class="abiz-label">Email Address</label>' +
-                '<input class="settings-input" id="ue-email-'+p.id+'" value="'+(p.email||'')+'" type="email" style="margin:0;" placeholder="rep@company.com"></div>' +
+                '<input class="settings-input" id="ue-email-'+p.id+'" value="'+(p.email||'')+'" type="email" style="margin:0;" placeholder="user@company.com"></div>' +
               '<button onclick="sendPasswordReset(\''+p.id+'\')" style="padding:9px 12px;background:var(--paper2);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">Send Login Link</button>' +
             '</div>' +
 
@@ -5275,7 +5275,7 @@ async function renderInviteTab(body) {
         '</div>'+
 
         '<div><label class="abiz-label">Email Address *</label>'+
-          '<input class="settings-input" id="inv-email" type="email" placeholder="rep@company.com" style="margin:0;"></div>'+
+          '<input class="settings-input" id="inv-email" type="email" placeholder="user@company.com" style="margin:0;"></div>'+
 
         '<div><label class="abiz-label">Markets — which can this user see?</label>'+
           '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:.5rem;background:#fff;border:1px solid var(--border);border-radius:8px;" id="inv-markets">'+
@@ -8916,7 +8916,7 @@ function onMapClick(e) {
     </div>
     <div class="settings-tabs">
       <button class="settings-tab active" onclick="switchSettingsTab('users')">Users</button>
-      <button class="settings-tab" onclick="switchSettingsTab('invite')">Invite Rep</button>
+      <button class="settings-tab" onclick="switchSettingsTab('invite')">Invite User</button>
       <button class="settings-tab" onclick="switchSettingsTab('markets')">Markets</button>
     </div>
     <div class="settings-body" id="settings-body">
