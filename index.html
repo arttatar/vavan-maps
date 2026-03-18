@@ -3494,12 +3494,20 @@ function _dskClearRouteSelection() {
   if (host) _renderDesktopList(host);
 }
 
+var _rpPendingSelection = null; // saved selection before modal opens
+
 function _dskBuildRoute() {
   var sel = Object.values(_routeSelected);
   if (!sel.length) { _showToast('Select at least one stop first'); return; }
   if (sel.length > 50) { _showToast('Max 50 stops per route'); return; }
-  // Show start point modal then build
-  closeDesktopSection();
+  // Save selection before closing panel (panel close can clear _routeSelected)
+  _rpPendingSelection = sel.slice();
+  _routeMode = false;
+  document.querySelectorAll('.dsk-mode-btn').forEach(function(b){ b.classList.remove('active'); });
+  var host = document.getElementById('desktop-panel-host');
+  if (host) { host.classList.remove('open'); host.innerHTML = ''; }
+  var topControls = document.getElementById('desktop-top-controls');
+  if (topControls) topControls.classList.remove('panel-open');
   document.getElementById('route-start-modal').classList.add('open');
 }
 
@@ -8301,8 +8309,9 @@ function routeClearSelection() {
 
 function buildRouteFromSelection() {
   var sel = Object.values(_routeSelected);
-  if (!sel.length) { alert('Select at least 1 business.'); return; }
-  if (sel.length > 50) { alert('Max 50 stops per route.'); return; }
+  if (!sel.length) { _showToast('Select at least one stop first'); return; }
+  if (sel.length > 50) { _showToast('Max 50 stops per route'); return; }
+  _rpPendingSelection = sel.slice();
   document.getElementById('route-start-modal').classList.add('open');
 }
 
@@ -8370,10 +8379,14 @@ async function confirmRouteStart() {
 
 // ── BUILD + OPTIMIZE ──
 async function _buildRoute() {
-  var sel = Object.values(_routeSelected);
+  // Use pending selection from desktop flow if _routeSelected was cleared
+  var sel = (_rpPendingSelection && _rpPendingSelection.length)
+    ? _rpPendingSelection
+    : Object.values(_routeSelected);
+  _rpPendingSelection = null;
   var stops = sel.filter(function(b){ return b.lat&&b.lon; })
     .map(function(b){ return {biz:b, done:false}; });
-  if (!stops.length) { alert('No businesses with coordinates selected.'); return; }
+  if (!stops.length) { _showToast('No stops selected — tap businesses first'); return; }
 
   // Exit selection mode cleanly
   _routeMode = false;
@@ -8425,8 +8438,8 @@ async function _buildRoute() {
   _saveRoute();
   _drawRouteOnMap();
   _renderRPStops();
-  var finLabel = _routeFinishType === 'start' ? ' → back to start' :
-                _routeFinishType === 'branch' ? ' → Branch' : '';
+  var finLabel = _routeFinishType === 'start' ? ' → returns to start' :
+                _routeFinishType === 'branch' ? ' → returns to branch' : '';
   _setRPSubtitle(
     _routeStops.length+' stops'+
     (_routeTotalDur  ? ' · '+_fmtDur(_routeTotalDur)  : '')+
@@ -8926,14 +8939,26 @@ async function reoptimizeRoute() {
 function clearRoute() {
   if (_routeStops.length&&!confirm('Clear this route?')) return;
   _routeStops=[]; _routeGeomCache=null; _routeTotalDur=0; _routeTotalDist=0;
+  _routeSelected={}; _rpPendingSelection=null;
   _routeMarkers.forEach(function(m){ m.remove(); }); _routeMarkers=[];
   ['route-line-casing','route-line'].forEach(function(id){ if(map.getLayer(id)){try{map.removeLayer(id);}catch(e){}} });
   if(map.getSource('route-line-src')){try{map.removeSource('route-line-src');}catch(e){}}
   _routeLine=null;
   localStorage.removeItem('vavan_route');
+  // Clear the stops list UI before closing
+  var rpList = document.getElementById('rp-stops-list');
+  if (rpList) rpList.innerHTML = '<div class="rp-empty">No stops yet.<br>Select businesses from the list then tap Route.</div>';
+  var rpSub = document.getElementById('rp-subtitle');
+  if (rpSub) rpSub.textContent = '';
+  // Close panel
   document.getElementById('route-panel').classList.remove('open');
+  // Also clear desktop route panel if open
+  var dskBody = document.getElementById('dsk-route-body');
+  if (dskBody) dskBody.innerHTML = '<div class="rp-empty">No stops. Select businesses and tap Route.</div>';
   var vrBtn=document.getElementById('view-route-btn'); if(vrBtn) vrBtn.style.display='none';
   var btn=document.getElementById('route-btn'); if(btn) btn.textContent='Route';
+  // Close desktop section if showing route
+  if (_desktopSection === 'route') closeDesktopSection();
   renderList();
 }
 
