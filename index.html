@@ -5192,12 +5192,11 @@ async function sendPasswordReset(profileId) {
 
 async function resendInvite(email, name) {
   try {
-    var r = await sb.auth.signInWithOtp({
-      email: email,
-      options: { shouldCreateUser: true, data: { full_name: name } }
+    var r = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
     });
     if (r.error) throw r.error;
-    _showToast('Invite resent to ' + email);
+    _showToast('Password setup email resent to ' + email);
   } catch(e) { _showToast('Failed: ' + e.message); }
 }
 
@@ -5312,29 +5311,39 @@ async function sendInvite() {
     }
 
     if (!fnOk) {
-      // Fallback: OTP invite (creates auth user on first click, profile on first login)
+      // Step 1: Create the auth user with a temp password
+      // We use OTP to create the user, then immediately send a password reset
+      // so their first experience is setting their own password
       var r = await sb.auth.signInWithOtp({
         email: email,
         options: {
           shouldCreateUser: true,
-          data: { full_name: name, territory_code: territoryCode, territory_name: territoryName, role: 'rep', client_id: currentProfile ? currentProfile.client_id : null }
+          data: { full_name: name, territory_code: territoryCode, territory_name: territoryName, role: 'user', client_id: currentProfile ? currentProfile.client_id : null }
         }
       });
       if (r.error) throw r.error;
 
-      // Store pending invite
+      // Store pending invite so profile is ready on first login
       try {
         await sb.from('pending_invites').upsert({
           email, full_name: name, territory_code: territoryCode, territory_name: territoryName,
-          role: 'rep', client_id: currentProfile ? currentProfile.client_id : null,
+          role: 'user', client_id: currentProfile ? currentProfile.client_id : null,
           invited_by: currentProfile ? currentProfile.full_name : '',
           invited_at: new Date().toISOString()
         }, { onConflict: 'email' });
       } catch(e){}
+
+      // Step 2: Also send a password reset so they set a real password
+      // This means they get ONE email with a link that takes them to set password
+      try {
+        await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + window.location.pathname
+        });
+      } catch(e){ console.warn('Could not send password reset:', e.message); }
     }
 
     statusEl.style.color = '#059669';
-    statusEl.textContent = '✓ User added! They\'ll receive a login link at ' + email;
+    statusEl.textContent = '✓ Invite sent to ' + email + '. They\'ll receive an email to set their password.';
 
     // Reset form
     document.getElementById('inv-name').value = '';
