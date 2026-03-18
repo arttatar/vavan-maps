@@ -1581,9 +1581,17 @@ async function doSetNewPassword() {
     var r = await sb.auth.updateUser({ password: p1 });
     if (r.error) throw r.error;
     statusEl.style.color = '#059669';
-    statusEl.textContent = '✓ Password set! Signing you in...';
+    statusEl.textContent = '✓ Password saved! Signing you in...';
+    // Clean the URL token
+    window.history.replaceState(null, '', window.location.pathname);
     setTimeout(function(){
       document.getElementById('setnew-modal').style.display = 'none';
+      var session = sb.auth.getSession();
+      session.then(function(s){
+        if (s.data && s.data.session) {
+          _updateAccountEmail(s.data.session.user.email);
+        }
+      });
       startApp();
     }, 1200);
   } catch(e) {
@@ -1618,7 +1626,7 @@ async function sendPasswordReset2() {
   btn.disabled = true;
   try {
     var r = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://maps.vavan.co'
+      redirectTo: window.location.origin + window.location.pathname
     });
     if (r.error) throw r.error;
     statusEl.style.color = '#059669';
@@ -2180,12 +2188,16 @@ function _closeMenuOutside(e) {
 // Handle magic link / password reset tokens in URL hash
 sb.auth.onAuthStateChange(function(event, session) {
   if (event === 'PASSWORD_RECOVERY') {
-    // User clicked the reset link — show set new password UI
+    // User clicked the reset link — hide login, show set new password UI
     document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('forgot-modal').style.display = 'none';
     showSetNewPassword();
     return;
   }
   if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
+    // Don't auto-start app if we're in password recovery mode
+    if (document.getElementById('setnew-modal') && 
+        document.getElementById('setnew-modal').style.display === 'flex') return;
     var loginScreen = document.getElementById('login-screen');
     if (loginScreen && !loginScreen.classList.contains('hidden')) {
       window.history.replaceState(null, '', window.location.pathname);
@@ -2198,6 +2210,16 @@ sb.auth.onAuthStateChange(function(event, session) {
 
 sb.auth.getSession().then(function(r) {
   if (r.data && r.data.session) {
+    // Check if URL has a recovery token (type=recovery in hash)
+    var hash = window.location.hash || '';
+    var params = new URLSearchParams(hash.replace('#', '?').replace('#', '&'));
+    var type = params.get('type');
+    if (type === 'recovery') {
+      // Show set password screen, don't start app
+      document.getElementById('login-screen').classList.add('hidden');
+      showSetNewPassword();
+      return;
+    }
     document.getElementById('login-screen').classList.add('hidden');
     _updateAccountEmail(r.data.session.user.email);
     startApp();
@@ -3432,14 +3454,30 @@ if (navigator.geolocation) {
   });
 
 // Refresh list as map moves — shows only what's visible
+// Auto-refresh desktop list when map moves/zooms
+function _deskRefreshListIfOpen() {
+  if (_desktopSection === 'list') {
+    // Re-render the list panel with updated visible data
+    var host = document.getElementById('desktop-panel-host');
+    if (!host || !host.classList.contains('open')) return;
+    // Only refresh if we're showing the list, not a business detail
+    var topState = _deskStack[_deskStack.length - 1];
+    if (topState && topState.type === 'business') return;
+    openDesktopSection('list');
+  }
+}
+
 map.on('moveend', function() {
   if (document.getElementById('results-panel').classList.contains('open')) renderList();
-  // Allow taps again shortly after movement stops
+  // Also refresh desktop list if it's open
+  _deskRefreshListIfOpen();
   clearTimeout(_moveTimer);
   _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
 });
 map.on('zoomend', function() {
   if (document.getElementById('results-panel').classList.contains('open')) renderList();
+  // Also refresh desktop list if it's open
+  _deskRefreshListIfOpen();
   clearTimeout(_moveTimer);
   _moveTimer = setTimeout(function(){ mapIsMoving = false; }, 350);
 });
