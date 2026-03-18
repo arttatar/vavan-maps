@@ -8414,24 +8414,83 @@ function setMapLayer(layer) {
   if (_currentMapLayer === layer) return;
   _currentMapLayer = layer;
 
-  // Update active buttons
   ['dark','sat'].forEach(function(k){
     var el = document.getElementById('mlt-'+k);
     if (el) el.classList.toggle('active', (k === 'sat' ? 'satellite' : k) === layer);
   });
 
-  // After style switch ALL sources/layers/handlers are wiped — must rebuild everything
   map.setStyle(MAP_STYLES[layer]);
   map.once('style.load', function() {
-    // Reset handler flag so renderPins re-attaches click handlers
     _mapHandlersAttached = false;
-    // Full re-render — adds all sources, layers, handlers
-    renderPins();
-    // Re-draw route line if active
-    if (_routeStops.length && _routeGeomCache) {
-      setTimeout(_drawRouteOnMap, 200);
+    _rebuildAllMapLayers();
+  });
+}
+
+function _rebuildAllMapLayers() {
+  var source = filtersApplied ? filteredData : allData;
+  var valid = source.filter(function(b){ return b.lat && b.lon && !isNaN(b.lat) && !isNaN(b.lon); });
+
+  ['biz-hover-dot','biz-hover-glow','biz-sel-dot','biz-sel-ring','biz','biz-cn','biz-cl'].forEach(function(id){
+    try { if (map.getLayer(id)) map.removeLayer(id); } catch(e){}
+  });
+  ['biz','biz-selected','biz-hover'].forEach(function(id){
+    try { if (map.getSource(id)) map.removeSource(id); } catch(e){}
+  });
+
+  map.addSource('biz', { type:'geojson', cluster:true, clusterMaxZoom:13, clusterRadius:40,
+    data:{ type:'FeatureCollection', features: valid.map(function(b){
+      return {type:'Feature', geometry:{type:'Point', coordinates:[b.lon,b.lat]},
+        properties:{_id:b._id, industry:b.industry||'', is_competitor:b.is_competitor||false, score:b.score||calcScore(b), sales_status:salesStatus(b)}};
+    })}
+  });
+  map.addLayer({ id:'biz-cl', type:'circle', source:'biz', filter:['has','point_count'],
+    paint:{'circle-color':'#4a36c8','circle-radius':['step',['get','point_count'],16,10,22,50,28],'circle-opacity':.85}
+  });
+  map.addLayer({ id:'biz-cn', type:'symbol', source:'biz', filter:['has','point_count'],
+    layout:{'text-field':'{point_count_abbreviated}','text-size':12}, paint:{'text-color':'#fff'}
+  });
+  map.addLayer({ id:'biz', type:'circle', source:'biz', filter:['!',['has','point_count']],
+    paint:{
+      'circle-radius':6,
+      'circle-color':['case',
+        ['==',['get','is_competitor'],true],'#EF4444',
+        ['==',['get','industry'],'Automotive'],'#3B82F6',
+        ['==',['get','industry'],'Agribusiness'],'#84CC16',
+        ['in',['get','industry'],['literal',['Transport','Transportation']]],'#F97316',
+        ['in',['get','industry'],['literal',['Construction','Infrastructure']]],'#D97706',
+        ['==',['get','industry'],'Industrial'],'#6B7280',
+        ['==',['get','industry'],'Services'],'#8B5CF6',
+        ['==',['get','industry'],'Hospitality'],'#EC4899',
+        ['==',['get','industry'],'Government'],'#0EA5E9',
+        ['in',['get','industry'],['literal',['Energy','Fuel Stations']]],'#EAB308',
+        ['==',['get','industry'],'RealEstate'],'#14B8A6',
+        '#9b93d4'
+      ],
+      'circle-opacity':0.9,'circle-stroke-width':1.5,'circle-stroke-color':'rgba(255,255,255,0.7)'
     }
   });
+
+  map.addSource('biz-selected', {type:'geojson', data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({ id:'biz-sel-ring', type:'circle', source:'biz-selected',
+    paint:{'circle-radius':18,'circle-color':'#fff','circle-opacity':0.25,'circle-stroke-width':0}
+  });
+  map.addLayer({ id:'biz-sel-dot', type:'circle', source:'biz-selected',
+    paint:{'circle-radius':10,'circle-color':'#9b93d4','circle-stroke-width':3,'circle-stroke-color':'#ffffff','circle-opacity':1}
+  });
+
+  map.addSource('biz-hover', {type:'geojson', data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({ id:'biz-hover-glow', type:'circle', source:'biz-hover',
+    paint:{'circle-radius':16,'circle-color':'#fff','circle-opacity':0.22,'circle-stroke-width':0}
+  });
+  map.addLayer({ id:'biz-hover-dot', type:'circle', source:'biz-hover',
+    paint:{'circle-radius':9,'circle-color':'#fff','circle-opacity':1,'circle-stroke-width':2.5,'circle-stroke-color':'#4a36c8'}
+  });
+
+  initMapHandlers();
+  var _pc = document.getElementById('pcount');
+  if (_pc) _pc.textContent = allData.length.toLocaleString();
+  updateFabCount();
+  if (_routeStops.length && _routeGeomCache) setTimeout(_drawRouteOnMap, 100);
 }
 
 // ── SELECTION MODE ──
