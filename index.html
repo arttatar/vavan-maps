@@ -1053,7 +1053,25 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
     <input class="linput" type="password" id="lpass" placeholder="••••••••">
     <button class="lbtn" id="lbtn">Sign in</button>
     <div class="lerr" id="lerr"></div>
+    <div style="text-align:center;margin-top:.5rem;">
+      <button onclick="showForgotPassword()" style="background:none;border:none;color:#9ca3af;font-size:12px;cursor:pointer;font-family:Inter,sans-serif;text-decoration:underline;">Forgot password?</button>
+    </div>
     <div class="lfooter">Vavan Intelligence Platform · Private Access</div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgot-modal" style="display:none;position:fixed;inset:0;background:rgba(13,13,20,.85);z-index:99999;display:none;align-items:center;justify-content:center;font-family:Inter,sans-serif;padding:16px;">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <div style="font-size:16px;font-weight:800;color:var(--ink);font-family:Syne,sans-serif;margin-bottom:4px;">Reset Password</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Enter your email and we'll send a reset link.</div>
+    <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px;">Email</label>
+    <input id="forgot-email" type="email" placeholder="you@company.com" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:Inter,sans-serif;outline:none;margin-bottom:12px;">
+    <div id="forgot-status" style="font-size:12px;min-height:18px;margin-bottom:12px;color:var(--muted);"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="sendPasswordReset2()" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:9px;color:#fff;font-size:14px;font-weight:700;font-family:Inter,sans-serif;cursor:pointer;">Send Reset Link</button>
+      <button onclick="hideForgotPassword()" style="padding:11px 16px;background:var(--paper2);border:1px solid var(--border);border-radius:9px;font-size:14px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;color:var(--ink);">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -1527,6 +1545,46 @@ async function doLogin() {
 }
 
 async function doSignOut() { await sb.auth.signOut(); location.reload(); }
+
+function showForgotPassword() {
+  var modal = document.getElementById('forgot-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    var emailInput = document.getElementById('forgot-email');
+    // Pre-fill with whatever they typed in the login form
+    var loginEmail = document.getElementById('lemail').value.trim();
+    if (loginEmail && emailInput) emailInput.value = loginEmail;
+    document.getElementById('forgot-status').textContent = '';
+  }
+}
+
+function hideForgotPassword() {
+  var modal = document.getElementById('forgot-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function sendPasswordReset2() {
+  var email = (document.getElementById('forgot-email').value || '').trim();
+  var statusEl = document.getElementById('forgot-status');
+  var btn = document.querySelector('#forgot-modal button');
+  if (!email) { statusEl.style.color = '#dc2626'; statusEl.textContent = 'Enter your email.'; return; }
+  statusEl.style.color = 'var(--muted)'; statusEl.textContent = 'Sending...';
+  btn.disabled = true;
+  try {
+    var r = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://maps.vavan.co'
+    });
+    if (r.error) throw r.error;
+    statusEl.style.color = '#059669';
+    statusEl.textContent = '✓ Reset link sent! Check your email.';
+    setTimeout(function(){ hideForgotPassword(); }, 3000);
+  } catch(e) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = e.message || 'Failed to send reset email.';
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 // ── SUPER ADMIN / CLIENT MANAGEMENT ──
 // Role hierarchy: vavan_super > client_admin > rep
