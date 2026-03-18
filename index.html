@@ -985,10 +985,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .rp-btn.nav{background:#dbeafe;color:#1d4ed8;}
 .rp-btn.done{background:#dcfce7;color:#059669;}
 .rp-btn.remove{background:#fef2f2;color:#dc2626;}
-.rp-drag-handle{
-  color:#ccc;font-size:16px;padding-top:4px;
-  flex-shrink:0;cursor:grab;user-select:none;
-}
+.rp-drag-handle{cursor:grab;touch-action:none;padding:10px 8px;margin:-6px -4px;-webkit-user-select:none;user-select:none;display:flex;align-items:center;}
 .rp-empty{padding:2rem 1rem;text-align:center;color:var(--muted);font-size:13px;}
 
 /* Start-point modal */
@@ -8648,9 +8645,7 @@ function _renderRPStops() {
       if (stop._legDist) parts.push(_fmtDist(stop._legDist));
       leg='<div class="rp-stop-leg">'+parts.join(' · ')+'</div>';
     }
-    return '<div class="rp-stop'+(isDone?' done':'')+'" id="rpstop-'+i+'" draggable="true" '+
-      'ondragstart="_rpDragStart(event,'+i+')" ondragover="_rpDragOver(event,'+i+')" '+
-      'ondrop="_rpDrop(event,'+i+')" ondragleave="_rpDragLeave(event)">'+
+    return '<div class="rp-stop'+(isDone?' done':'')+'" id="rpstop-'+i+'">'+
       '<div class="rp-drag-handle" title="Drag to reorder"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" style="display:block;"><circle cx="3" cy="3" r="1.5" fill="#ccc"/><circle cx="7" cy="3" r="1.5" fill="#ccc"/><circle cx="3" cy="8" r="1.5" fill="#ccc"/><circle cx="7" cy="8" r="1.5" fill="#ccc"/><circle cx="3" cy="13" r="1.5" fill="#ccc"/><circle cx="7" cy="13" r="1.5" fill="#ccc"/></svg></div>'+
       '<div class="rp-num'+(isDone?' done-num':'')+'">'+( isDone?'✓':(i+1) )+'</div>'+
       '<div class="rp-stop-info">'+
@@ -8667,23 +8662,167 @@ function _renderRPStops() {
       '</div>'+
     '</div>';
   }).join('');
+  // Attach touch+mouse drag handlers after render
+  setTimeout(_rpInitDrag, 0);
 }
 
-// ── DRAG TO REORDER ──
+// ── DRAG TO REORDER (touch + mouse, with auto-scroll) ──
 var _rpDragIdx = null;
-function _rpDragStart(e,i){ _rpDragIdx=i; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
-function _rpDragOver(e,i){ e.preventDefault(); e.dataTransfer.dropEffect='move'; document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); }); if(i!==_rpDragIdx){ var el=document.getElementById('rpstop-'+i); if(el) el.classList.add('drag-over'); } }
-function _rpDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
-function _rpDrop(e,toIdx){
-  e.preventDefault();
-  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
-  if (_rpDragIdx===null||_rpDragIdx===toIdx){ _rpDragIdx=null; return; }
-  var moved=_routeStops.splice(_rpDragIdx,1)[0];
-  _routeStops.splice(toIdx,0,moved);
-  _rpDragIdx=null;
+var _rpDragEl  = null;
+var _rpGhost   = null;
+var _rpScrollTimer = null;
+var _rpDragOffsetY = 0;
+
+function _rpInitDrag() {
+  var list = document.getElementById('rp-stops-list');
+  if (!list) return;
+  list.querySelectorAll('.rp-drag-handle').forEach(function(handle) {
+    var stop = handle.closest('.rp-stop');
+    if (!stop) return;
+    // Remove old listeners by cloning
+    var newHandle = handle.cloneNode(true);
+    handle.parentNode.replaceChild(newHandle, handle);
+    newHandle.addEventListener('mousedown', _rpMouseDown, {passive:false});
+    newHandle.addEventListener('touchstart', _rpTouchStart, {passive:false});
+  });
+}
+
+function _rpGetIdx(el) {
+  var id = el && el.id;
+  if (!id) return -1;
+  return parseInt(id.replace('rpstop-',''));
+}
+
+function _rpFindStopAt(y) {
+  var stops = document.querySelectorAll('#rp-stops-list .rp-stop');
+  for (var i = 0; i < stops.length; i++) {
+    var r = stops[i].getBoundingClientRect();
+    if (y >= r.top && y <= r.bottom) return stops[i];
+  }
+  return null;
+}
+
+function _rpMoveStop(fromIdx, toIdx) {
+  if (fromIdx === toIdx || toIdx < 0 || toIdx >= _routeStops.length) return;
+  var moved = _routeStops.splice(fromIdx, 1)[0];
+  _routeStops.splice(toIdx, 0, moved);
   _saveRoute();
   _drawRouteOnMap();
   _renderRPStops();
+  _rpInitDrag();
+  // Re-highlight dragged item
+  var newEl = document.getElementById('rpstop-' + toIdx);
+  if (newEl) newEl.classList.add('dragging');
+  _rpDragIdx = toIdx;
+  _rpDragEl = newEl;
+}
+
+// ── MOUSE DRAG ──
+function _rpMouseDown(e) {
+  e.preventDefault();
+  var handle = e.currentTarget;
+  var stop = handle.closest('.rp-stop');
+  if (!stop) return;
+  _rpDragIdx = _rpGetIdx(stop);
+  _rpDragEl = stop;
+  stop.classList.add('dragging');
+  _rpDragOffsetY = e.clientY - stop.getBoundingClientRect().top;
+  document.addEventListener('mousemove', _rpMouseMove);
+  document.addEventListener('mouseup', _rpMouseUp);
+}
+
+function _rpMouseMove(e) {
+  if (_rpDragIdx === null) return;
+  _rpAutoScroll(e.clientY);
+  var target = _rpFindStopAt(e.clientY);
+  if (target && target !== _rpDragEl) {
+    document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); });
+    target.classList.add('drag-over');
+  }
+}
+
+function _rpMouseUp(e) {
+  document.removeEventListener('mousemove', _rpMouseMove);
+  document.removeEventListener('mouseup', _rpMouseUp);
+  _rpStopAutoScroll();
+  if (_rpDragIdx === null) return;
+  var target = _rpFindStopAt(e.clientY);
+  var toIdx = target ? _rpGetIdx(target) : -1;
+  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
+  if (toIdx >= 0 && toIdx !== _rpDragIdx) {
+    _rpMoveStop(_rpDragIdx, toIdx);
+  }
+  _rpDragIdx = null;
+  _rpDragEl = null;
+}
+
+// ── TOUCH DRAG ──
+function _rpTouchStart(e) {
+  e.preventDefault();
+  var handle = e.currentTarget;
+  var stop = handle.closest('.rp-stop');
+  if (!stop) return;
+  _rpDragIdx = _rpGetIdx(stop);
+  _rpDragEl = stop;
+  stop.classList.add('dragging');
+  handle.addEventListener('touchmove', _rpTouchMove, {passive:false});
+  handle.addEventListener('touchend', _rpTouchEnd, {passive:false});
+}
+
+function _rpTouchMove(e) {
+  e.preventDefault();
+  if (_rpDragIdx === null) return;
+  var touch = e.touches[0];
+  _rpAutoScroll(touch.clientY);
+  var target = _rpFindStopAt(touch.clientY);
+  if (target && target !== _rpDragEl) {
+    document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); });
+    target.classList.add('drag-over');
+  }
+}
+
+function _rpTouchEnd(e) {
+  e.currentTarget.removeEventListener('touchmove', _rpTouchMove);
+  e.currentTarget.removeEventListener('touchend', _rpTouchEnd);
+  _rpStopAutoScroll();
+  if (_rpDragIdx === null) return;
+  var touch = e.changedTouches[0];
+  var target = _rpFindStopAt(touch.clientY);
+  var toIdx = target ? _rpGetIdx(target) : -1;
+  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('dragging','drag-over'); });
+  if (toIdx >= 0 && toIdx !== _rpDragIdx) {
+    _rpMoveStop(_rpDragIdx, toIdx);
+  } else {
+    _renderRPStops();
+    _rpInitDrag();
+  }
+  _rpDragIdx = null;
+  _rpDragEl = null;
+}
+
+// ── AUTO-SCROLL when near edge ──
+function _rpAutoScroll(clientY) {
+  var list = document.getElementById('rp-stops-list');
+  // Also check desktop panel host
+  var scrollEl = list;
+  var dskBody = document.getElementById('dsk-route-body');
+  if (dskBody && dskBody.contains && _rpDragEl && dskBody.contains(_rpDragEl)) scrollEl = dskBody;
+  if (!scrollEl) return;
+  _rpStopAutoScroll();
+  var rect = scrollEl.getBoundingClientRect();
+  var ZONE = 60; // px from edge to trigger scroll
+  var SPEED = 8;
+  if (clientY < rect.top + ZONE) {
+    // Near top — scroll up
+    _rpScrollTimer = setInterval(function(){ scrollEl.scrollTop -= SPEED; }, 16);
+  } else if (clientY > rect.bottom - ZONE) {
+    // Near bottom — scroll down
+    _rpScrollTimer = setInterval(function(){ scrollEl.scrollTop += SPEED; }, 16);
+  }
+}
+
+function _rpStopAutoScroll() {
+  if (_rpScrollTimer) { clearInterval(_rpScrollTimer); _rpScrollTimer = null; }
 }
 
 // ── STOP ACTIONS ──
