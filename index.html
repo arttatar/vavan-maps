@@ -956,7 +956,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 .rp-stop:active{cursor:grabbing;}
 .rp-stop.dragging{background:var(--accent-light);opacity:.85;box-shadow:0 4px 16px rgba(0,0,0,.12);}
-.rp-stop.drag-over{border-top:2px solid var(--accent);}
+.rp-stop.drag-over{border-top:3px solid var(--accent);margin-top:-1px;}
 .rp-stop.done{opacity:.5;}
 .rp-stop.done .rp-stop-name{text-decoration:line-through;}
 .rp-num{
@@ -8646,7 +8646,7 @@ function _renderRPStops() {
       leg='<div class="rp-stop-leg">'+parts.join(' · ')+'</div>';
     }
     return '<div class="rp-stop'+(isDone?' done':'')+'" id="rpstop-'+i+'">'+
-      '<div class="rp-drag-handle" title="Drag to reorder"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" style="display:block;"><circle cx="3" cy="3" r="1.5" fill="#ccc"/><circle cx="7" cy="3" r="1.5" fill="#ccc"/><circle cx="3" cy="8" r="1.5" fill="#ccc"/><circle cx="7" cy="8" r="1.5" fill="#ccc"/><circle cx="3" cy="13" r="1.5" fill="#ccc"/><circle cx="7" cy="13" r="1.5" fill="#ccc"/></svg></div>'+
+      '<div class="rp-drag-handle" title="Drag to reorder"><svg width="14" height="20" viewBox="0 0 14 20" fill="none" style="display:block;"><circle cx="4" cy="4" r="2" fill="#aaa"/><circle cx="10" cy="4" r="2" fill="#aaa"/><circle cx="4" cy="10" r="2" fill="#aaa"/><circle cx="10" cy="10" r="2" fill="#aaa"/><circle cx="4" cy="16" r="2" fill="#aaa"/><circle cx="10" cy="16" r="2" fill="#aaa"/></svg></div>'+
       '<div class="rp-num'+(isDone?' done-num':'')+'">'+( isDone?'✓':(i+1) )+'</div>'+
       '<div class="rp-stop-info">'+
         '<div class="rp-stop-name" onclick="_rpFlyTo('+i+')" style="cursor:pointer;" title="Show on map">'+stop.biz.name+'</div>'+
@@ -8717,6 +8717,31 @@ function _rpMoveStop(fromIdx, toIdx) {
   _rpDragEl = newEl;
 }
 
+// ── GHOST ELEMENT ──
+function _rpCreateGhost(sourceEl) {
+  var ghost = sourceEl.cloneNode(true);
+  ghost.id = 'rp-drag-ghost';
+  ghost.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;opacity:.92;'+
+    'background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.22);'+
+    'width:'+sourceEl.offsetWidth+'px;left:'+sourceEl.getBoundingClientRect().left+'px;'+
+    'top:'+sourceEl.getBoundingClientRect().top+'px;'+
+    'transform:scale(1.03);transition:none;';
+  document.body.appendChild(ghost);
+  return ghost;
+}
+
+function _rpMoveGhost(clientY) {
+  var ghost = document.getElementById('rp-drag-ghost');
+  if (!ghost || !_rpDragEl) return;
+  var h = _rpDragEl.offsetHeight;
+  ghost.style.top = (clientY - h/2) + 'px';
+}
+
+function _rpRemoveGhost() {
+  var ghost = document.getElementById('rp-drag-ghost');
+  if (ghost) ghost.remove();
+}
+
 // ── MOUSE DRAG ──
 function _rpMouseDown(e) {
   e.preventDefault();
@@ -8725,26 +8750,29 @@ function _rpMouseDown(e) {
   if (!stop) return;
   _rpDragIdx = _rpGetIdx(stop);
   _rpDragEl = stop;
-  stop.classList.add('dragging');
   _rpDragOffsetY = e.clientY - stop.getBoundingClientRect().top;
+  // Create ghost
+  _rpGhost = _rpCreateGhost(stop);
+  stop.style.opacity = '0.35';
   document.addEventListener('mousemove', _rpMouseMove);
   document.addEventListener('mouseup', _rpMouseUp);
 }
 
 function _rpMouseMove(e) {
   if (_rpDragIdx === null) return;
+  _rpMoveGhost(e.clientY);
   _rpAutoScroll(e.clientY);
   var target = _rpFindStopAt(e.clientY);
-  if (target && target !== _rpDragEl) {
-    document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); });
-    target.classList.add('drag-over');
-  }
+  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); });
+  if (target && target !== _rpDragEl) target.classList.add('drag-over');
 }
 
 function _rpMouseUp(e) {
   document.removeEventListener('mousemove', _rpMouseMove);
   document.removeEventListener('mouseup', _rpMouseUp);
   _rpStopAutoScroll();
+  _rpRemoveGhost();
+  if (_rpDragEl) _rpDragEl.style.opacity = '';
   if (_rpDragIdx === null) return;
   var target = _rpFindStopAt(e.clientY);
   var toIdx = target ? _rpGetIdx(target) : -1;
@@ -8764,7 +8792,8 @@ function _rpTouchStart(e) {
   if (!stop) return;
   _rpDragIdx = _rpGetIdx(stop);
   _rpDragEl = stop;
-  stop.classList.add('dragging');
+  _rpGhost = _rpCreateGhost(stop);
+  stop.style.opacity = '0.35';
   handle.addEventListener('touchmove', _rpTouchMove, {passive:false});
   handle.addEventListener('touchend', _rpTouchEnd, {passive:false});
 }
@@ -8773,18 +8802,19 @@ function _rpTouchMove(e) {
   e.preventDefault();
   if (_rpDragIdx === null) return;
   var touch = e.touches[0];
+  _rpMoveGhost(touch.clientY);
   _rpAutoScroll(touch.clientY);
   var target = _rpFindStopAt(touch.clientY);
-  if (target && target !== _rpDragEl) {
-    document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); });
-    target.classList.add('drag-over');
-  }
+  document.querySelectorAll('.rp-stop').forEach(function(el){ el.classList.remove('drag-over'); });
+  if (target && target !== _rpDragEl) target.classList.add('drag-over');
 }
 
 function _rpTouchEnd(e) {
   e.currentTarget.removeEventListener('touchmove', _rpTouchMove);
   e.currentTarget.removeEventListener('touchend', _rpTouchEnd);
   _rpStopAutoScroll();
+  _rpRemoveGhost();
+  if (_rpDragEl) _rpDragEl.style.opacity = '';
   if (_rpDragIdx === null) return;
   var touch = e.changedTouches[0];
   var target = _rpFindStopAt(touch.clientY);
