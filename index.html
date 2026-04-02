@@ -1376,6 +1376,8 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
           <button class="tbtn" id="tbtn-radius" onclick="activateTool('radius')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="19" y2="12"/></svg>Radius</button>
           <button class="tbtn" id="tbtn-clear" onclick="clearArea()" style="display:none">Clear Area</button>
+          <button class="tbtn" id="tbtn-tag-area" onclick="_tagAreaPrompt()" style="display:none;background:var(--accent);color:#fff;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Tag Area</button>
         </div>
         <div id="radius-wrap" style="display:none;margin-top:.75rem;">
           <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;">Click map to place circle · drag slider to resize</div>
@@ -2823,6 +2825,7 @@ function filterMyAccounts() {
       host.classList.add('open');
       _desktopSection = 'myaccounts';
       _myAccActivityLoaded = false;
+      _myAccContactsLoaded = false;
       host.innerHTML =
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;flex-shrink:0;">'+
           '<div style="font-size:14px;font-weight:700;color:var(--ink);font-family:Syne,sans-serif;">My Accounts ('+myData.length+')</div>'+
@@ -2830,6 +2833,7 @@ function filterMyAccounts() {
         '</div>'+
         '<div class="det-tabs">'+
           '<div class="det-tab myacc-tab active" onclick="_switchMyAccTab(\'accounts\')">My Accounts</div>'+
+          '<div class="det-tab myacc-tab" onclick="_switchMyAccTab(\'contacts\')">My Contacts</div>'+
           '<div class="det-tab myacc-tab" onclick="_switchMyAccTab(\'activity\')">My Activity</div>'+
         '</div>'+
         '<div id="dsk-myacc-accounts" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">'+
@@ -2838,6 +2842,7 @@ function filterMyAccounts() {
           '</div>'+
           '<div style="flex:1;overflow-y:auto;" id="dsk-myacc-body"></div>'+
         '</div>'+
+        '<div id="dsk-myacc-contacts" style="flex:1;overflow-y:auto;display:none;"></div>'+
         '<div id="dsk-myacc-activity" style="flex:1;overflow-y:auto;display:none;"></div>';
 
       var body = host.querySelector('#dsk-myacc-body');
@@ -2866,6 +2871,7 @@ function filterMyAccounts() {
     var rcountEl = document.getElementById('rcount');
     if (rcountEl) rcountEl.textContent = myData.length + ' of your accounts';
     _myAccActivityLoaded = false;
+    _myAccContactsLoaded = false;
     if (listEl) {
       var accountsList = '';
       if (!myData.length) {
@@ -2884,6 +2890,7 @@ function filterMyAccounts() {
       listEl.innerHTML =
         '<div class="det-tabs">'+
           '<div class="det-tab myacc-tab active" onclick="_switchMyAccTab(\'accounts\')">My Accounts</div>'+
+          '<div class="det-tab myacc-tab" onclick="_switchMyAccTab(\'contacts\')">My Contacts</div>'+
           '<div class="det-tab myacc-tab" onclick="_switchMyAccTab(\'activity\')">My Activity</div>'+
         '</div>'+
         '<div id="mob-myacc-accounts" style="display:block;">'+
@@ -2893,6 +2900,7 @@ function filterMyAccounts() {
           '</div>'+
           accountsList+
         '</div>'+
+        '<div id="mob-myacc-contacts" style="display:none;"></div>'+
         '<div id="mob-myacc-activity" style="display:none;"></div>';
     }
     _bsOpen('results-panel', 'WORK', closeResults);
@@ -6408,16 +6416,59 @@ function locateMe() {
   if (!navigator.geolocation) return;
   var btn = document.getElementById('locate-btn');
   if (btn) btn.classList.add('locating');
+  // Reset denied state so user can re-try after enabling in settings
+  if (_geoPermission === 'denied') _geoPermission = null;
   _geoAsk(function(pos) {
     if (btn) btn.classList.remove('locating');
     map.flyTo({
       center: [pos.lon, pos.lat],
       zoom: 14, speed: 1.5
     });
+    // Ensure user dot is on the map (may not exist if permission was granted late)
+    _ensureUserDot(pos);
   }, function() {
     if (btn) btn.classList.remove('locating');
     alert('Location access denied. Please enable location in your browser settings.');
   });
+}
+
+// Make sure the blue location dot exists and is at the right position
+function _ensureUserDot(pos) {
+  if (!map || !map.isStyleLoaded()) return;
+  var coords = [pos.lon, pos.lat];
+  if (map.getSource('user-loc')) {
+    map.getSource('user-loc').setData({
+      type:'Feature', geometry:{type:'Point', coordinates: coords}
+    });
+  } else {
+    map.addSource('user-loc', {
+      type:'geojson',
+      data:{type:'Feature', geometry:{type:'Point', coordinates: coords}}
+    });
+    map.addLayer({
+      id:'user-pulse', type:'circle', source:'user-loc',
+      paint:{
+        'circle-radius':16,
+        'circle-color':'#4A90E2',
+        'circle-opacity':0.15,
+        'circle-stroke-width':1,
+        'circle-stroke-color':'#4A90E2',
+        'circle-stroke-opacity':0.4
+      }
+    });
+    map.addLayer({
+      id:'user-dot', type:'circle', source:'user-loc',
+      paint:{
+        'circle-radius':8,
+        'circle-color':'#4A90E2',
+        'circle-stroke-width':2.5,
+        'circle-stroke-color':'#ffffff',
+        'circle-opacity':1
+      }
+    });
+    // Start the watch for live updates now that we have permission
+    _geoStartWatch();
+  }
 }
 
 // ── NAVIGATION SHEET ──
@@ -6668,6 +6719,123 @@ function _createNewTag() {
   _saveBizTags(biz, tags);
 }
 
+// ── BULK TAG AREA ──
+function _tagAreaPrompt() {
+  if (!_can('edit_business')) { _showToast('Admin only'); return; }
+  if (!selPoly) { _showToast('Draw an area first'); return; }
+
+  // Find all businesses inside the drawn area (respecting current filters)
+  var source = filtersApplied ? filteredData : allData;
+  var inside = source.filter(function(b) {
+    if (!b.lat || !b.lon) return false;
+    return turf.booleanPointInPolygon(turf.point([b.lon, b.lat]), selPoly);
+  });
+
+  if (!inside.length) { _showToast('No businesses in this area'); return; }
+
+  // Build the modal
+  var existing = _getAllTags();
+  var optionsHtml = existing.map(function(t) {
+    return '<option value="'+t+'">#'+t+'</option>';
+  }).join('');
+
+  var modal = document.createElement('div');
+  modal.id = 'tag-area-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:12px;padding:20px;max-width:380px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.2);font-family:Inter,Arial,sans-serif;">'+
+      '<div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;">Tag Area</div>'+
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:16px;">'+inside.length+' businesses in drawn area</div>'+
+
+      '<div style="margin-bottom:12px;">'+
+        '<label style="font-size:12px;font-weight:600;color:var(--ink);display:block;margin-bottom:4px;">Choose existing tag:</label>'+
+        '<select id="tag-area-select" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">'+
+          '<option value="">— Select a tag —</option>'+
+          optionsHtml+
+        '</select>'+
+      '</div>'+
+
+      '<div style="margin-bottom:16px;">'+
+        '<label style="font-size:12px;font-weight:600;color:var(--ink);display:block;margin-bottom:4px;">Or create new tag:</label>'+
+        '<input id="tag-area-new" type="text" placeholder="e.g. ds-team-1" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;box-sizing:border-box;">'+
+      '</div>'+
+
+      '<div id="tag-area-progress" style="display:none;margin-bottom:12px;">'+
+        '<div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;">'+
+          '<div id="tag-area-bar" style="height:100%;background:var(--accent);width:0%;transition:width .2s;"></div>'+
+        '</div>'+
+        '<div id="tag-area-status" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center;"></div>'+
+      '</div>'+
+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+        '<button id="tag-area-cancel" onclick="document.getElementById(\'tag-area-modal\').remove()" style="padding:8px 16px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:13px;cursor:pointer;">Cancel</button>'+
+        '<button id="tag-area-apply" onclick="_applyTagArea()" style="padding:8px 16px;border:none;background:var(--accent);color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Apply Tag</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+async function _applyTagArea() {
+  var sel = document.getElementById('tag-area-select');
+  var inp = document.getElementById('tag-area-new');
+  var tagName = (inp.value || '').trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-_]/g, '') || (sel ? sel.value : '');
+  if (!tagName) { _showToast('Enter or select a tag name'); return; }
+
+  // Save to global tag list if new
+  var all = _getAllTags();
+  if (all.indexOf(tagName) < 0) { all.push(tagName); _saveAllTags(all); }
+
+  // Find businesses in area
+  var source = filtersApplied ? filteredData : allData;
+  var inside = source.filter(function(b) {
+    if (!b.lat || !b.lon) return false;
+    return turf.booleanPointInPolygon(turf.point([b.lon, b.lat]), selPoly);
+  });
+
+  // Disable buttons, show progress
+  document.getElementById('tag-area-apply').disabled = true;
+  document.getElementById('tag-area-cancel').style.display = 'none';
+  document.getElementById('tag-area-progress').style.display = 'block';
+  var bar = document.getElementById('tag-area-bar');
+  var status = document.getElementById('tag-area-status');
+
+  var success = 0, fail = 0;
+  // Batch update — process in chunks of 20
+  var batchSize = 20;
+  for (var i = 0; i < inside.length; i += batchSize) {
+    var batch = inside.slice(i, i + batchSize);
+    var promises = batch.map(function(biz) {
+      var tags = _getBizTags(biz);
+      if (tags.indexOf(tagName) >= 0) { success++; return Promise.resolve(); } // already has tag
+      tags.push(tagName);
+      var val = JSON.stringify(tags);
+      return sb.from('businesses').update({tags: val, updated_at: new Date().toISOString()}).eq('id', biz.id||biz._id)
+        .then(function(r) {
+          if (r.error) { fail++; return; }
+          biz.tags = tags;
+          if (_bizById[biz._id]) _bizById[biz._id].tags = tags;
+          success++;
+        })
+        .catch(function() { fail++; });
+    });
+    await Promise.all(promises);
+    var pct = Math.round(((i + batch.length) / inside.length) * 100);
+    bar.style.width = pct + '%';
+    status.textContent = success + ' tagged' + (fail ? ', ' + fail + ' failed' : '') + ' — ' + pct + '%';
+  }
+
+  // Done
+  bar.style.width = '100%';
+  status.textContent = 'Done! ' + success + ' businesses tagged #' + tagName + (fail ? ' (' + fail + ' failed)' : '');
+  document.getElementById('tag-area-apply').textContent = 'Done';
+  document.getElementById('tag-area-apply').onclick = function() {
+    document.getElementById('tag-area-modal').remove();
+    _initTagFilterDropdown();
+    applyFilters();
+  };
+  document.getElementById('tag-area-apply').disabled = false;
+}
+
 function _initTagFilterDropdown() {
   var sel = document.getElementById('tag-filter-sel');
   if (!sel) return;
@@ -6753,11 +6921,76 @@ function _renderPhotoGallery(photos) {
   window._bizPhotos = photos;
 }
 
-async function _uploadBizPhotos(files) {
+// ── PHOTO LABEL PICKER ──
+var _pendingPhotoFiles = null;
+var PHOTO_LABELS = [
+  'Competitor pricing',
+  'Equipment photo',
+  'Inventory photo',
+  'Business card',
+  'Building photo',
+  'Fleet / vehicles'
+];
+
+function _onPhotoFilePicked(files) {
+  if (!files || !files.length) return;
+  _pendingPhotoFiles = files;
+  _showPhotoLabelPicker();
+}
+
+function _showPhotoLabelPicker() {
+  // Remove any existing picker
+  var old = document.getElementById('photo-label-picker');
+  if (old) old.remove();
+
+  var count = _pendingPhotoFiles ? _pendingPhotoFiles.length : 0;
+  var picker = document.createElement('div');
+  picker.id = 'photo-label-picker';
+  picker.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;justify-content:flex-end;';
+  picker.innerHTML =
+    '<div onclick="_cancelPhotoPicker()" style="flex:1;background:rgba(0,0,0,.35);"></div>'+
+    '<div style="background:#fff;border-radius:16px 16px 0 0;padding:16px 16px 24px;max-height:70vh;overflow-y:auto;">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'+
+        '<div>'+
+          '<div style="font-size:15px;font-weight:700;color:var(--accent);">Photo Label</div>'+
+          '<div style="font-size:12px;color:var(--muted);">Select a label for '+ count +' photo'+(count>1?'s':'')+' · or skip</div>'+
+        '</div>'+
+        '<button onclick="_cancelPhotoPicker()" style="width:28px;height:28px;border-radius:50%;background:#f3f4f6;border:none;font-size:16px;cursor:pointer;color:#666;display:flex;align-items:center;justify-content:center;">×</button>'+
+      '</div>'+
+      PHOTO_LABELS.map(function(label) {
+        return '<div onclick="_pickPhotoLabel(\''+label.replace(/'/g,"\\'")+'\')" style="padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;color:var(--ink);font-weight:500;'+
+          'transition:background .15s;" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\'\'">'+label+'</div>';
+      }).join('')+
+      '<div onclick="_pickPhotoLabel(\'\')" style="padding:14px 16px;text-align:center;cursor:pointer;font-size:13px;color:var(--accent);font-weight:600;margin-top:4px;">'+
+        'Skip — just upload'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(picker);
+}
+
+function _cancelPhotoPicker() {
+  _pendingPhotoFiles = null;
+  var inp = document.getElementById('photo-upload-input');
+  if (inp) inp.value = '';
+  var picker = document.getElementById('photo-label-picker');
+  if (picker) picker.remove();
+}
+
+function _pickPhotoLabel(label) {
+  var picker = document.getElementById('photo-label-picker');
+  if (picker) picker.remove();
+  if (_pendingPhotoFiles) {
+    _uploadBizPhotos(_pendingPhotoFiles, label);
+    _pendingPhotoFiles = null;
+  }
+}
+
+async function _uploadBizPhotos(files, caption) {
   if (!files || !files.length) return;
   var b = lastSelectedBiz; if (!b) return;
   var cid = currentProfile ? currentProfile.client_id : null;
   if (!cid) return;
+  caption = caption || '';
 
   var gallery = document.getElementById('biz-photo-gallery');
   var origHtml = gallery ? gallery.innerHTML : '';
@@ -6795,8 +7028,7 @@ async function _uploadBizPhotos(files) {
       });
       if (r.error) throw r.error;
 
-      // Insert metadata record
-      var caption = files.length === 1 ? (prompt('Add a caption (optional):') || '') : '';
+      // Insert metadata record with label as caption
       await sb.from('business_photos').insert({
         business_id: String(b.id||b._id),
         client_id: cid,
@@ -6816,7 +7048,7 @@ async function _uploadBizPhotos(files) {
   if (inp) inp.value = '';
 
   if (uploaded > 0) {
-    _logChange('Added ' + uploaded + ' photo' + (uploaded > 1 ? 's' : ''), 'photo');
+    _logChange('Added ' + uploaded + ' photo' + (uploaded > 1 ? 's' : '') + (caption ? ' — ' + caption : ''), 'photo');
     _loadBizPhotos(b.id || b._id);
   } else {
     if (gallery) gallery.innerHTML = origHtml;
@@ -7324,7 +7556,7 @@ function renderDetailPanel(b) {
           '<label style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--accent-light);border:1px dashed var(--accent);border-radius:7px;font-size:11px;font-weight:700;color:var(--accent);cursor:pointer;font-family:Inter,sans-serif;">'+
             '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'+
             'Add Photo'+
-            '<input type="file" accept="image/*" multiple onchange="_uploadBizPhotos(this.files)" style="display:none;" id="photo-upload-input">'+
+            '<input type="file" accept="image/*" multiple onchange="_onPhotoFilePicked(this.files)" style="display:none;" id="photo-upload-input">'+
           '</label>'+
         '</div>'+
         '<div id="biz-photo-gallery" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;">'+
@@ -8158,22 +8390,89 @@ async function loadActivity(b) {
   }
 }
 
-// ── MY ACTIVITY (for My Accounts panel) ──
+// ── MY ACTIVITY & MY CONTACTS (for My Accounts panel) ──
 var _myAccActivityLoaded = false;
+var _myAccContactsLoaded = false;
 function _switchMyAccTab(tab) {
   var accPanel = document.getElementById('dsk-myacc-accounts') || document.getElementById('mob-myacc-accounts');
+  var conPanel = document.getElementById('dsk-myacc-contacts') || document.getElementById('mob-myacc-contacts');
   var actPanel = document.getElementById('dsk-myacc-activity') || document.getElementById('mob-myacc-activity');
   // Toggle tab active state — only target .myacc-tab so we don't touch business detail tabs
   document.querySelectorAll('.myacc-tab').forEach(function(t, i) {
-    var isActive = (tab === 'accounts' && i === 0) || (tab === 'activity' && i === 1);
+    var isActive = (tab === 'accounts' && i === 0) || (tab === 'contacts' && i === 1) || (tab === 'activity' && i === 2);
     t.classList.toggle('active', isActive);
   });
   if (accPanel) accPanel.style.display = tab === 'accounts' ? 'flex' : 'none';
+  if (conPanel) conPanel.style.display = tab === 'contacts' ? 'block' : 'none';
   if (actPanel) actPanel.style.display = tab === 'activity' ? 'block' : 'none';
+  // Lazy-load contacts on first switch
+  if (tab === 'contacts' && !_myAccContactsLoaded && conPanel) {
+    _myAccContactsLoaded = true;
+    _loadMyContacts(conPanel);
+  }
   // Lazy-load activity on first switch
   if (tab === 'activity' && !_myAccActivityLoaded && actPanel) {
     _myAccActivityLoaded = true;
     loadMyActivity(actPanel);
+  }
+}
+
+async function _loadMyContacts(container) {
+  if (!container) return;
+  container.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted);font-size:12px;">Loading contacts...</div>';
+  try {
+    // Get my assigned business IDs
+    var repName = currentProfile ? (currentProfile.full_name || '') : '';
+    var myBiz = allData.filter(function(b){ return b.assigned_rep === repName; });
+    if (!myBiz.length) {
+      container.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No accounts assigned to you yet.</div>';
+      return;
+    }
+    var myBizIds = myBiz.map(function(b){ return String(b.id || b._id); });
+
+    // Fetch contacts for those businesses
+    var allContacts = [];
+    // Supabase .in() has a limit, so batch if needed
+    var batchSize = 50;
+    for (var i = 0; i < myBizIds.length; i += batchSize) {
+      var batch = myBizIds.slice(i, i + batchSize);
+      var r = await sb.from('contacts').select('*').in('business_id', batch).order('first_name', {ascending:true});
+      if (r.error) throw r.error;
+      if (r.data) allContacts = allContacts.concat(r.data);
+    }
+
+    if (!allContacts.length) {
+      container.innerHTML = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No contacts found for your accounts.<br>Add them from a business profile.</div>';
+      return;
+    }
+
+    // Build lookup for business names
+    var _bizByUuid = {};
+    allData.forEach(function(b){ if (b.id) _bizByUuid[String(b.id)] = b; });
+
+    container.innerHTML =
+      '<div style="padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);">' + allContacts.length + ' contacts across ' + myBiz.length + ' accounts</div>' +
+      allContacts.map(function(c){
+        var biz = _bizByUuid[String(c.business_id)] || null;
+        var bizName = biz ? biz.name : 'Unknown';
+        var color = biz ? bizColor(biz) : '#9b93d4';
+        var fullName = ((c.first_name||'') + ' ' + (c.last_name||'')).trim() || 'Unnamed';
+        return '<div class="citem" style="padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openContactBusiness(\'' + c.business_id + '\')">'+
+          '<div style="display:flex;align-items:center;gap:8px;">'+
+            '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0;margin-top:2px;"></div>'+
+            '<div style="flex:1;min-width:0;">'+
+              '<div style="font-size:13px;font-weight:600;color:var(--ink);">'+fullName+'</div>'+
+              (c.job_title?'<div style="font-size:11px;color:var(--muted);">'+c.job_title+'</div>':'')+
+              '<div style="font-size:11px;color:var(--accent);">'+bizName+'</div>'+
+              (c.phone?'<div style="font-size:11px;margin-top:2px;"><a href="tel:'+c.phone.replace(/\D/g,'')+'" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;">'+c.phone+'</a></div>':'')+
+              (c.email?'<div style="font-size:11px;"><a href="mailto:'+c.email+'" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;">'+c.email+'</a></div>':'')+
+            '</div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="padding:1.5rem;font-size:12px;color:var(--muted);text-align:center;">Could not load contacts.</div>';
+    console.error('My Contacts error:', e);
   }
 }
 
@@ -10539,6 +10838,7 @@ function activateTool(t) {
   deactivate(); activeTool = t;
   document.getElementById('tbtn-'+t).classList.add('on');
   document.getElementById('tbtn-clear').style.display = 'inline-flex';
+  if(_can('edit_business'))document.getElementById('tbtn-tag-area').style.display = 'inline-flex';
   if (t==='poly') {
     draw.changeMode('draw_polygon');
     document.getElementById('radius-wrap').style.display='none';
@@ -10603,12 +10903,14 @@ function clearArea() {
   ['rad','rad-line'].forEach(function(id){ if(map.getLayer(id)) map.removeLayer(id); });
   if(map.getSource('rad')) map.removeSource('rad');
   document.getElementById('tbtn-clear').style.display='none';
+  document.getElementById('tbtn-tag-area').style.display='none';
   deactivate(); applyFilters();
 }
 function onDraw(e) {
   if(!e.features||!e.features[0]) return;
   selPoly=e.features[0]; deactivate();
   document.getElementById('tbtn-clear').style.display='inline-flex';
+  if(_can('edit_business'))document.getElementById('tbtn-tag-area').style.display='inline-flex';
   applyFilters();
 }
 function clearFilters() {
@@ -10675,6 +10977,7 @@ function _onRadSlider(val) {
       map.addLayer({id:'rad-line', type:'line', source:'rad', paint:{'line-color':'#4a36c8','line-width':2,'line-dasharray':[2,2]}});
     }
     document.getElementById('tbtn-clear').style.display = 'inline-flex';
+  if(_can('edit_business'))document.getElementById('tbtn-tag-area').style.display = 'inline-flex';
     applyFilters();
   }
 }
