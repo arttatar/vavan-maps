@@ -7156,6 +7156,13 @@ function renderDetailPanel(b) {
           '<button class="edit-cancel-btn" onclick="toggleEditMode()">Cancel</button>'+
         '</div>'+
         '<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);">'+
+          '<button id="move-pin-btn" onclick="_startMovePin()" style="width:100%;padding:9px;background:none;border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;margin-bottom:8px;">'+
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
+            'Move Pin Location'+
+          '</button>'+
+          '<div id="move-pin-status" style="display:none;font-size:11px;color:var(--accent);text-align:center;margin-bottom:8px;font-weight:600;"></div>'+
+        '</div>'+
+        '<div style="margin-top:.5rem;padding-top:.75rem;border-top:1px solid var(--border);">'+
           '<button onclick="abandonBusiness()" style="width:100%;padding:9px;background:none;border:1px solid #dc2626;border-radius:8px;color:#dc2626;font-size:12px;font-weight:600;font-family:Inter,sans-serif;cursor:pointer;">'+
             'Mark as Abandoned'+
           '</button>'+
@@ -7515,6 +7522,105 @@ async function saveBusinessEdits() {
   } finally {
     btn.textContent = 'Save Changes'; btn.disabled = false;
   }
+}
+
+// ── MOVE PIN ──
+var _movePinActive = false;
+var _movePinHandler = null;
+
+function _startMovePin() {
+  var b = lastSelectedBiz; if (!b) return;
+  _movePinActive = true;
+
+  var btn = document.getElementById('move-pin-btn');
+  var status = document.getElementById('move-pin-status');
+  if (btn) { btn.textContent = 'Click new location on map...'; btn.style.borderColor = '#d97706'; btn.style.color = '#d97706'; btn.disabled = true; }
+  if (status) { status.style.display = 'block'; status.textContent = 'Tap the map where the pin should be, or press Escape to cancel.'; }
+
+  // Change cursor
+  map.getCanvas().style.cursor = 'crosshair';
+
+  // Escape key to cancel
+  function onEsc(e) { if (e.key === 'Escape') cancelMovePin(); }
+  document.addEventListener('keydown', onEsc);
+
+  // Map click handler
+  _movePinHandler = async function(e) {
+    var newLng = e.lngLat.lng;
+    var newLat = e.lngLat.lat;
+
+    // Cleanup handlers first
+    map.off('click', _movePinHandler);
+    document.removeEventListener('keydown', onEsc);
+    map.getCanvas().style.cursor = '';
+    _movePinActive = false;
+
+    if (status) { status.textContent = 'Saving new location...'; }
+
+    try {
+      var r = await sb.from('businesses').update({
+        lat: newLat, lon: newLng,
+        updated_at: new Date().toISOString()
+      }).eq('id', b.id || b._id);
+      if (r.error) throw r.error;
+
+      // Update local data
+      b.lat = newLat;
+      b.lon = newLng;
+      if (_bizById[b._id]) { _bizById[b._id].lat = newLat; _bizById[b._id].lon = newLng; }
+
+      // Update selected pin
+      if (map.getSource('biz-selected')) {
+        map.getSource('biz-selected').setData({
+          type: 'FeatureCollection',
+          features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [newLng, newLat] },
+            properties: { industry: b.industry || '', is_competitor: b.is_competitor || false } }]
+        });
+      }
+
+      // Update main pin layer
+      _refreshMapPins();
+
+      // Log it
+      _logChange('Pin moved to ' + newLat.toFixed(6) + ', ' + newLng.toFixed(6), 'edit');
+
+      // Fly to new spot
+      map.flyTo({ center: [newLng, newLat], zoom: 16, speed: 1.4 });
+
+      if (status) { status.textContent = 'Pin moved successfully!'; status.style.color = '#059669'; }
+      if (btn) { btn.textContent = 'Move Pin Location'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; btn.disabled = false; }
+      setTimeout(function() { if (status) status.style.display = 'none'; }, 2000);
+
+    } catch (err) {
+      alert('Could not move pin: ' + err.message);
+      if (btn) { btn.textContent = 'Move Pin Location'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; btn.disabled = false; }
+      if (status) status.style.display = 'none';
+    }
+  };
+
+  map.on('click', _movePinHandler);
+
+  function cancelMovePin() {
+    map.off('click', _movePinHandler);
+    document.removeEventListener('keydown', onEsc);
+    map.getCanvas().style.cursor = '';
+    _movePinActive = false;
+    if (btn) { btn.textContent = 'Move Pin Location'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; btn.disabled = false; }
+    if (status) status.style.display = 'none';
+  }
+}
+
+function _refreshMapPins() {
+  if (!map.getSource('biz')) return;
+  var data = filtersApplied ? filteredData : allData;
+  var valid = data.filter(function(x) { return x.lat && x.lon && !x.is_abandoned; });
+  map.getSource('biz').setData({
+    type: 'FeatureCollection',
+    features: valid.map(function(x) {
+      return { type: 'Feature', geometry: { type: 'Point', coordinates: [x.lon, x.lat] },
+        properties: { _id: x._id, industry: x.industry || '', is_competitor: x.is_competitor || false, score: x.score || calcScore(x) } };
+    })
+  });
 }
 
 // ── PIPELINE STAGE DOT CLICK (in detail hero) ──
