@@ -643,14 +643,50 @@ body{
 }
 @media (max-width: 780px){
   .shell{padding:20px 14px 28px}
+  .panel{padding:16px}
   .season-strip{grid-template-columns:1fr}
+  .season-card{padding:14px 15px;border-radius:18px}
+  .season-title{font-size:18px}
+  .season-metric-value{font-size:24px}
   .topbar{flex-direction:column}
-  .brand h1{font-size:36px}
-  .metrics{grid-template-columns:1fr}
+  .meta{width:100%;justify-content:flex-start}
+  .pill{padding:8px 11px;font-size:11px}
+  .brand h1{font-size:34px}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .metric{padding:14px;border-radius:16px}
+  .metric .value{font-size:28px}
+  .metric .sub{font-size:11px}
+  .section-head{flex-direction:column}
+  .controls{width:100%}
+  .control{min-width:0;flex:1 1 100%}
+  .date-input,.btn{width:100%}
+  .view-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .view-btn{width:100%;text-align:center;padding:10px 10px}
   .rules{grid-template-columns:1fr}
-  .leader-row{grid-template-columns:auto 1fr}
-  .total-box{grid-column:2}
+  .leader-row{grid-template-columns:56px 1fr;gap:12px;padding:14px;border-radius:18px}
+  .rank{width:50px;height:50px;border-radius:15px;font-size:20px}
+  .rep-name{font-size:22px}
+  .rank-title{font-size:9px;padding:4px 8px}
+  .progress-copy{font-size:10px}
+  .total-box{grid-column:1 / -1;min-width:0;padding:10px 12px}
+  .total-value{font-size:32px}
   .stat-grid{grid-column:1 / -1;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat-chip{min-height:74px;padding:10px 9px;border-radius:14px}
+  .stat-value{font-size:24px}
+  .stat-points{font-size:10px}
+  .audit-controls{width:100%}
+  .audit-filter-chip{flex:1 1 calc(50% - 8px);justify-content:center}
+  .audit-row{grid-template-columns:1fr;gap:10px;padding:12px}
+  .audit-points{min-width:0;width:88px}
+}
+@media (max-width: 520px){
+  .shell{padding:16px 10px 24px}
+  .brand h1{font-size:30px}
+  .metrics{grid-template-columns:1fr}
+  .view-switch{grid-template-columns:1fr}
+  .stat-grid{grid-template-columns:1fr}
+  .rep-name{font-size:20px}
+  .audit-filter-chip{flex:1 1 100%}
 }
 </style>
 </head>
