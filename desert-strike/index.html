@@ -92,61 +92,38 @@ body{
 .btn-full{width:100%}
 .status{min-height:18px;margin-top:10px;font-size:12px;color:var(--danger)}
 .shell{max-width:1380px;margin:0 auto;padding:28px 20px 40px}
-.season-strip{
-  display:grid;
-  grid-template-columns:1.2fr repeat(3,minmax(0,1fr));
-  gap:12px;
-  margin-bottom:18px;
-}
-.season-card{
-  padding:16px 18px;
-  border-radius:22px;
+.quick-nav{
+  position:sticky;
+  top:10px;
+  z-index:20;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+  padding:10px;
   border:1px solid rgba(255,255,255,.08);
-  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border-radius:20px;
+  background:rgba(19,11,7,.78);
+  backdrop-filter:blur(12px);
   box-shadow:var(--shadow);
 }
-.season-card.main{
-  background:
-    radial-gradient(circle at right top, rgba(255,209,102,.18), transparent 34%),
-    linear-gradient(135deg, rgba(255,138,28,.14), rgba(255,91,71,.08));
-}
-.season-kicker{
-  color:var(--accent2);
-  text-transform:uppercase;
-  letter-spacing:.14em;
-  font-size:10px;
-  font-weight:900;
-}
-.season-title{
-  margin-top:8px;
-  font-size:22px;
-  font-weight:900;
-  color:var(--text);
-}
-.season-copy{
-  margin-top:6px;
-  color:var(--muted);
+.quick-nav a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  border-radius:999px;
+  text-decoration:none;
+  color:var(--sand);
   font-size:12px;
-  line-height:1.55;
-}
-.season-metric-label{
-  color:var(--muted);
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  font-size:10px;
   font-weight:800;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
 }
-.season-metric-value{
-  margin-top:8px;
-  color:var(--text);
-  font-size:30px;
-  line-height:1;
-  font-weight:900;
-}
-.season-metric-sub{
-  margin-top:6px;
-  color:var(--muted);
-  font-size:12px;
+.quick-nav a:hover{
+  background:linear-gradient(135deg, var(--accent), #ffb44c);
+  color:#2b1405;
+  border-color:transparent;
 }
 .topbar{
   display:flex;
@@ -194,20 +171,16 @@ body{
   font-size:12px;
 }
 .pill strong{color:var(--text)}
-.grid{
-  display:grid;
-  grid-template-columns:1.1fr .9fr;
-  gap:18px;
-}
+.stack{display:flex;flex-direction:column;gap:18px}
 .panel{padding:20px}
 .metrics{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
 }
 .metric{
-  padding:16px;
-  border-radius:20px;
+  padding:14px;
+  border-radius:18px;
   border:1px solid rgba(255,255,255,.06);
   background:rgba(255,255,255,.03);
 }
@@ -219,16 +192,16 @@ body{
   font-weight:800;
 }
 .metric .value{
-  margin-top:10px;
-  font-size:34px;
+  margin-top:8px;
+  font-size:28px;
   line-height:1;
   font-weight:800;
   color:var(--text);
 }
 .metric .sub{
-  margin-top:6px;
+  margin-top:5px;
   color:var(--muted);
-  font-size:12px;
+  font-size:11px;
 }
 .section-head{
   display:flex;
@@ -533,16 +506,6 @@ body{
   font-size:12px;
   line-height:1.5;
 }
-.note-box{
-  margin-top:14px;
-  padding:14px;
-  border-radius:18px;
-  background:rgba(255,138,28,.07);
-  border:1px solid rgba(255,138,28,.15);
-  color:var(--sand);
-  font-size:12px;
-  line-height:1.6;
-}
 .audit-panel{
   margin-top:18px;
 }
@@ -637,17 +600,11 @@ body{
   font-size:14px;
 }
 @media (max-width: 1150px){
-  .season-strip{grid-template-columns:1fr 1fr}
-  .grid{grid-template-columns:1fr}
-  .metrics{grid-template-columns:repeat(2,1fr)}
+  .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width: 780px){
   .shell{padding:20px 14px 28px}
   .panel{padding:16px}
-  .season-strip{grid-template-columns:1fr}
-  .season-card{padding:14px 15px;border-radius:18px}
-  .season-title{font-size:18px}
-  .season-metric-value{font-size:24px}
   .topbar{flex-direction:column}
   .meta{width:100%;justify-content:flex-start}
   .pill{padding:8px 11px;font-size:11px}
@@ -711,27 +668,10 @@ body{
 
 <div id="app-view" class="hidden">
   <div class="shell">
-    <div class="season-strip">
-      <div class="season-card main">
-        <div class="season-kicker">Live Season</div>
-        <div class="season-title">Desert Strike: Market Blitz</div>
-        <div class="season-copy">Every rep is chasing points by visiting accounts, uncovering supplier intel, collecting credit app progress, and stacking field actions faster than the rest of the team.</div>
-      </div>
-      <div class="season-card">
-        <div class="season-metric-label">Game Mode</div>
-        <div class="season-metric-value">Field Rush</div>
-        <div class="season-metric-sub">Live points from real activity in Supabase.</div>
-      </div>
-      <div class="season-card">
-        <div class="season-metric-label">Win Condition</div>
-        <div class="season-metric-value">Top Total</div>
-        <div class="season-metric-sub">Highest blitz points owns the board.</div>
-      </div>
-      <div class="season-card">
-        <div class="season-metric-label">Power Move</div>
-        <div class="season-metric-value">10 Pts</div>
-        <div class="season-metric-sub">Competitor invoice or collected credit app.</div>
-      </div>
+    <div class="quick-nav">
+      <a href="#leaderboard">Leader Board</a>
+      <a href="#rules">Rules</a>
+      <a href="#audit">Audit Log</a>
     </div>
 
     <div class="topbar">
@@ -750,8 +690,8 @@ body{
       <div class="metrics" id="summary-grid"></div>
     </div>
 
-    <div class="grid">
-      <div class="panel">
+    <div class="stack">
+      <div class="panel" id="leaderboard">
         <div class="section-head">
           <div>
             <h2 id="board-title">Rep Standings</h2>
@@ -776,25 +716,20 @@ body{
         <div id="leader-list" class="leader-list"></div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="rules">
         <div class="section-head">
           <div>
             <h2>Point Rules</h2>
-            <p>These are the current blitz weights driving the leaderboard.</p>
           </div>
         </div>
         <div id="rules-grid" class="rules"></div>
-        <div class="note-box">
-          Some blitz categories are inferred from the data Interstate is already saving today. For example, competitor invoices and equipment photos are detected from photo captions and filenames, and credit-app-left or credit-app-collected currently rely on keywords in activity notes. If you want perfect tracking later, we should add dedicated fields for those actions in the map app.
-        </div>
       </div>
     </div>
 
-    <div class="panel audit-panel">
+    <div class="panel audit-panel" id="audit">
       <div class="section-head">
         <div>
           <h2>Audit Log</h2>
-          <p>Live point events so you can see exactly what created the score.</p>
         </div>
         <div class="audit-controls">
           <button class="audit-filter-chip active" id="audit-filter-all" onclick="setAuditFilter('all')">All Events</button>
