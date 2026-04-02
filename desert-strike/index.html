@@ -99,8 +99,9 @@ body{
   display:flex;
   gap:8px;
   flex-wrap:wrap;
-  margin-bottom:14px;
-  padding:10px;
+  align-items:center;
+  margin-bottom:10px;
+  padding:8px;
   border:1px solid rgba(255,255,255,.08);
   border-radius:20px;
   background:rgba(19,11,7,.78);
@@ -120,6 +121,30 @@ body{
   background:rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.08);
 }
+.quick-tab-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  border-radius:999px;
+  color:var(--sand);
+  font-size:12px;
+  font-weight:800;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  cursor:pointer;
+}
+.quick-tab-btn.active{
+  background:linear-gradient(135deg, var(--accent), #ffb44c);
+  color:#2b1405;
+  border-color:transparent;
+}
+.quick-nav-group{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
 .quick-nav a:hover{
   background:linear-gradient(135deg, var(--accent), #ffb44c);
   color:#2b1405;
@@ -130,10 +155,39 @@ body{
   justify-content:space-between;
   gap:18px;
   align-items:flex-start;
-  margin-bottom:20px;
+  margin-bottom:10px;
 }
 .brand{display:flex;flex-direction:column;gap:10px}
-.brand h1{font-size:46px}
+.brand h1{font-size:40px}
+.header-tools{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  margin-top:2px;
+}
+.header-tools .view-btn,
+.header-tools .btn{
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:12px;
+}
+.header-tools .control{
+  min-width:132px;
+}
+.header-tools .control label{
+  display:block;
+  margin-bottom:4px;
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-weight:800;
+}
+.header-tools .date-input{
+  padding:9px 12px;
+  border-radius:999px;
+}
 .subhead{margin:0;max-width:820px;color:var(--muted);font-size:14px;line-height:1.65}
 .subhead strong{color:var(--text)}
 .banner{
@@ -171,16 +225,15 @@ body{
   font-size:12px;
 }
 .pill strong{color:var(--text)}
-.stack{display:flex;flex-direction:column;gap:18px}
-.panel{padding:20px}
+.panel{padding:16px}
 .metrics{
   display:grid;
   grid-template-columns:repeat(5,minmax(0,1fr));
-  gap:10px;
+  gap:8px;
 }
 .metric{
-  padding:14px;
-  border-radius:18px;
+  padding:12px;
+  border-radius:16px;
   border:1px solid rgba(255,255,255,.06);
   background:rgba(255,255,255,.03);
 }
@@ -193,7 +246,7 @@ body{
 }
 .metric .value{
   margin-top:8px;
-  font-size:28px;
+  font-size:24px;
   line-height:1;
   font-weight:800;
   color:var(--text);
@@ -208,7 +261,7 @@ body{
   justify-content:space-between;
   gap:12px;
   align-items:flex-start;
-  margin-bottom:16px;
+  margin-bottom:12px;
 }
 .section-head h2{
   margin:0;
@@ -221,12 +274,6 @@ body{
   color:var(--muted);
   max-width:700px;
   line-height:1.5;
-}
-.controls{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:flex-end;
 }
 .view-switch{
   display:inline-flex;
@@ -476,11 +523,11 @@ body{
 .rules{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
+  gap:10px;
 }
 .rule{
-  padding:14px;
-  border-radius:18px;
+  padding:12px;
+  border-radius:16px;
   background:rgba(255,255,255,.03);
   border:1px solid rgba(255,255,255,.06);
 }
@@ -506,8 +553,17 @@ body{
   font-size:12px;
   line-height:1.5;
 }
+.content-panel{
+  min-height:420px;
+}
+.content-section{
+  display:none;
+}
+.content-section.active{
+  display:block;
+}
 .audit-panel{
-  margin-top:18px;
+  margin-top:0;
 }
 .audit-controls{
   display:flex;
@@ -537,15 +593,15 @@ body{
 .audit-list{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:8px;
 }
 .audit-row{
   display:grid;
   grid-template-columns:auto 1fr auto;
   gap:12px;
   align-items:start;
-  padding:14px;
-  border-radius:18px;
+  padding:12px;
+  border-radius:16px;
   border:1px solid rgba(255,255,255,.06);
   background:rgba(255,255,255,.03);
 }
@@ -604,21 +660,23 @@ body{
 }
 @media (max-width: 780px){
   .shell{padding:20px 14px 28px}
-  .panel{padding:16px}
+  .quick-nav{padding:8px;border-radius:16px}
+  .quick-nav-group{width:100%}
   .topbar{flex-direction:column}
   .meta{width:100%;justify-content:flex-start}
   .pill{padding:8px 11px;font-size:11px}
   .brand h1{font-size:34px}
+  .header-tools{width:100%}
+  .header-tools .view-btn{flex:1 1 calc(50% - 8px);justify-content:center}
+  .header-tools .control{flex:1 1 calc(50% - 8px);min-width:0}
+  .header-tools .btn{width:100%;justify-content:center}
   .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .metric{padding:14px;border-radius:16px}
   .metric .value{font-size:28px}
   .metric .sub{font-size:11px}
   .section-head{flex-direction:column}
-  .controls{width:100%}
-  .control{min-width:0;flex:1 1 100%}
-  .date-input,.btn{width:100%}
-  .view-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
-  .view-btn{width:100%;text-align:center;padding:10px 10px}
+  .view-switch{display:none}
+  .quick-nav .quick-tab-btn{flex:1 1 calc(33.33% - 8px);justify-content:center}
   .rules{grid-template-columns:1fr}
   .leader-row{grid-template-columns:56px 1fr;gap:12px;padding:14px;border-radius:18px}
   .rank{width:50px;height:50px;border-radius:15px;font-size:20px}
@@ -640,7 +698,11 @@ body{
   .shell{padding:16px 10px 24px}
   .brand h1{font-size:30px}
   .metrics{grid-template-columns:1fr}
-  .view-switch{grid-template-columns:1fr}
+  .quick-nav .quick-tab-btn,
+  .quick-nav a{flex:1 1 100%}
+  .header-tools .view-btn,
+  .header-tools .control,
+  .header-tools .btn{flex:1 1 100%}
   .stat-grid{grid-template-columns:1fr}
   .rep-name{font-size:20px}
   .audit-filter-chip{flex:1 1 100%}
@@ -669,15 +731,31 @@ body{
 <div id="app-view" class="hidden">
   <div class="shell">
     <div class="quick-nav">
-      <a href="#leaderboard">Leader Board</a>
-      <a href="#rules">Rules</a>
-      <a href="#audit">Audit Log</a>
+      <div class="quick-nav-group">
+        <button class="quick-tab-btn active" id="tab-leader-btn" onclick="setContentTab('leaderboard')">Leader Board</button>
+        <button class="quick-tab-btn" id="tab-rules-btn" onclick="setContentTab('rules')">Rules</button>
+        <button class="quick-tab-btn" id="tab-audit-btn" onclick="setContentTab('audit')">Audit Log</button>
+      </div>
     </div>
 
     <div class="topbar">
       <div class="brand">
         <div class="eyebrow">InterState Oil Market Blitz</div>
         <h1>Desert Strike Leader Board</h1>
+        <div class="header-tools">
+          <button class="view-btn active" id="view-team-btn" onclick="setBoardView('team')">Team Leader Board</button>
+          <button class="view-btn" id="view-user-btn" onclick="setBoardView('user')">User Leader Board</button>
+          <button class="view-btn" id="view-lone-btn" onclick="setBoardView('lone')">Lone Wolf</button>
+          <div class="control">
+            <label for="start-date">Start</label>
+            <input class="date-input" id="start-date" type="date">
+          </div>
+          <div class="control">
+            <label for="end-date">End</label>
+            <input class="date-input" id="end-date" type="date">
+          </div>
+          <button class="btn" id="reload-btn" onclick="loadBoard()">Reload</button>
+        </div>
       </div>
       <div class="meta">
         <div class="pill">Client <strong id="client-name">Loading...</strong></div>
@@ -686,37 +764,21 @@ body{
       </div>
     </div>
 
-    <div class="panel" style="margin-bottom:18px;">
+    <div class="panel" style="margin-bottom:10px;">
       <div class="metrics" id="summary-grid"></div>
     </div>
 
-    <div class="stack">
-      <div class="panel" id="leaderboard">
+    <div class="panel content-panel">
+      <div class="content-section active" id="leaderboard">
         <div class="section-head">
           <div>
             <h2 id="board-title">Rep Standings</h2>
-            <div class="view-switch">
-              <button class="view-btn active" id="view-team-btn" onclick="setBoardView('team')">Team Leader Board</button>
-              <button class="view-btn" id="view-user-btn" onclick="setBoardView('user')">User Leader Board</button>
-              <button class="view-btn" id="view-lone-btn" onclick="setBoardView('lone')">Lone Wolf</button>
-            </div>
-          </div>
-          <div class="controls">
-            <div class="control">
-              <label for="start-date">Start</label>
-              <input class="date-input" id="start-date" type="date">
-            </div>
-            <div class="control">
-              <label for="end-date">End</label>
-              <input class="date-input" id="end-date" type="date">
-            </div>
-            <button class="btn" id="reload-btn" onclick="loadBoard()">Reload</button>
           </div>
         </div>
         <div id="leader-list" class="leader-list"></div>
       </div>
 
-      <div class="panel" id="rules">
+      <div class="content-section" id="rules">
         <div class="section-head">
           <div>
             <h2>Point Rules</h2>
@@ -724,19 +786,19 @@ body{
         </div>
         <div id="rules-grid" class="rules"></div>
       </div>
-    </div>
 
-    <div class="panel audit-panel" id="audit">
-      <div class="section-head">
-        <div>
-          <h2>Audit Log</h2>
+      <div class="content-section audit-panel" id="audit">
+        <div class="section-head">
+          <div>
+            <h2>Audit Log</h2>
+          </div>
+          <div class="audit-controls">
+            <button class="audit-filter-chip active" id="audit-filter-all" onclick="setAuditFilter('all')">All Events</button>
+            <button class="audit-filter-chip" id="audit-filter-clear" onclick="clearAuditFilter()">Clear Tile Filter</button>
+          </div>
         </div>
-        <div class="audit-controls">
-          <button class="audit-filter-chip active" id="audit-filter-all" onclick="setAuditFilter('all')">All Events</button>
-          <button class="audit-filter-chip" id="audit-filter-clear" onclick="clearAuditFilter()">Clear Tile Filter</button>
-        </div>
+        <div id="audit-list" class="audit-list"></div>
       </div>
-      <div id="audit-list" class="audit-list"></div>
     </div>
   </div>
 </div>
@@ -761,7 +823,7 @@ var POINT_RULES = {
   supplier_captured:     { label:'Supplier Captured', points:3, note:'Counts each product line where a supplier is filled in on the opportunity record.' },
   brands_captured:       { label:'Brands Captured', points:3, note:'Counts a lubricants brand entry on the opportunity record.' },
   equipment_photo:       { label:'Equipment Photo', points:4, note:'Detected from photo captions or filenames that look like tank, pump, truck, dispenser, or equipment photos.' },
-  pain_points:           { label:'Pain Points', points:5, note:'Counts product notes with meaningful text captured in opportunities.' },
+  pain_points:           { label:'Pain Points', points:5, note:'Counts one event per business when any product reaches Fact-Finding, Proposal Sent, Credit Application, or Won Opportunity.' },
   credit_app:            { label:'Credit App', points:8, note:'Counts each product line currently sitting in Credit Application stage.' },
   credit_app_left:       { label:'Credit App Left', points:5, note:'Inferred from activity notes mentioning that a credit app was left behind.' },
   credit_app_collected:  { label:'Credit App Collected', points:10, note:'Inferred from activity notes mentioning collected, completed, filled-out, or received credit apps.' }
@@ -779,6 +841,12 @@ var CATEGORY_ORDER = [
   'credit_app_left',
   'credit_app_collected'
 ];
+var PAIN_POINT_STAGES = {
+  'Fact-Finding': true,
+  'Proposal Sent': true,
+  'Credit Application': true,
+  'Won Opportunity': true
+};
 
 var INVOICE_RX = /(invoice|competitor|competitors|comp invoice|competitor invoice)/i;
 var EQUIPMENT_RX = /(equipment|tank|tanks|pump|pumps|dispenser|dispensers|truck|fleet|grease|lube skid|bulk plant)/i;
@@ -799,6 +867,7 @@ var _boardView = 'team';
 var _auditEvents = [];
 var _auditFilterKey = 'all';
 var _businessNameMap = {};
+var _contentTab = 'leaderboard';
 
 document.getElementById('login-btn').addEventListener('click', doLogin);
 document.getElementById('password').addEventListener('keydown', function(e){
@@ -1017,13 +1086,23 @@ function renderAuditLog() {
 
 function setAuditFilter(key) {
   _auditFilterKey = key || 'all';
+  setContentTab('audit');
   renderAuditLog();
-  var panel = document.getElementById('audit-list');
-  if (panel) panel.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function clearAuditFilter() {
   setAuditFilter('all');
+}
+
+function setContentTab(tab) {
+  _contentTab = tab || 'leaderboard';
+  var tabs = ['leaderboard', 'rules', 'audit'];
+  tabs.forEach(function(id){
+    var panel = document.getElementById(id);
+    var btn = document.getElementById('tab-' + (id === 'leaderboard' ? 'leader' : id) + '-btn');
+    if (panel) panel.classList.toggle('active', id === _contentTab);
+    if (btn) btn.classList.toggle('active', id === _contentTab);
+  });
 }
 
 function getBoardTitle() {
@@ -1324,11 +1403,11 @@ async function loadBoard() {
       var row = ensureRow(rows, opp.updated_by);
       if (!row) return;
 
+      var painPointProducts = [];
       PRODUCT_LINES.forEach(function(product){
         if (!opp['uses_' + product.key]) return;
         var supplier = normalizeName(opp[product.field + '_supplier']);
         var stage = opp[product.field + '_stage'] || '';
-        var notes = opp[product.field + '_notes'] || '';
         if (supplier) {
           addScore(row, 'supplier_captured', 1);
           pushAuditEvent({ user:opp.updated_by, key:'supplier_captured', detail:product.label + ' supplier: ' + supplier, source:'opportunity', created_at:opp.updated_at, business_id:opp.business_id });
@@ -1337,11 +1416,22 @@ async function loadBoard() {
           addScore(row, 'credit_app', 1);
           pushAuditEvent({ user:opp.updated_by, key:'credit_app', detail:product.label + ' moved to Credit Application', source:'opportunity', created_at:opp.updated_at, business_id:opp.business_id });
         }
-        if (isMeaningfulText(notes)) {
-          addScore(row, 'pain_points', 1);
-          pushAuditEvent({ user:opp.updated_by, key:'pain_points', detail:product.label + ' notes captured', source:'opportunity', created_at:opp.updated_at, business_id:opp.business_id });
+        if (PAIN_POINT_STAGES[stage]) {
+          painPointProducts.push(product.label + ' (' + stage + ')');
         }
       });
+
+      if (painPointProducts.length) {
+        addScore(row, 'pain_points', 1);
+        pushAuditEvent({
+          user:opp.updated_by,
+          key:'pain_points',
+          detail:'Pipeline reached qualifying stage: ' + painPointProducts.join(' · '),
+          source:'opportunity',
+          created_at:opp.updated_at,
+          business_id:opp.business_id
+        });
+      }
 
       if (splitMulti(opp.lube_brands).length) {
         addScore(row, 'brands_captured', 1);
