@@ -736,8 +736,9 @@ body{
   }
   .mobile-date-tools{
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:10px;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+    gap:8px;
+    align-items:end;
   }
   .topbar{flex-direction:column}
   .meta{width:100%;justify-content:flex-start}
@@ -794,14 +795,21 @@ body{
   }
   .mobile-nav-tools .control label{
     display:block;
-    margin-bottom:6px;
+    margin-bottom:4px;
+    font-size:10px;
   }
   .mobile-nav-tools .date-input{
     width:100%;
+    padding:10px 10px;
+    border-radius:12px;
+    font-size:12px;
   }
   .mobile-nav-tools .btn{
-    width:100%;
+    width:auto;
     justify-content:center;
+    padding:10px 14px;
+    border-radius:12px;
+    font-size:12px;
   }
   .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .metric{padding:14px;border-radius:16px}
@@ -837,7 +845,9 @@ body{
   .quick-nav .quick-tab-btn{font-size:12px;padding:13px 6px 12px}
   .header-tools{grid-template-columns:1fr 1fr}
   .mobile-view-switch{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .mobile-date-tools{grid-template-columns:1fr}
+  .mobile-date-tools{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
+  .mobile-nav-tools .date-input{font-size:11px;padding:10px 8px}
+  .mobile-nav-tools .btn{padding:10px 12px;font-size:11px}
   .stat-grid{grid-template-columns:1fr}
   .rep-name{font-size:20px}
   .audit-filter-chip{flex:1 1 100%}
@@ -889,8 +899,8 @@ body{
             <label for="end-date-mobile">End</label>
             <input class="date-input" id="end-date-mobile" type="date" onchange="syncDateInput('end')">
           </div>
+          <button class="btn" id="reload-btn-mobile" onclick="loadBoard()">Reload</button>
         </div>
-        <button class="btn" id="reload-btn-mobile" onclick="loadBoard()">Reload</button>
       </div>
     </div>
 
