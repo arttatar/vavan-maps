@@ -1120,7 +1120,13 @@ function cloneRow(row, nameOverride) {
 function ensureRow(rows, name) {
   var userName = normalizeName(name);
   if (!userName) return null;
-  if (!rows[userName]) rows[userName] = buildEmptyRow(userName);
+  if (rows[userName]) return rows[userName];
+  var matchedRoster = Object.keys(rows).find(function(key){
+    return matchMemberName(userName, key);
+  });
+  if (matchedRoster) return rows[matchedRoster];
+  if (Object.keys(rows).length) return null;
+  rows[userName] = buildEmptyRow(userName);
   return rows[userName];
 }
 
@@ -1676,7 +1682,10 @@ function renderLeaders(rows) {
   var leaderScore = rows[0].total || 0;
   host.innerHTML = rows.map(function(row, idx){
     var rowClass = idx === 0 ? 'leader-row top-1' : idx === 1 ? 'leader-row top-2' : idx === 2 ? 'leader-row top-3' : 'leader-row';
-    var percent = leaderScore ? Math.max(10, Math.round((row.total / leaderScore) * 100)) : 0;
+    var percent = 0;
+    if (leaderScore && row.total > 0) {
+      percent = Math.max(2, Math.round((row.total / leaderScore) * 100));
+    }
     return '<div class="'+rowClass+'" onclick="openLeaderDetail(\''+row.user.replace(/'/g,"\\'")+'\')">'+
       '<div class="rank">#'+(idx + 1)+'</div>'+
       '<div>'+
@@ -1699,14 +1708,8 @@ function renderLeaders(rows) {
 
 function buildSeedRows(users) {
   var rows = {};
-  (users || []).forEach(function(user){
-    var name = normalizeName(user.full_name);
-    if (!name || user.active === false || user.role === 'vavan_super') return;
-    var allowed = USER_ROSTER.some(function(member){
-      return matchMemberName(name, member);
-    });
-    if (!allowed) return;
-    rows[name] = buildEmptyRow(name);
+  USER_ROSTER.forEach(function(member){
+    rows[member] = buildEmptyRow(member);
   });
   return rows;
 }
@@ -1717,7 +1720,6 @@ function inRangeQuery(query, field, range) {
 
 function sortRows(rows) {
   return Object.keys(rows).map(function(key){ return rows[key]; })
-    .filter(function(row){ return row.total > 0; })
     .sort(function(a, b){
       if (b.total !== a.total) return b.total - a.total;
       if ((b.counts.competitor_invoice||0) !== (a.counts.competitor_invoice||0)) {
