@@ -1723,7 +1723,18 @@ function getTerritoryReps() {
 
 function _buildLookup() {
   _bizById = {};
-  allData.forEach(function(b){ _bizById[b._id] = b; });
+  allData.forEach(function(b){
+    _bizById[b._id] = b;
+    if (b.id) _bizById[String(b.id)] = b;
+  });
+}
+
+function _bizUuid(biz) {
+  return biz && biz.id ? String(biz.id) : '';
+}
+
+function _bizKey(biz) {
+  return _bizUuid(biz) || String((biz && biz._id) || '');
 }
 var filters = {
   opp:'all', contact:'all', industry:'all', pipeline:'all',
@@ -2873,6 +2884,7 @@ function filterMyAccounts() {
     _myAccActivityLoaded = false;
     _myAccContactsLoaded = false;
     if (listEl) {
+      listEl.scrollTop = 0;
       var accountsList = '';
       if (!myData.length) {
         accountsList = '<div style="padding:1.5rem;font-size:13px;color:var(--muted);text-align:center;">No accounts assigned to you yet.</div>';
@@ -2888,20 +2900,21 @@ function filterMyAccounts() {
         }).join('');
       }
       listEl.innerHTML =
-        '<div class="det-tabs">'+
-          '<div class="det-tab myacc-tab active" onclick="_switchMyAccTab(\'accounts\')">My Accounts</div>'+
-          '<div class="det-tab myacc-tab" onclick="_switchMyAccTab(\'contacts\')">My Contacts</div>'+
-          '<div class="det-tab myacc-tab" onclick="_switchMyAccTab(\'activity\')">My Activity</div>'+
-        '</div>'+
-        '<div id="mob-myacc-accounts" style="display:block;">'+
-          '<div style="padding:8px 10px;background:var(--accent-light);border-bottom:1px solid var(--accent);display:flex;align-items:center;justify-content:space-between;">'+
-            '<span style="font-size:12px;font-weight:600;color:var(--accent);">My accounts — map not filtered yet</span>'+
-            '<button onclick="applyMyAccountsToMap()" style="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">Apply to Map</button>'+
+        '<div style="position:sticky;top:0;z-index:9;background:#fff;">'+
+          '<div style="padding:10px 12px 0;">'+
+            '<button onclick="applyMyAccountsToMap()" style="width:100%;padding:10px;background:var(--accent);border:none;border-radius:8px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:Inter,sans-serif;">Apply to Map</button>'+
           '</div>'+
+          '<div class="det-tabs" style="position:relative;top:0;margin-top:8px;padding:0 8px;gap:0;background:#fff;border-bottom:1px solid var(--border);">'+
+            '<div class="det-tab myacc-tab active" style="flex:1;min-width:0;" onclick="_switchMyAccTab(\'accounts\')">My Accounts</div>'+
+            '<div class="det-tab myacc-tab" style="flex:1;min-width:0;" onclick="_switchMyAccTab(\'contacts\')">My Contacts</div>'+
+            '<div class="det-tab myacc-tab" style="flex:1;min-width:0;" onclick="_switchMyAccTab(\'activity\')">My Activity</div>'+
+          '</div>'+
+        '</div>'+
+        '<div id="mob-myacc-accounts" style="display:block;padding:0 0 14px;">'+
           accountsList+
         '</div>'+
-        '<div id="mob-myacc-contacts" style="display:none;"></div>'+
-        '<div id="mob-myacc-activity" style="display:none;"></div>';
+        '<div id="mob-myacc-contacts" style="display:none;padding:0 0 14px;"></div>'+
+        '<div id="mob-myacc-activity" style="display:none;padding:0 0 14px;"></div>';
     }
     _bsOpen('results-panel', 'WORK', closeResults);
   }
@@ -5083,14 +5096,14 @@ function applyFilters() {
   // Opportunity pipeline filter — uses toggle enabled state per product
   if (filters.opp_product === 'none') {
     data = data.filter(function(b){
-      var opp = _oppCache[String(b.id||b._id)];
+      var opp = _oppCache[_bizKey(b)];
       if (!opp) return true;
       return !OPP_PRODUCTS.some(function(p){ return opp['uses_'+p.key]; });
     });
   } else if (Array.isArray(filters.opp_product) && filters.opp_product.length > 0) {
     // Multi-product filter — must match ALL enabled products (AND logic per product, OR across suppliers)
     data = data.filter(function(b){
-      var opp = _oppCache[String(b.id||b._id)];
+      var opp = _oppCache[_bizKey(b)];
       if (!opp) return false;
       return filters.opp_product.every(function(productKey){
         if (!opp['uses_'+productKey]) return false;
@@ -5126,7 +5139,7 @@ function applyFilters() {
     // Legacy single-product filter
     var oppStage = filters.opp_stage || 'all';
     data = data.filter(function(b){
-      var opp = _oppCache[String(b.id||b._id)];
+      var opp = _oppCache[_bizKey(b)];
       if (!opp) return false;
       if (!opp['uses_'+filters.opp_product]) return false;
       if (oppStage !== 'all') {
@@ -5141,7 +5154,7 @@ function applyFilters() {
   // Global supplier filter (cross-product — any product with matching supplier)
   if (filters.supplierFilter && filters.supplierFilter.length > 0) {
     data = data.filter(function(b){
-      var opp = _oppCache[String(b.id||b._id)];
+      var opp = _oppCache[_bizKey(b)];
       if (!opp) return false;
       return OPP_PRODUCTS.some(function(p){
         if (!opp['uses_'+p.key]) return false;
@@ -6878,15 +6891,34 @@ async function _loadBizPhotos(bizId) {
   var gallery = document.getElementById('biz-photo-gallery');
   if (!gallery) return;
   var cid = currentProfile ? currentProfile.client_id : null;
-  if (!cid) { gallery.innerHTML = ''; return; }
+  var normalizedBizId = String(bizId || '').trim();
+  if (!normalizedBizId) {
+    gallery.innerHTML = '<div style="font-size:12px;color:var(--muted);">No business ID for photos</div>';
+    return;
+  }
   try {
-    var r = await sb.from('business_photos').select('*')
-      .eq('business_id', String(bizId))
-      .eq('client_id', cid)
-      .order('created_at', { ascending: false });
-    if (r.error) throw r.error;
-    _renderPhotoGallery(r.data || []);
+    var rows = [];
+    if (cid) {
+      var scoped = await sb.from('business_photos').select('*')
+        .eq('business_id', normalizedBizId)
+        .eq('client_id', cid)
+        .order('created_at', { ascending: false });
+      if (scoped.error) {
+        console.warn('Scoped photo load failed:', scoped.error);
+      } else {
+        rows = scoped.data || [];
+      }
+    }
+    if (!rows.length) {
+      var unscoped = await sb.from('business_photos').select('*')
+        .eq('business_id', normalizedBizId)
+        .order('created_at', { ascending: false });
+      if (unscoped.error) throw unscoped.error;
+      rows = unscoped.data || [];
+    }
+    _renderPhotoGallery(rows);
   } catch(e) {
+    console.warn('Photo gallery load failed:', e);
     gallery.innerHTML = '<div style="font-size:12px;color:var(--muted);">Could not load photos</div>';
   }
 }
@@ -6894,6 +6926,8 @@ async function _loadBizPhotos(bizId) {
 function _renderPhotoGallery(photos) {
   var gallery = document.getElementById('biz-photo-gallery');
   if (!gallery) return;
+  var editPane = document.getElementById('det-edit');
+  var isEditing = !!(editPane && editPane.classList.contains('active'));
   if (!photos.length) {
     gallery.innerHTML = '<div style="font-size:12px;color:var(--muted);">No photos yet — tap Add Photo to upload.</div>';
     return;
@@ -6901,9 +6935,7 @@ function _renderPhotoGallery(photos) {
   gallery.innerHTML = photos.map(function(p, idx) {
     var url = SURL + '/storage/v1/object/public/business-photos/' + p.storage_path;
     var thumbUrl = url + '?width=200&height=200&resize=cover';
-    var isAdmin = currentProfile && ['vavan_admin','account_owner','account_admin'].indexOf(currentProfile.role) >= 0;
-    var isOwner = currentProfile && p.uploaded_by === currentProfile.full_name;
-    var canDelete = isAdmin || isOwner;
+    var canDelete = isEditing;
     var date = new Date(p.created_at);
     var dateStr = (date.getMonth()+1)+'/'+date.getDate()+'/'+date.getFullYear();
     return '<div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0;cursor:pointer;border:1px solid var(--border);" onclick="_openPhotoViewer('+idx+')">'+
@@ -7019,7 +7051,7 @@ async function _uploadBizPhotos(files, caption) {
     }
 
     var ext = (uploadFile.name.match(/\.([^.]+)$/) || [,'jpg'])[1].toLowerCase();
-    var path = cid + '/' + String(b.id||b._id) + '/' + Date.now() + '_' + i + '.' + ext;
+    var path = cid + '/' + _bizKey(b) + '/' + Date.now() + '_' + i + '.' + ext;
 
     try {
       var r = await sb.storage.from('business-photos').upload(path, uploadFile, {
@@ -7030,7 +7062,7 @@ async function _uploadBizPhotos(files, caption) {
 
       // Insert metadata record with label as caption
       await sb.from('business_photos').insert({
-        business_id: String(b.id||b._id),
+        business_id: _bizUuid(b),
         client_id: cid,
         storage_path: path,
         file_name: file.name,
@@ -7049,7 +7081,7 @@ async function _uploadBizPhotos(files, caption) {
 
   if (uploaded > 0) {
     _logChange('Added ' + uploaded + ' photo' + (uploaded > 1 ? 's' : '') + (caption ? ' — ' + caption : ''), 'photo');
-    _loadBizPhotos(b.id || b._id);
+    _loadBizPhotos(_bizUuid(b));
   } else {
     if (gallery) gallery.innerHTML = origHtml;
     alert('No photos were uploaded. Please try again.');
@@ -7062,7 +7094,7 @@ async function _deleteBizPhoto(photoId, storagePath) {
     await sb.storage.from('business-photos').remove([storagePath]);
     await sb.from('business_photos').delete().eq('id', photoId);
     var b = lastSelectedBiz;
-    if (b) _loadBizPhotos(b.id || b._id);
+    if (b) _loadBizPhotos(_bizUuid(b));
   } catch(e) {
     alert('Could not delete photo: ' + e.message);
   }
@@ -7380,7 +7412,7 @@ function renderDetailPanel(b) {
         )+
       '</div>'+
       (function(){
-        var opp = _oppCache[String(b.id||b._id)];
+        var opp = _oppCache[_bizKey(b)];
         if (!opp) return '';
         var OPP_SC = {'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669','Uses Oil':'#d97706','Lost':'#dc2626'};
         var STD_STAGES = ['Lead Captured','Qualified','Fact-Finding','Proposal Sent','Credit Application','Won Opportunity','Lost'];
@@ -7661,7 +7693,7 @@ function renderDetailPanel(b) {
   loadContacts(b);
   loadActivity(b);
   loadOpportunities(b);
-  _loadBizPhotos(b.id || b._id);
+  _loadBizPhotos(_bizUuid(b));
 }
 
 function switchTab(tab) {
@@ -7687,6 +7719,7 @@ function toggleEditMode() {
     edit.classList.add('active');
     view.classList.add('hidden');
   }
+  if (lastSelectedBiz) _loadBizPhotos(_bizUuid(lastSelectedBiz));
 }
 
 // ── ABANDON BUSINESS ──
@@ -7713,7 +7746,7 @@ async function abandonBusiness() {
 
     // Log it — separate type so it's never counted
     await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       type: 'abandoned',
       note: 'Marked as Abandoned — not a prospect for our products/services',
       client_id: currentProfile ? currentProfile.client_id : null,
@@ -7772,7 +7805,7 @@ async function claimAccount() {
     }).eq('id', b.id||b._id);
     if (r.error) throw r.error;
     await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       type: 'claimed',
       note: repName + ' claimed this account',
       client_id: currentProfile ? currentProfile.client_id : null,
@@ -8098,7 +8131,7 @@ async function setDetailStage(stage) {
     if (newStatus !== (b.status||'Lead')) noteText += ' · Status auto-updated to "' + newStatus + '"';
 
     await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       type: 'pipeline',
       client_id: currentProfile ? currentProfile.client_id : null,
       note: noteText,
@@ -8124,7 +8157,7 @@ async function loadContacts(b) {
   var el = document.getElementById('contacts-list');
   if (!el) return;
   try {
-    var r = await sb.from('contacts').select('*').eq('business_id', String(b.id||b._id)).order('created_at', {ascending:true});
+    var r = await sb.from('contacts').select('*').eq('business_id', _bizUuid(b)).order('created_at', {ascending:true});
     if (r.error) throw r.error;
     if (!r.data || !r.data.length) {
       el.innerHTML = '<div class="det-empty">No contacts yet. Add one above.</div>';
@@ -8145,7 +8178,7 @@ async function loadContacts(b) {
             '<div class="contact-card-title">'+(c.job_title||'')+'</div>'+
           '</div>'+
           '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">'+
-            '<button onclick="setPrimaryContact(\''+c.id+'\',\''+String(b.id||b._id)+'\')" '+
+            '<button onclick="setPrimaryContact(\''+c.id+'\',\''+_bizUuid(b)+'\')" '+
               'style="background:'+(isPrimary?'var(--accent)':'none')+';color:'+(isPrimary?'#fff':'#bbb')+';border:'+(isPrimary?'none':'1px solid #ddd')+';border-radius:100px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">'+
               (isPrimary?'Primary':'Set Primary')+
             '</button>'+
@@ -8207,7 +8240,7 @@ async function saveContact() {
 
   try {
     var r = await sb.from('contacts').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       first_name: first, last_name: last,
       phone: phone, email: email, job_title: title,
       client_id: currentProfile ? currentProfile.client_id : null
@@ -8216,10 +8249,10 @@ async function saveContact() {
 
     // Log contact creation to activity
     await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       type: 'contact',
       client_id: currentProfile ? currentProfile.client_id : null,
-      note: 'Contact added: ' + [first, last].filter(Boolean).join(' ') + (title ? ' (' + title + ')' : ''),
+      note: _withBizNote(b, 'Contact added: ' + [first, last].filter(Boolean).join(' ') + (title ? ' (' + title + ')' : '')),
       created_by: byName
     });
 
@@ -8290,10 +8323,10 @@ saveContact = async function() {
     if (r.error) throw r.error;
 
     await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       type: 'contact',
       client_id: currentProfile ? currentProfile.client_id : null,
-      note: 'Contact updated: ' + [first, last].filter(Boolean).join(' ') + (title ? ' (' + title + ')' : ''),
+      note: _withBizNote(b, 'Contact updated: ' + [first, last].filter(Boolean).join(' ') + (title ? ' (' + title + ')' : '')),
       created_by: byName
     });
 
@@ -8318,10 +8351,10 @@ async function deleteContact(contactId, contactName) {
     if (r.error) throw r.error;
 
     await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
+      business_id: _bizUuid(b),
       type: 'contact',
       client_id: currentProfile ? currentProfile.client_id : null,
-      note: 'Contact deleted: ' + contactName,
+      note: _withBizNote(b, 'Contact deleted: ' + contactName),
       created_by: byName
     });
 
@@ -8347,15 +8380,15 @@ async function loadActivity(b) {
   var el = document.getElementById('activity-feed');
   if (!el) return;
   try {
-    var r = await sb.from('activity').select('*').eq('business_id', String(b.id||b._id)).order('created_at', {ascending:false}).limit(50);
+    var r = await sb.from('activity').select('*').eq('business_id', _bizUuid(b)).order('created_at', {ascending:false}).limit(50);
     if (r.error) throw r.error;
     if (!r.data || !r.data.length) {
       el.innerHTML = '<div class="det-empty">No activity yet.</div>';
       return;
     }
     el.innerHTML = '<div class="activity-feed">'+r.data.map(function(a){
-      var icon    = a.type==='contacted'?'C':a.type==='visited'?'V':a.type==='pipeline'?'P':a.type==='contact'?'CT':a.type==='opportunities'?'OPP':a.type==='claimed'?'CL':a.type==='abandoned'?'X':a.type==='created'?'★':'N';
-      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'||a.type==='opportunities'||a.type==='claimed'||a.type==='abandoned'||a.type==='created'?'pipeline':a.type==='contact'?'pipeline':'note';
+      var icon    = a.type==='contacted'?'C':a.type==='visited'?'V':a.type==='pipeline'?'P':a.type==='contact'?'CT':a.type==='opportunities'?'OPP':a.type==='photo'?'PH':a.type==='claimed'?'CL':a.type==='abandoned'?'X':a.type==='created'?'★':'N';
+      var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'||a.type==='opportunities'||a.type==='claimed'||a.type==='abandoned'||a.type==='created'||a.type==='photo'?'pipeline':a.type==='contact'?'pipeline':'note';
 
       // Build display text — show outcome + note for visited/contacted
       var label = a.type.charAt(0).toUpperCase()+a.type.slice(1);
@@ -8372,7 +8405,7 @@ async function loadActivity(b) {
             label = a.note;
           }
         }
-      } else if (a.type==='note'||a.type==='pipeline'||a.type==='contact'||a.type==='created'||a.type==='edit'||a.type==='claimed'||a.type==='abandoned'||a.type==='opportunities') {
+      } else if (a.type==='note'||a.type==='pipeline'||a.type==='contact'||a.type==='created'||a.type==='edit'||a.type==='claimed'||a.type==='abandoned'||a.type==='opportunities'||a.type==='photo') {
         label = a.note || label;
       }
 
@@ -8394,17 +8427,26 @@ async function loadActivity(b) {
 var _myAccActivityLoaded = false;
 var _myAccContactsLoaded = false;
 function _switchMyAccTab(tab) {
-  var accPanel = document.getElementById('dsk-myacc-accounts') || document.getElementById('mob-myacc-accounts');
-  var conPanel = document.getElementById('dsk-myacc-contacts') || document.getElementById('mob-myacc-contacts');
-  var actPanel = document.getElementById('dsk-myacc-activity') || document.getElementById('mob-myacc-activity');
+  var listHost = document.getElementById('biz-list');
+  var dskAccPanel = document.getElementById('dsk-myacc-accounts');
+  var dskConPanel = document.getElementById('dsk-myacc-contacts');
+  var dskActPanel = document.getElementById('dsk-myacc-activity');
+  var mobAccPanel = document.getElementById('mob-myacc-accounts');
+  var mobConPanel = document.getElementById('mob-myacc-contacts');
+  var mobActPanel = document.getElementById('mob-myacc-activity');
+  var accPanel = dskAccPanel || mobAccPanel;
+  var conPanel = dskConPanel || mobConPanel;
+  var actPanel = dskActPanel || mobActPanel;
   // Toggle tab active state — only target .myacc-tab so we don't touch business detail tabs
   document.querySelectorAll('.myacc-tab').forEach(function(t, i) {
     var isActive = (tab === 'accounts' && i === 0) || (tab === 'contacts' && i === 1) || (tab === 'activity' && i === 2);
     t.classList.toggle('active', isActive);
   });
-  if (accPanel) accPanel.style.display = tab === 'accounts' ? 'flex' : 'none';
+  if (dskAccPanel) dskAccPanel.style.display = tab === 'accounts' ? 'flex' : 'none';
+  if (mobAccPanel) mobAccPanel.style.display = tab === 'accounts' ? 'block' : 'none';
   if (conPanel) conPanel.style.display = tab === 'contacts' ? 'block' : 'none';
   if (actPanel) actPanel.style.display = tab === 'activity' ? 'block' : 'none';
+  if (listHost) listHost.scrollTop = 0;
   // Lazy-load contacts on first switch
   if (tab === 'contacts' && !_myAccContactsLoaded && conPanel) {
     _myAccContactsLoaded = true;
@@ -8451,13 +8493,13 @@ async function _loadMyContacts(container) {
     allData.forEach(function(b){ if (b.id) _bizByUuid[String(b.id)] = b; });
 
     container.innerHTML =
-      '<div style="padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);">' + allContacts.length + ' contacts across ' + myBiz.length + ' accounts</div>' +
+      '<div style="padding:10px 14px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);background:#fff;">' + allContacts.length + ' contacts across ' + myBiz.length + ' accounts</div>' +
       allContacts.map(function(c){
         var biz = _bizByUuid[String(c.business_id)] || null;
         var bizName = biz ? biz.name : 'Unknown';
         var color = biz ? bizColor(biz) : '#9b93d4';
         var fullName = ((c.first_name||'') + ' ' + (c.last_name||'')).trim() || 'Unnamed';
-        return '<div class="citem" style="padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openContactBusiness(\'' + c.business_id + '\')">'+
+        return '<div class="citem" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;" onclick="openContactBusiness(\'' + c.business_id + '\')">'+
           '<div style="display:flex;align-items:center;gap:8px;">'+
             '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0;margin-top:2px;"></div>'+
             '<div style="flex:1;min-width:0;">'+
@@ -8496,7 +8538,7 @@ async function loadMyActivity(container) {
     var _bizByUuid = {};
     allData.forEach(function(b){ if (b.id) _bizByUuid[String(b.id)] = b; });
 
-    container.innerHTML = r.data.map(function(a) {
+    container.innerHTML = '<div style="padding-top:2px;background:#fff;">' + r.data.map(function(a) {
       var icon    = a.type==='contacted'?'C':a.type==='visited'?'V':a.type==='pipeline'?'P':a.type==='contact'?'CT':a.type==='opportunities'?'OPP':a.type==='claimed'?'CL':a.type==='abandoned'?'X':a.type==='created'?'★':'N';
       var iconCls = a.type==='contacted'?'contacted':a.type==='visited'?'visited':a.type==='pipeline'||a.type==='opportunities'||a.type==='claimed'||a.type==='abandoned'||a.type==='created'?'pipeline':a.type==='contact'?'pipeline':'note';
 
@@ -8524,7 +8566,7 @@ async function loadMyActivity(container) {
       var rowClick = bizId ? ' onclick="closeDesktopSection();closeResults();selectBiz('+bizId+')"' : '';
       var rowStyle = bizId ? 'cursor:pointer;' : '';
 
-      return '<div class="activity-item" style="'+rowStyle+'"'+rowClick+'>'+
+      return '<div class="activity-item" style="padding:12px 14px;'+rowStyle+'"'+rowClick+'>'+
         '<div class="act-icon '+iconCls+'" style="flex-shrink:0;">'+icon+'</div>'+
         '<div class="act-content" style="flex:1;min-width:0;">'+
           (bizName ? '<div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:2px;display:flex;align-items:center;gap:5px;">'+
@@ -8537,7 +8579,7 @@ async function loadMyActivity(container) {
         '</div>'+
         (bizId ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;align-self:center;opacity:.5;"><polyline points="9 18 15 12 9 6"/></svg>' : '')+
       '</div>';
-    }).join('');
+    }).join('') + '</div>';
   } catch(e) {
     container.innerHTML = '<div style="padding:1rem;font-size:12px;color:#ef4444;text-align:center;">Could not load activity.</div>';
   }
@@ -8628,6 +8670,17 @@ function _removeActivitySheet() {
   if (el) el.remove();
 }
 
+function _activityBizLabel(biz) {
+  return String((biz && (biz.name || biz.business_name)) || '').trim();
+}
+
+function _withBizNote(biz, note) {
+  var text = String(note || '').trim();
+  var bizName = _activityBizLabel(biz);
+  if (!bizName) return text;
+  return 'Business: ' + bizName + (text ? ' || ' + text : '');
+}
+
 function _selectActivityOption(type, outcome) {
   _removeActivitySheet();
   if (outcome) {
@@ -8687,7 +8740,7 @@ async function _doLogActivity(type, outcome) {
   var note = (noteEl ? noteEl.value.trim() : '');
   _removeActivitySheet();
   var byName = currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown';
-  var fullNote = outcome ? (outcome + (note ? ': ' + note : '')) : (note || '');
+  var fullNote = _withBizNote(biz, outcome ? (outcome + (note ? ': ' + note : '')) : (note || ''));
 
   try {
     // Mark as visited if type is visited
@@ -8697,7 +8750,7 @@ async function _doLogActivity(type, outcome) {
       if (_bizById[biz._id]) _bizById[biz._id].visited = true;
     }
     await sb.from('activity').insert({
-      business_id: String(biz.id||biz._id),
+      business_id: _bizUuid(biz),
       type: type,
       note: fullNote,
       client_id: currentProfile ? currentProfile.client_id : null,
@@ -8720,8 +8773,8 @@ async function _saveQuickNote() {
   var byName = currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown';
   try {
     await sb.from('activity').insert({
-      business_id: String(biz.id||biz._id),
-      type: 'note', note: note,
+      business_id: _bizUuid(biz),
+      type: 'note', note: _withBizNote(biz, note),
       client_id: currentProfile ? currentProfile.client_id : null,
       created_by: byName
     });
@@ -8736,8 +8789,8 @@ async function logActivity(type) {
   var byName = currentProfile ? (currentProfile.full_name || 'Unknown') : 'Unknown';
   try {
     var r = await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
-      type: type, note: '',
+      business_id: _bizUuid(b),
+      type: type, note: _withBizNote(b, ''),
       client_id: currentProfile ? currentProfile.client_id : null,
       created_by: byName
     });
@@ -8752,9 +8805,9 @@ async function _logChange(note, type) {
   var byName = currentProfile ? (currentProfile.full_name || 'Unknown') : 'Unknown';
   try {
     await sb.from('activity').insert({
-      business_id: String(biz.id||biz._id),
+      business_id: _bizUuid(biz),
       type: type || 'edit',
-      note: note,
+      note: _withBizNote(biz, note),
       client_id: currentProfile ? currentProfile.client_id : null,
       created_by: byName
     });
@@ -8776,8 +8829,8 @@ async function saveNote() {
 
   try {
     var r = await sb.from('activity').insert({
-      business_id: String(b.id||b._id),
-      type: 'note', note: note,
+      business_id: _bizUuid(b),
+      type: 'note', note: _withBizNote(b, note),
       client_id: currentProfile ? currentProfile.client_id : null,
       created_by: byName
     });
@@ -8834,7 +8887,7 @@ async function loadOpportunities(b) {
   try {
     var r = await sb.from('business_opportunities')
       .select('*')
-      .eq('business_id', String(b.id||b._id))
+      .eq('business_id', _bizUuid(b))
       .eq('client_id', currentProfile ? currentProfile.client_id : '00000000-0000-0000-0000-000000000000')
       .maybeSingle();
     if (r.error) throw r.error;
@@ -9402,7 +9455,7 @@ async function saveOpportunities() {
   btn.textContent = 'Saving...'; btn.disabled = true;
 
   var payload = {
-    business_id: String(b.id||b._id),
+    business_id: _bizUuid(b),
     client_id: currentProfile ? currentProfile.client_id : null,
     updated_at: new Date().toISOString(),
     updated_by: currentProfile ? (currentProfile.full_name||'') : ''
@@ -9424,7 +9477,7 @@ async function saveOpportunities() {
 
   try {
     // Load previous opp data to compare changes
-    var prevOpp = _oppCache[String(b.id||b._id)] || {};
+    var prevOpp = _oppCache[_bizKey(b)] || {};
 
     var r = await sb.from('business_opportunities')
       .upsert(payload, { onConflict: 'business_id,client_id' });
@@ -9442,7 +9495,7 @@ async function saveOpportunities() {
     }
 
     // Update cache
-    _oppCache[String(b.id||b._id)] = payload;
+    _oppCache[_bizKey(b)] = payload;
 
     // Update summary lines
     var STAGE_COLORS = {'Lead Captured':'#9b93d4','Qualified':'#4a36c8','Fact-Finding':'#d97706','Proposal Sent':'#16a34a','Credit Application':'#9333ea','Won Opportunity':'#059669','Lost':'#dc2626'};
@@ -9513,7 +9566,7 @@ async function saveOpportunities() {
     // Insert all log entries
     for (var i = 0; i < logEntries.length; i++) {
       await sb.from('activity').insert({
-        business_id: String(b.id||b._id),
+        business_id: _bizUuid(b),
         type: 'opportunities',
         note: logEntries[i].note,
         client_id: currentProfile ? currentProfile.client_id : null,
@@ -10718,7 +10771,7 @@ function _rpDone(idx) {
   _routeStops[idx].done=true;
   var b=_routeStops[idx].biz;
   sb.from('activity').insert({
-    business_id:String(b.id||b._id),type:'visited',
+    business_id:_bizUuid(b),type:'visited',
     note:'Visited during route',
     client_id:currentProfile?currentProfile.client_id:null,
     created_by:currentProfile?(currentProfile.full_name||''):''
