@@ -1694,6 +1694,22 @@ async function loadBoard() {
         addScore(row, 'credit_app_collected', 1);
         pushAuditEvent({ user:item.created_by, key:'credit_app_collected', detail:note, source:'activity', created_at:item.created_at, business_id:item.business_id, business_name:_businessNameMap[normalizeBizId(item.business_id)] || '' });
       }
+      if (item.type === 'opportunities' && /supplier:/i.test(note)) {
+        addScore(row, 'supplier_captured', 1);
+        pushAuditEvent({ user:item.created_by, key:'supplier_captured', detail:note, source:'activity', created_at:item.created_at, business_id:item.business_id, business_name:_businessNameMap[normalizeBizId(item.business_id)] || '' });
+      }
+      if (item.type === 'opportunities' && /brands:/i.test(note)) {
+        addScore(row, 'brands_captured', 1);
+        pushAuditEvent({ user:item.created_by, key:'brands_captured', detail:note, source:'activity', created_at:item.created_at, business_id:item.business_id, business_name:_businessNameMap[normalizeBizId(item.business_id)] || '' });
+      }
+      if (item.type === 'opportunities' && /stage:\s*credit application/i.test(note)) {
+        addScore(row, 'credit_app', 1);
+        pushAuditEvent({ user:item.created_by, key:'credit_app', detail:note, source:'activity', created_at:item.created_at, business_id:item.business_id, business_name:_businessNameMap[normalizeBizId(item.business_id)] || '' });
+      }
+      if (item.type === 'opportunities' && /stage:\s*(fact-finding|proposal sent|credit application|won opportunity)/i.test(note)) {
+        addScore(row, 'pain_points', 1);
+        pushAuditEvent({ user:item.created_by, key:'pain_points', detail:note, source:'activity', created_at:item.created_at, business_id:item.business_id, business_name:_businessNameMap[normalizeBizId(item.business_id)] || '' });
+      }
     });
 
     try {
