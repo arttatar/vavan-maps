@@ -1034,6 +1034,7 @@ var TEAM_GROUPS = [
   { name:'DJ / Logan', members:['DJ', 'Logan'] }
 ];
 var SOLO_TEAM_MEMBERS = ['Uriah', 'Ozzy', 'Cameron'];
+var USER_ROSTER = ['Brent', 'Chad', 'Scotty', 'Kylie', 'Chris', 'Brian', 'Steve', 'Art', 'DJ', 'Logan', 'Uriah', 'Ozzy', 'Cameron'];
 
 var _currentProfile = null;
 var _clientName = 'Unknown Client';
@@ -1518,7 +1519,7 @@ function getBoardTitle() {
 
 function getBoardCopy() {
   if (_boardView === 'team') {
-    return 'Ranked by total blitz points. Named rep pairs roll up together, while the RSD reps show on their own.';
+    return 'Ranked by total blitz points for the five paired teams only.';
   }
   if (_boardView === 'lone') {
     return 'Ranked by total blitz points for the solo RSD reps only: Uriah, Ozzy, and Cameron.';
@@ -1577,39 +1578,17 @@ function getProgressLabel(row, leaderScore) {
 
 function buildTeamRows(userRows) {
   var teams = {};
-  var usedUsers = {};
 
   TEAM_GROUPS.forEach(function(team){
     var teamRow = buildEmptyRow(team.name);
-    var hit = false;
     userRows.forEach(function(row){
       var matched = team.members.some(function(member){
         return matchMemberName(row.user, member);
       });
       if (!matched) return;
       mergeRowInto(teamRow, row);
-      usedUsers[row.user] = true;
-      hit = true;
     });
     teams[team.name] = teamRow;
-  });
-
-  SOLO_TEAM_MEMBERS.forEach(function(member){
-    var found = false;
-    userRows.forEach(function(row){
-      if (matchMemberName(row.user, member)) {
-        teams[row.user] = cloneRow(row, row.user);
-        usedUsers[row.user] = true;
-        found = true;
-      }
-    });
-    if (!found) teams[member] = buildEmptyRow(member);
-  });
-
-  userRows.forEach(function(row){
-    if (!usedUsers[row.user]) {
-      teams[row.user] = cloneRow(row, row.user);
-    }
   });
 
   return sortAllRows(teams);
@@ -1723,6 +1702,10 @@ function buildSeedRows(users) {
   (users || []).forEach(function(user){
     var name = normalizeName(user.full_name);
     if (!name || user.active === false || user.role === 'vavan_super') return;
+    var allowed = USER_ROSTER.some(function(member){
+      return matchMemberName(name, member);
+    });
+    if (!allowed) return;
     rows[name] = buildEmptyRow(name);
   });
   return rows;
