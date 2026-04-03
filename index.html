@@ -4313,6 +4313,7 @@ function renderPins() {
           ['in',['get','industry'],['literal',['Construction','Infrastructure']]],'#D97706',
           ['==',['get','industry'],'Industrial'],'#6B7280',
           ['==',['get','industry'],'Services'],'#8B5CF6',
+          ['==',['get','industry'],'RestaurantServices'],'#F59E0B',
           ['==',['get','industry'],'Hospitality'],'#EC4899',
           ['==',['get','industry'],'Government'],'#0EA5E9',
           ['in',['get','industry'],['literal',['Energy','Fuel Stations']]],'#EAB308',
@@ -10061,7 +10062,23 @@ function _rebuildAllMapLayers() {
     paint:{'circle-radius':18,'circle-color':'#fff','circle-opacity':0.25,'circle-stroke-width':0}
   });
   map.addLayer({ id:'biz-sel-dot', type:'circle', source:'biz-selected',
-    paint:{'circle-radius':10,'circle-color':'#9b93d4','circle-stroke-width':3,'circle-stroke-color':'#ffffff','circle-opacity':1}
+    paint:{'circle-radius':10,
+      'circle-color':['case',
+        ['==',['get','is_competitor'],true],'#EF4444',
+        ['==',['get','industry'],'Automotive'],'#3B82F6',
+        ['==',['get','industry'],'Agribusiness'],'#84CC16',
+        ['in',['get','industry'],['literal',['Transport','Transportation']]],'#F97316',
+        ['in',['get','industry'],['literal',['Construction','Infrastructure']]],'#D97706',
+        ['==',['get','industry'],'Industrial'],'#6B7280',
+        ['==',['get','industry'],'Services'],'#8B5CF6',
+        ['==',['get','industry'],'RestaurantServices'],'#F59E0B',
+        ['==',['get','industry'],'Hospitality'],'#EC4899',
+        ['==',['get','industry'],'Government'],'#0EA5E9',
+        ['in',['get','industry'],['literal',['Energy','Fuel Stations']]],'#EAB308',
+        ['==',['get','industry'],'RealEstate'],'#14B8A6',
+        '#9b93d4'
+      ],
+      'circle-stroke-width':3,'circle-stroke-color':'#ffffff','circle-opacity':1}
   });
 
   map.addSource('biz-hover', {type:'geojson', data:{type:'FeatureCollection',features:[]}});
