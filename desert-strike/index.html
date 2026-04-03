@@ -728,7 +728,11 @@ body{
   .mobile-view-switch{
     display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:8px;
+    gap:0;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    overflow:hidden;
+    background:rgba(255,255,255,.03);
   }
   .mobile-date-tools{
     display:grid;
@@ -765,11 +769,24 @@ body{
   .topbar .header-tools{display:none}
   .mobile-nav-tools .view-btn{
     min-width:0;
+    display:flex;
+    align-items:center;
     justify-content:center;
     text-align:center;
     line-height:1.15;
-    padding:11px 8px;
+    padding:12px 6px 11px;
     width:100%;
+    border:none;
+    border-bottom:3px solid transparent;
+    border-radius:0;
+    background:transparent;
+    color:var(--muted);
+    font-size:11px;
+  }
+  .mobile-view-switch .view-btn.active{
+    color:var(--text);
+    background:rgba(255,255,255,.05);
+    border-bottom-color:var(--accent);
   }
   .mobile-nav-tools .control{
     min-width:0;
@@ -819,13 +836,14 @@ body{
   .metrics{grid-template-columns:1fr}
   .quick-nav .quick-tab-btn{font-size:12px;padding:13px 6px 12px}
   .header-tools{grid-template-columns:1fr 1fr}
-  .mobile-view-switch{grid-template-columns:1fr}
+  .mobile-view-switch{grid-template-columns:repeat(3,minmax(0,1fr))}
   .mobile-date-tools{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr}
   .rep-name{font-size:20px}
   .audit-filter-chip{flex:1 1 100%}
 }
 .hidden-tab-copy{display:none !important}
+.hidden-tab-meta{display:none !important}
 </style>
 </head>
 <body>
@@ -858,8 +876,8 @@ body{
       </div>
       <div class="mobile-nav-tools">
         <div class="mobile-view-switch">
-          <button class="view-btn active" id="view-team-btn-mobile" onclick="setBoardView('team')">Team Leader Board</button>
-          <button class="view-btn" id="view-user-btn-mobile" onclick="setBoardView('user')">User Leader Board</button>
+          <button class="view-btn active" id="view-team-btn-mobile" onclick="setBoardView('team')">Team</button>
+          <button class="view-btn" id="view-user-btn-mobile" onclick="setBoardView('user')">User</button>
           <button class="view-btn" id="view-lone-btn-mobile" onclick="setBoardView('lone')">Lone Wolf</button>
         </div>
         <div class="mobile-date-tools">
@@ -897,7 +915,7 @@ body{
           <button class="btn" id="reload-btn" onclick="loadBoard()">Reload</button>
         </div>
       </div>
-      <div class="meta">
+      <div class="meta" id="leaderboard-meta">
         <div class="pill">Client <strong id="client-name">Loading...</strong></div>
         <div class="pill">Viewer <strong id="viewer-name">Loading...</strong></div>
         <div class="pill">Updated <strong id="updated-at">-</strong></div>
@@ -1476,7 +1494,9 @@ function setContentTab(tab) {
     if (btn) btn.classList.toggle('active', id === _contentTab);
   });
   var copy = document.getElementById('leaderboard-copy');
+  var meta = document.getElementById('leaderboard-meta');
   if (copy) copy.classList.toggle('hidden-tab-copy', _contentTab !== 'leaderboard');
+  if (meta) meta.classList.toggle('hidden-tab-meta', _contentTab !== 'leaderboard');
 }
 
 function getBoardTitle() {
