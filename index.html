@@ -1619,6 +1619,33 @@ async function _callFn(fnName, body) {
   return data;
 }
 
+// ── GHL SYNC MODULE ──────────────────────────────────────────
+// Pushes business changes and activity notes to GoHighLevel CRM
+// via the sync-to-ghl Edge Function. All calls are fire-and-forget
+// so they never block the UI.
+var _ghlSyncEnabled = true; // flip to false to disable sync
+
+function _syncToGHL(businessId) {
+  if (!_ghlSyncEnabled || !businessId) return;
+  _callFn('sync-to-ghl', { business_id: String(businessId), action: 'sync' })
+    .then(function(r) { console.log('GHL sync:', r); })
+    .catch(function(e) { console.warn('GHL sync failed (non-blocking):', e.message); });
+}
+
+function _syncNoteToGHL(businessId, note, createdBy, type) {
+  if (!_ghlSyncEnabled || !businessId || !note) return;
+  _callFn('sync-to-ghl', {
+    business_id: String(businessId),
+    action: 'note',
+    note: note,
+    created_by: createdBy || 'Unknown',
+    type: type || 'note'
+  })
+    .then(function(r) { console.log('GHL note sync:', r); })
+    .catch(function(e) { console.warn('GHL note sync failed (non-blocking):', e.message); });
+}
+// ─────────────────────────────────────────────────────────────
+
 var allData = [], filteredData = [], filtersApplied = false, map, draw;
 var _bizById = {};
 var currentProfile = null;
@@ -6240,6 +6267,7 @@ async function _quickMarkCustomer() {
     await sb.from('businesses').update({status:'Customer', updated_at:new Date().toISOString()}).eq('id',biz.id||biz._id);
     biz.status = 'Customer';
     if (_bizById[biz._id]) _bizById[biz._id].status = 'Customer';
+    _syncToGHL(biz.id || biz._id);
     _logChange('Status → Customer', 'edit');
     _showToast('Marked as Customer');
     renderDetailPanel(biz);
@@ -6254,6 +6282,7 @@ async function _quickMarkDead() {
     await sb.from('businesses').update({status:'Lost Customer', updated_at:new Date().toISOString()}).eq('id',biz.id||biz._id);
     biz.status = 'Lost Customer';
     if (_bizById[biz._id]) _bizById[biz._id].status = 'Lost Customer';
+    _syncToGHL(biz.id || biz._id);
     _logChange('Status → Dead Lead', 'edit');
     _showToast('Marked as Dead Lead');
     renderDetailPanel(biz);
@@ -6449,6 +6478,9 @@ async function saveNewBusiness() {
       client_id: currentProfile ? currentProfile.client_id : null,
       created_by: creatorName || 'Unknown'
     });
+
+    // ── Create contact in GHL ──
+    _syncToGHL(String(r.data.id));
 
     var pcount = document.getElementById('pcount');
     if (pcount) pcount.textContent = allData.length.toLocaleString();
@@ -6744,8 +6776,10 @@ function _getBizTags(b) {
 
 async function _saveBizTags(biz, tags) {
   try {
-    var val = tags.length ? JSON.stringify(tags) : null;
-    var r = await sb.from('businesses').update({tags: val, updated_at: new Date().toISOString()}).eq('id', biz.id||biz._id);
+    var val = tags.length ? tags : null;
+    var bizId = biz.id || biz._id;
+    if (!bizId) { _showToast('No business ID — cannot save tags'); return; }
+    var r = await sb.from('businesses').update({tags: val, updated_at: new Date().toISOString()}).eq('id', bizId);
     if (r.error) throw r.error;
     biz.tags = tags;
     if (_bizById[biz._id]) _bizById[biz._id].tags = tags;
@@ -6876,15 +6910,16 @@ async function _applyTagArea() {
       var tags = _getBizTags(biz);
       if (tags.indexOf(tagName) >= 0) { success++; return Promise.resolve(); } // already has tag
       tags.push(tagName);
-      var val = JSON.stringify(tags);
-      return sb.from('businesses').update({tags: val, updated_at: new Date().toISOString()}).eq('id', biz.id||biz._id)
+      var bizId = biz.id || biz._id;
+      if (!bizId) { console.warn('Tag skip — no id for', biz.name); fail++; return Promise.resolve(); }
+      return sb.from('businesses').update({tags: tags, updated_at: new Date().toISOString()}).eq('id', bizId)
         .then(function(r) {
-          if (r.error) { fail++; return; }
+          if (r.error) { console.error('Tag fail:', biz.name, r.error.message || r.error); fail++; return; }
           biz.tags = tags;
           if (_bizById[biz._id]) _bizById[biz._id].tags = tags;
           success++;
         })
-        .catch(function() { fail++; });
+        .catch(function(e) { console.error('Tag catch:', biz.name, e); fail++; });
     });
     await Promise.all(promises);
     var pct = Math.round(((i + batch.length) / inside.length) * 100);
@@ -6895,6 +6930,7 @@ async function _applyTagArea() {
   // Done
   bar.style.width = '100%';
   status.textContent = 'Done! ' + success + ' businesses tagged #' + tagName + (fail ? ' (' + fail + ' failed)' : '');
+  if (fail > 0 && success === 0) _showToast('All tags failed — check browser console (F12) for details');
   document.getElementById('tag-area-apply').textContent = 'Done';
   document.getElementById('tag-area-apply').onclick = function() {
     document.getElementById('tag-area-modal').remove();
@@ -7866,6 +7902,8 @@ async function claimAccount() {
       client_id: currentProfile ? currentProfile.client_id : null,
       created_by: repName
     });
+    _syncToGHL(b.id || b._id);
+    _syncNoteToGHL(_bizUuid(b), repName + ' claimed this account', repName, 'claimed');
     b.assigned_rep = repName;
     renderDetailPanel(b);
     switchTab('profile');
@@ -7896,6 +7934,7 @@ async function saveInlineIndustry() {
     var r = await sb.from('businesses').update({industry: newInd||null, updated_at:new Date().toISOString()}).eq('id',biz.id||biz._id);
     if (r.error) throw r.error;
     biz.industry = newInd;
+    _syncToGHL(biz.id || biz._id);
     // Log the change
     _logChange('Industry → ' + (newInd||'removed'), 'edit');
     // Update sub-industry dropdown options
@@ -8033,6 +8072,9 @@ async function saveBusinessEdits() {
     }).eq('id', b.id||b._id);
 
     if (r.error) throw r.error;
+
+    // ── Push to GHL ──
+    _syncToGHL(b.id || b._id);
 
     // Build change log
     var changes = [];
@@ -8192,6 +8234,10 @@ async function setDetailStage(stage) {
       note: noteText,
       created_by: currentProfile ? (currentProfile.full_name || 'Unknown') : 'Unknown'
     });
+
+    // ── Push pipeline + status change to GHL ──
+    _syncToGHL(b.id || b._id);
+    _syncNoteToGHL(_bizUuid(b), noteText, currentProfile ? (currentProfile.full_name||'Unknown') : 'Unknown', 'pipeline');
 
     b.pipeline_stage = stage;
     b.status = newStatus;
@@ -8869,6 +8915,8 @@ async function _logChange(note, type) {
     // Reload activity feed if it's visible
     var actTab = document.getElementById('det-activity');
     if (actTab && actTab.classList.contains('active')) loadActivity(biz);
+    // ── Push activity note to GHL ──
+    _syncNoteToGHL(_bizUuid(biz), _withBizNote(biz, note), byName, type || 'edit');
   } catch(e) { console.warn('Activity log failed:', e); }
 }
 
@@ -8892,6 +8940,8 @@ async function saveNote() {
     if (r.error) throw r.error;
     noteEl.value = '';
     loadActivity(b);
+    // ── Push note to GHL ──
+    _syncNoteToGHL(_bizUuid(b), note, byName, 'note');
   } catch(e) { alert('Could not save note: ' + e.message); }
   finally { btn.textContent = 'Add'; btn.disabled = false; }
 }
