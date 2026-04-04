@@ -6763,7 +6763,19 @@ function _getTagsKey() {
   return 'vavan_tags_' + (currentProfile ? currentProfile.client_id||'default' : 'default');
 }
 function _getAllTags() {
-  try { return JSON.parse(localStorage.getItem(_getTagsKey())||'[]'); } catch(e){ return []; }
+  // Build tag list from actual business data + any localStorage extras
+  var tagSet = {};
+  // Scan all loaded businesses for tags in DB
+  (allData||[]).forEach(function(b){
+    var bt = _getBizTags(b);
+    bt.forEach(function(t){ if(t) tagSet[t]=true; });
+  });
+  // Also include any from localStorage (user-created tags not yet assigned)
+  try {
+    var ls = JSON.parse(localStorage.getItem(_getTagsKey())||'[]');
+    ls.forEach(function(t){ if(t) tagSet[t]=true; });
+  } catch(e){}
+  return Object.keys(tagSet).sort();
 }
 function _saveAllTags(arr) {
   try { localStorage.setItem(_getTagsKey(), JSON.stringify(arr)); } catch(e){}
