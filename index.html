@@ -565,7 +565,11 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 
 /* Section tabs */
 .det-tabs{display:flex;border-bottom:2px solid var(--border);background:#fff;position:sticky;top:48px;z-index:9;}
-.det-tab{flex:1;padding:.6rem .5rem;font-size:12px;font-weight:600;color:var(--muted);text-align:center;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.det-tab{flex:1;padding:.6rem .5rem;font-size:12px;font-weight:600;color:var(--muted);text-align:center;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+/* On desktop the det-body has no sheet header so tabs stick at top:0 */
+@media(min-width:769px){ .det-tabs{top:0;} }
+/* Touch-friendly action buttons for iPad */
+.det-action-btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-appearance:none;}
 .det-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .det-section{display:none;padding:1rem 1.25rem;}
 .det-section.active{display:block;padding-bottom:4rem;}
@@ -6598,8 +6602,12 @@ function _showNavSheet() {
 
   if (isDesktop) {
     var det = document.getElementById('desktop-panel-host') || document.getElementById('detail');
-    var rect = det ? det.getBoundingClientRect() : {left:0,top:0,width:400,bottom:window.innerHeight};
-    overlay.style.cssText = 'position:fixed;top:'+rect.top+'px;left:'+rect.left+'px;width:'+rect.width+'px;height:'+(rect.bottom-rect.top)+'px;background:rgba(13,13,20,.4);z-index:9800;display:flex;align-items:flex-end;justify-content:stretch;font-family:Inter,sans-serif;overflow:hidden;';
+    var rect = det ? det.getBoundingClientRect() : null;
+    if (rect && rect.width >= 50 && (rect.bottom - rect.top) >= 100) {
+      overlay.style.cssText = 'position:fixed;top:'+rect.top+'px;left:'+rect.left+'px;width:'+rect.width+'px;height:'+(rect.bottom-rect.top)+'px;background:rgba(13,13,20,.4);z-index:9800;display:flex;align-items:flex-end;justify-content:stretch;font-family:Inter,sans-serif;overflow:hidden;';
+    } else {
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(13,13,20,.45);z-index:9800;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;';
+    }
   } else {
     overlay.style.cssText = 'position:fixed;inset:0;bottom:60px;background:rgba(0,0,0,.45);z-index:8000;display:flex;align-items:flex-end;justify-content:center;';
   }
@@ -7508,7 +7516,7 @@ function renderDetailPanel(b) {
       '</div>'+
       // Quick action buttons — Navigate + Call
       '<div style="display:flex;gap:8px;margin-top:10px;">'+
-        '<button onclick="openNav(\''+addr.replace(/'/g,"\\'")+'\',' + (b.lat||null) + ',' + (b.lon||null) + ')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;">'+
+        '<button class="det-action-btn" onclick="openNav(\''+addr.replace(/'/g,"\\'")+'\',' + (b.lat||null) + ',' + (b.lon||null) + ')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;background:var(--paper2);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:Inter,sans-serif;">'+
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
           'Navigate</button>'+
         (b.phone ?
@@ -7582,11 +7590,11 @@ function renderDetailPanel(b) {
         '<div style="padding:.75rem 0 .875rem;border-bottom:1px solid var(--border);margin-bottom:.25rem;">'+
           '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;">Log Activity</div>'+
           '<div style="display:flex;gap:8px;margin-bottom:.75rem;">'+
-            '<button onclick="_openActivitySheet(\'visited\')" style="flex:1;padding:9px;border:1.5px solid #d97706;border-radius:9px;background:'+(b.visited?'#fff7e6':'#fff')+';color:#d97706;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+            '<button class="det-action-btn" onclick="_openActivitySheet(\'visited\')" style="flex:1;padding:9px;border:1.5px solid #d97706;border-radius:9px;background:'+(b.visited?'#fff7e6':'#fff')+';color:#d97706;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>'+
               (b.visited ? '✓ Visited' : 'Visited')+
             '</button>'+
-            '<button onclick="_openActivitySheet(\'contacted\')" style="flex:1;padding:9px;border:1.5px solid #059669;border-radius:9px;background:#fff;color:#059669;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
+            '<button class="det-action-btn" onclick="_openActivitySheet(\'contacted\')" style="flex:1;padding:9px;border:1.5px solid #059669;border-radius:9px;background:#fff;color:#059669;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">'+
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'+
               'Contacted'+
             '</button>'+
@@ -7718,6 +7726,18 @@ function renderDetailPanel(b) {
           '<input class="edit-input" id="edit-phone" type="tel" value="'+(b.phone||'')+'"></div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Website</label>'+
           '<input class="edit-input" id="edit-website" type="url" value="'+(b.website||'')+'"></div>'+
+        // Address fields
+        '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem;">Address</div>'+
+        '<div class="edit-field-group"><label class="edit-field-label">Street</label>'+
+          '<input class="edit-input" id="edit-street" type="text" placeholder="123 Main St" value="'+((b.street||'').replace(/"/g,'&quot;'))+'"></div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<div class="edit-field-group" style="flex:2;"><label class="edit-field-label">City</label>'+
+            '<input class="edit-input" id="edit-city" type="text" placeholder="Las Vegas" value="'+((b.locality||'').replace(/"/g,'&quot;'))+'"></div>'+
+          '<div class="edit-field-group" style="flex:1;"><label class="edit-field-label">State</label>'+
+            '<input class="edit-input" id="edit-state" type="text" placeholder="NV" value="'+((b.state||'').replace(/"/g,'&quot;'))+'"></div>'+
+          '<div class="edit-field-group" style="flex:1;"><label class="edit-field-label">Zip</label>'+
+            '<input class="edit-input" id="edit-zip" type="text" placeholder="89101" value="'+((b.zip||'').replace(/"/g,'&quot;'))+'"></div>'+
+        '</div>'+
         '<div class="edit-field-group"><label class="edit-field-label">Location Type</label>'+
           '<select class="edit-input" id="edit-location-type">'+
             '<option value="">— Select type —</option>'+
@@ -8065,6 +8085,14 @@ async function saveBusinessEdits() {
   var status   = document.getElementById('edit-status').value;
   var locType  = document.getElementById('edit-location-type').value;
   var pipeline = b.pipeline_stage || 'Lead Captured';
+  var street   = (document.getElementById('edit-street') || {}).value || '';
+  street = street.trim();
+  var city     = (document.getElementById('edit-city') || {}).value || '';
+  city = city.trim();
+  var state    = (document.getElementById('edit-state') || {}).value || '';
+  state = state.trim();
+  var zip      = (document.getElementById('edit-zip') || {}).value || '';
+  zip = zip.trim();
 
   // Collect social links from edit form
   var newSocials = Object.assign({}, b.social_links || {});
@@ -8083,11 +8111,15 @@ async function saveBusinessEdits() {
   btn.textContent = 'Saving...'; btn.disabled = true;
 
   try {
+    var addrParts = [street, city, (state && city && !city.includes(state)) ? state : '', zip].filter(Boolean);
+    var fullAddr = addrParts.join(', ');
     var r = await sb.from('businesses').update({
       phone: phone, website: website,
       assigned_rep: rep, status: status, pipeline_stage: pipeline,
       location_type: locType, social_links: newSocials,
-      is_competitor: status === 'Competitor'
+      is_competitor: status === 'Competitor',
+      street: street, locality: city, state: state, zip: zip,
+      full_address: fullAddr
     }).eq('id', b.id||b._id);
 
     if (r.error) throw r.error;
@@ -8102,6 +8134,10 @@ async function saveBusinessEdits() {
     if (rep !== (b.assigned_rep||''))      changes.push('Assigned Rep → '+(rep||'Unassigned'));
     if (status !== (b.status||'Lead'))     changes.push('Status → '+status);
     if (locType !== (b.location_type||'')) changes.push('Location Type → '+(locType||'removed'));
+    if (street !== (b.street||''))       changes.push('Street → '+(street||'removed'));
+    if (city !== (b.locality||''))       changes.push('City → '+(city||'removed'));
+    if (state !== (b.state||''))         changes.push('State → '+(state||'removed'));
+    if (zip !== (b.zip||''))             changes.push('Zip → '+(zip||'removed'));
     ['facebook','instagram','linkedin','yelp','tiktok'].forEach(function(k){
       var old = (b.social_links||{})[k]||''; var nw = newSocials[k]||'';
       if (old !== nw) changes.push(k.charAt(0).toUpperCase()+k.slice(1)+' → '+(nw||'removed'));
@@ -8112,6 +8148,8 @@ async function saveBusinessEdits() {
     b.assigned_rep = rep; b.status = status; b.pipeline_stage = pipeline;
     b.location_type = locType; b.social_links = newSocials;
     b.is_competitor = status === 'Competitor';
+    b.street = street; b.locality = city; b.state = state; b.zip = zip;
+    b.full_address = fullAddr;
     if (_bizById[b._id]) _bizById[b._id].is_competitor = b.is_competitor;
 
     toggleEditMode();
@@ -8728,9 +8766,17 @@ var VISITED_OPTIONS = [
 function _activitySheetStyles() {
   var isDesktop = window.innerWidth > 768;
   if (isDesktop) {
-    // On desktop — anchor popup inside left panel host
+    // On desktop/iPad — anchor popup inside left panel host
     var det = document.getElementById('desktop-panel-host') || document.getElementById('detail');
-    var rect = det ? det.getBoundingClientRect() : {left:0,top:0,width:400,bottom:window.innerHeight};
+    var rect = det ? det.getBoundingClientRect() : null;
+    // Guard: if the panel host has no usable rect, fall back to centered fullscreen
+    if (!rect || rect.width < 50 || (rect.bottom - rect.top) < 100) {
+      return {
+        overlay: 'position:fixed;inset:0;background:rgba(13,13,20,.45);z-index:9800;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;',
+        sheet: 'background:#fff;width:90%;max-width:420px;border-radius:16px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.2);max-height:80vh;overflow-y:auto;',
+        animate: false
+      };
+    }
     return {
       overlay: 'position:fixed;top:'+rect.top+'px;left:'+rect.left+'px;width:'+rect.width+'px;height:'+(rect.bottom-rect.top)+'px;background:rgba(13,13,20,.4);z-index:9800;display:flex;align-items:flex-end;justify-content:stretch;font-family:Inter,sans-serif;border-radius:0 0 16px 16px;overflow:hidden;',
       sheet: 'background:#fff;width:100%;border-radius:12px 12px 0 0;overflow:hidden;box-shadow:0 -4px 24px rgba(0,0,0,.15);max-height:90%;overflow-y:auto;',
@@ -11703,3 +11749,4 @@ function onMapClick(e) {
 
 </body>
 </html>
+
