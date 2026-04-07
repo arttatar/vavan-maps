@@ -9291,9 +9291,14 @@ function _addOppChipOrCustom(type, key, listName, sel) {
       _saveCustomList(listName, list);
     }
     _addOppChipDirect(type, key, newVal);
-    // Refresh the whole opp panel so new entry appears in dropdown
-    var biz = lastSelectedBiz;
-    if (biz) loadOpportunities(biz);
+    // Remove the new entry from the dropdown since it's now a chip
+    var selId = type === 'sup' ? 'opp-sup-'+key : 'opp-brand-'+key;
+    var selEl = document.getElementById(selId);
+    if (selEl) {
+      for (var i = selEl.options.length - 1; i >= 0; i--) {
+        if (selEl.options[i].value === newVal) selEl.remove(i);
+      }
+    }
     return;
   }
 
