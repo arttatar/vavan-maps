@@ -9200,6 +9200,9 @@ function renderOpportunities(b, opp) {
           '</div>'+
           (function(){
             var visible = _getVisibleSuppliers(p.key);
+            var customSups = _getCustomList('suppliers');
+            customSups.forEach(function(c){ if (visible.indexOf(c) < 0) visible.push(c); });
+            visible.sort();
             var selected = supplier ? supplier.split(',').map(function(s){return s.trim();}).filter(Boolean) : [];
             var chips = selected.map(function(s){
               return '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent-light);color:var(--accent);border-radius:100px;padding:3px 9px;font-size:11px;font-weight:600;white-space:nowrap;margin:2px;">'+
