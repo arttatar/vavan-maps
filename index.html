@@ -3329,16 +3329,34 @@ function applySubIndustries(rows) {
 
 async function loadData() {
   try {
-    var allowedMarketNames = userMarkets
+    // Super-users (account_owner / admin / vavan_admin / account_admin) see all markets.
+    // Regular users are filtered by their assigned client markets.
+    var superRoles = ['admin','account_owner','vavan_admin','account_admin'];
+    var isSuperUser = currentProfile && superRoles.indexOf(currentProfile.role) !== -1;
+    var allowedMarketNames = isSuperUser ? [] : userMarkets
       .map(function(m){ return m.markets ? m.markets.name : null; })
       .filter(Boolean);
 
+    // Slim column list — excludes heavy custom_fields jsonb (lot_wkt + building_wkt polygons).
+    // Detail view fetches custom_fields on demand for individual rows.
+    var SLIM_COLS = [
+      'id','name','street','locality','full_address','phone','website',
+      'market','market_id','industry','sub_industry','branch_code','territory_code',
+      'lat','lon','score','status','pipeline_stage',
+      'lead_source','assigned_rep','visited','is_competitor','is_abandoned',
+      'relationship_strength','customer_health','customer_tier','customer_since','account_number',
+      'tags','normalized_address','normalized_name',
+      'created_at','updated_at','ghl_contact_id','ghl_location_id',
+      'state','zip','priority_tier'
+    ].join(',');
+
     var allRows = [];
     var from = 0;
-    var pageSize = 1000;
+    var pageSize = 2000; // larger pages since rows are now smaller
 
     while (true) {
-      var query = sb.from('businesses').select('*').range(from, from + pageSize - 1);
+      var query = sb.from('businesses').select(SLIM_COLS).range(from, from + pageSize - 1)
+        .eq('is_abandoned', false);  // server-side filter
       if (allowedMarketNames.length) {
         query = query.in('market', allowedMarketNames);
       }
@@ -3356,7 +3374,8 @@ async function loadData() {
       console.warn('Market filter returned 0 — loading all as fallback');
       from = 0;
       while (true) {
-        var r2 = await sb.from('businesses').select('*').range(from, from + pageSize - 1);
+        var r2 = await sb.from('businesses').select(SLIM_COLS).range(from, from + pageSize - 1)
+          .eq('is_abandoned', false);
         if (r2.error) throw r2.error;
         if (!r2.data || r2.data.length === 0) break;
         allRows = allRows.concat(r2.data);
