@@ -3352,7 +3352,7 @@ async function loadData() {
 
     var allRows = [];
     var from = 0;
-    var pageSize = 2000; // larger pages since rows are now smaller
+    var pageSize = 1000; // PostgREST default max — DO NOT exceed (server caps at 1000)
 
     while (true) {
       var query = sb.from('businesses').select(SLIM_COLS).range(from, from + pageSize - 1)
