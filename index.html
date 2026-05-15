@@ -3350,38 +3350,74 @@ async function loadData() {
       'state','zip','priority_tier'
     ].join(',');
 
-    var allRows = [];
-    var from = 0;
     var pageSize = 1000; // PostgREST default max — DO NOT exceed (server caps at 1000)
 
-    while (true) {
-      var query = sb.from('businesses').select(SLIM_COLS).range(from, from + pageSize - 1)
-        .eq('is_abandoned', false);  // server-side filter
-      if (allowedMarketNames.length) {
-        query = query.in('market', allowedMarketNames);
-      }
-      var r = await query;
-      if (r.error) throw r.error;
-      if (!r.data || r.data.length === 0) break;
-      allRows = allRows.concat(r.data);
-      prog(30 + Math.min(30, Math.floor(allRows.length / 60)), 'Loading... ' + allRows.length + ' businesses');
-      if (r.data.length < pageSize) break;
-      from += pageSize;
+    // Helper: one page fetch
+    function fetchPage(from) {
+      var q = sb.from('businesses').select(SLIM_COLS).range(from, from + pageSize - 1)
+        .eq('is_abandoned', false).order('id', { ascending: true });
+      if (allowedMarketNames.length) q = q.in('market', allowedMarketNames);
+      return q.then(function(r){
+        if (r.error) throw r.error;
+        return r.data || [];
+      });
     }
 
-    // If market filter returned nothing, retry without filter (safety fallback)
+    // 1. First page — single round-trip to see the map fast
+    prog(30, 'Loading businesses...');
+    var firstPage = await fetchPage(0);
+    var allRows = firstPage.slice();
+
+    // Progressive render: show first page on the map immediately
+    if (allRows.length > 0) {
+      allData = applySubIndustries(normalizeAll(allRows));
+      _buildLookup();
+      var pc = document.getElementById('pcount');
+      if (pc) pc.textContent = allRows.length.toLocaleString() + (firstPage.length === pageSize ? '…' : '');
+      try { if (typeof renderPins === 'function') renderPins(); } catch(e){}
+      prog(40, 'Loaded ' + allRows.length + ' (loading rest...)');
+    }
+
+    // 2. Subsequent pages — fetch up to 30 in parallel batches of 6
+    if (firstPage.length === pageSize) {
+      var BATCH_SIZE = 6;
+      var page = 1;
+      var stop = false;
+      while (!stop) {
+        var batchOffsets = [];
+        for (var i = 0; i < BATCH_SIZE; i++) {
+          batchOffsets.push(page * pageSize);
+          page++;
+        }
+        var results = await Promise.all(batchOffsets.map(function(off){ return fetchPage(off); }));
+        for (var j = 0; j < results.length; j++) {
+          allRows = allRows.concat(results[j]);
+          if (results[j].length < pageSize) stop = true;
+        }
+        prog(40 + Math.min(40, Math.floor(allRows.length / 750)), 'Loading... ' + allRows.length + ' businesses');
+        // Update map progressively
+        try {
+          allData = applySubIndustries(normalizeAll(allRows));
+          _buildLookup();
+          var pc2 = document.getElementById('pcount');
+          if (pc2) pc2.textContent = allRows.length.toLocaleString() + (stop ? '' : '…');
+          if (typeof renderPins === 'function') renderPins();
+        } catch(e){ console.warn('Progressive update error:', e); }
+      }
+    }
+
+    // Safety fallback: if market filter returned 0, retry without filter
     if (allRows.length === 0 && allowedMarketNames.length > 0) {
       console.warn('Market filter returned 0 — loading all as fallback');
-      from = 0;
+      allowedMarketNames = [];
+      // Recurse once with no filter
+      var fbFrom = 0;
       while (true) {
-        var r2 = await sb.from('businesses').select(SLIM_COLS).range(from, from + pageSize - 1)
-          .eq('is_abandoned', false);
-        if (r2.error) throw r2.error;
-        if (!r2.data || r2.data.length === 0) break;
-        allRows = allRows.concat(r2.data);
-        prog(30 + Math.min(30, Math.floor(allRows.length / 60)), 'Loading... ' + allRows.length + ' businesses');
-        if (r2.data.length < pageSize) break;
-        from += pageSize;
+        var fbPage = await fetchPage(fbFrom);
+        if (fbPage.length === 0) break;
+        allRows = allRows.concat(fbPage);
+        if (fbPage.length < pageSize) break;
+        fbFrom += pageSize;
       }
     }
 
