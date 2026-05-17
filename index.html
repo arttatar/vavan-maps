@@ -3089,17 +3089,37 @@ function normalizeRecord(b) {
   b.market      = (b.market      || 'Las Vegas').trim();
   b.pipeline_stage = (b.pipeline_stage || '').trim();
 
-  // Industry — normalize casing to match IND_COLORS keys
+  // Industry — normalize to short-code that matches IND_COLORS keys.
+  // Now handles both old (raw scrape) values AND new canonical 11-category names.
   var rawInd = (b.industry || '').trim();
   var IND_NORMALIZE = {
-    'automotive':'Automotive','agribusiness':'Agribusiness',
-    'transport':'Transport','transportation':'Transport',
+    // Automotive
+    'automotive':'Automotive',
+    // Agribusiness
+    'agribusiness':'Agribusiness','agriculture':'Agribusiness','farming':'Agribusiness',
+    // Transportation
+    'transport':'Transport','transportation':'Transport','logistics':'Transport',
+    // Infrastructure / Construction
     'construction':'Construction','infrastructure':'Construction',
-    'industrial':'Industrial','services':'Services',
+    // Industrial
+    'industrial':'Industrial','manufacturing':'Industrial',
+    // Services Business
+    'services':'Services','service business':'Services','services business':'Services',
+    // Restaurant Services
     'restaurant services':'RestaurantServices','restaurantservices':'RestaurantServices',
-    'hospitality':'Hospitality','government':'Government',
-    'energy':'Energy','realestate':'RealEstate','real estate':'RealEstate',
-    'competitors':'Competitors','competitor':'Competitors'  // kept for legacy data migration
+    'restaurant':'RestaurantServices',
+    // Hospitality & Leisure
+    'hospitality':'Hospitality','leisure':'Hospitality','hospitality & leisure':'Hospitality',
+    // Government & Institutions
+    'government':'Government','institutions':'Government','government & institutions':'Government',
+    // Energy, Utilities & Environmental
+    'energy':'Energy','utilities':'Energy','environmental':'Energy',
+    'fuel stations':'Energy','energy & utilities':'Energy',
+    'energy, utilities & environmental':'Energy',
+    // Real Estate
+    'realestate':'RealEstate','real estate':'RealEstate',
+    // Legacy
+    'competitors':'Competitors','competitor':'Competitors'
   };
   b.industry = IND_NORMALIZE[rawInd.toLowerCase()] || rawInd;
 
